@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Excel files (если они содержат данные, которые не должны быть в репозитории)
+# data/*.xlsx
+# !data/.gitkeep
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Reports (временные файлы отчётов)
+*.txt
+reports/
+
+# Testing
+.pytest_cache/
+.coverage

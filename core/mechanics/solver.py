@@ -49,36 +49,48 @@ class SolvableFrame:
     def solve_single_unknown_at_node(self, node: Node):
         point = (node.x, node.y)
         moment = 0
+        equation = ''
         for load in self.loads:
             if isinstance(load, Force):
-                moment += load.get_moment_about(point=point)
+                text, moment_of_load = load.get_moment_about(point=point)
+                moment += moment_of_load
+                equation = equation + text
             elif isinstance(load, Momentum):
                 if load.rotation:
                     moment += load.value
+                    equation = equation + f'+{load.name}'
                 else:
                     moment -= load.value
+                    equation = equation + f'-{load.name}'
             if isinstance(load, DistributedForce):
-                moment += load.get_moment_about(point=point)
+                text, moment_of_load = load.get_moment_about(point=point)
+                moment += moment_of_load
+                equation = equation + text
 
         reaction = self.find_node_with_single_unknown()[1]
         reaction_lever_arm = reaction.get_lever_arm(point=point)
         reaction_value = -moment / reaction_lever_arm
-        return [reaction.name, round_up(reaction_value, 2)]
+        return [reaction.name, round_up(reaction_value, 2), equation]
 
     def sum_force_projections(self, axis: str):
+        sum_force_expression = ''
         sum_of_projections = 0
         all_loads = self.loads + self.finded_reactions
         for load in all_loads:
             if isinstance(load, Force):
-                projection = load.get_projection_on_axis(axis_name=axis)
+                projection, expression = load.get_projection_on_axis(axis_name=axis)
                 sum_of_projections += projection
+                sum_force_expression += expression
             elif isinstance(load, DistributedForce):
-                projection = load.get_projection_on_axis(axis_name=axis)
+                projection, expression = load.get_projection_on_axis(axis_name=axis)
                 sum_of_projections += projection
-        return sum_of_projections
+                sum_force_expression += expression
+        return sum_of_projections, sum_force_expression
 
     def find_reaction_from_force_projection(self, axis: str):
-        sum_of_loads = self.sum_force_projections(axis=axis)
+        sum_of_loads, expression = self.sum_force_projections(axis=axis)
+        expression = f'∑F({axis}): {expression}=0'
+        print(expression)
         finded_reactions_names = [i.name for i in self.finded_reactions]
         unknown_count = []
 
@@ -129,7 +141,7 @@ class SolvableFrame:
 
         for load in all_known_loads:
             if isinstance(load, Force):
-                moment = load.get_moment_about(point=point)
+                text, moment = load.get_moment_about(point=point)
                 if abs(moment) > 1e-10:
                     constant_term += moment
             elif isinstance(load, Momentum):
@@ -255,6 +267,7 @@ class SimpleFrame(SolvableFrame, BaseFrame):
             if r[0] == reaction.name:
                 reaction.value = r[1]
                 self.finded_reactions.append(reaction)
+                print(r[2])
 
         self.find_reaction_from_force_projection('x')
         self.find_reaction_from_force_projection('y')
@@ -639,6 +652,8 @@ class ThreeHingedFrame(SolvableFrame, BaseFrame):
         equation1 = self.create_equation_for_half_about_hinge(left_part, hinge_node)
         intersection_point = self.find_intersection_point_of_reactions(right_part)
         equation2 = self.create_equation_for_whole_frame_about_point(intersection_point)
+        print(equation1)
+        print(equation2)
 
         solution = self.solve_system_of_equations(equation1, equation2)
 

@@ -46,8 +46,9 @@ class Force:
 
     def get_moment_about(self, point: Tuple[float, float]) -> float:
         lever_arm = self.get_lever_arm(point=point)
-        moment = lever_arm * self.value
-        return round_up(number=moment)
+        moment = round_up(lever_arm * self.value)
+        text = f'{self.name} * {lever_arm}'
+        return text, moment
 
     def get_projection_on_axis(self, axis_name: str) -> float:
         rotation_radians = math.radians(self.rotation)
@@ -57,7 +58,12 @@ class Force:
             projection = self.value * math.sin(rotation_radians)
         else:
             raise Exception('Название оси должно быть \'x\' или \'y\'')
-        return round(projection, 2)
+        projection = round(projection, 2)
+        if projection >= 0:
+            expression = f'+{self.name}'
+        else:
+            expression = f'-{self.name}'
+        return projection, expression
 
     def __repr__(self) -> str:
         return f"Force({self.name}={self.value} ---- {self.rotation}, node - {self.node.name})"
@@ -83,9 +89,9 @@ class DistributedForce:
         self.rotation = int(rotation)
 
         if self.rotation in [90, 270]:
-            self.length = self.rod.dx()
+            self.length = round_up(self.rod.dx())
         elif self.rotation in [0, 180]:
-            self.length = self.rod.dy()
+            self.length = round_up(self.rod.dy())
         else:
             raise Exception("Направление распределенной нагрузки должно быть 0, 90, 180 или 270")
 
@@ -108,7 +114,13 @@ class DistributedForce:
             projection = self.Q() * math.sin(rotation_radians)
         else:
             raise Exception('Название оси должно быть \'x\' или \'y\'')
-        return round(projection, 2)
+        projection = round(projection, 2)
+        if projection >= 0:
+            expression = f'+{self.name}*{self.length}'
+        else:
+            expression = f'-{self.name}*{self.length}'
+        return projection, expression
+
 
     def get_lever_arm(self, point: Tuple[float, float]) -> float:
         """

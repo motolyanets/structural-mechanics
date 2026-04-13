@@ -18,6 +18,7 @@ class BRGTUForceMethod(TaskPlugin):
     def get_available_schemes(self) -> list:
         return [
             {"scheme_id": 27, "name": "Схема 27"},
+            {"scheme_id": 29, "name": "Схема 29"},
         ]
 
     def solve(self, cipher: str) -> Dict[str, Any]:
@@ -80,9 +81,10 @@ class BRGTUForceMethod(TaskPlugin):
             from schemes.brgtu.force_method.frame_27 import create_frame_27, create_primary_system_27
             nodes, rods, supports, loads = create_frame_27(params)
             ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_27(params)
-        # # elif circuit_number == 29:
-        # #     from schemes.brgtu.composite_frame.frame_29 import create_frame_29
-        # #     nodes, rods, supports, loads, splitted_order = create_frame_29(params)
+        elif circuit_number == 29:
+            from schemes.brgtu.force_method.frame_29 import create_frame_29, create_primary_system_29
+            nodes, rods, supports, loads = create_frame_29(params)
+            ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_29(params)
         else:
             raise ValueError(f"Схема {circuit_number} не реализована")
 

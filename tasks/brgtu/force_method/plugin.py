@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Dict, Any
 
 from core.mechanics.solver import SolvableFrame
+from services.services import round_up, making_report_of_multiply
 from tasks.base import TaskPlugin
 from core.mechanics.load import Force, Momentum
 from tasks.brgtu.force_method.loader import ForceMethodLoader
@@ -92,6 +93,7 @@ class BRGTUForceMethod(TaskPlugin):
         frame = Frame(nodes, rods, supports, loads)
 
         sf = {}
+        calculation_frame = SolvableFrame(nodes=ps_nodes, rods=ps_rods, supports=ps_supports, loads=loads)
         for load in ps_loads:
             fr = SolvableFrame(nodes=ps_nodes, rods=ps_rods, supports=ps_supports, loads=ps_loads[load])
             sf[f'sf_{load}'] = fr.classify_part()
@@ -100,7 +102,68 @@ class BRGTUForceMethod(TaskPlugin):
             print(f)
             frame_1 = sf[f]
             frame_1.solve_frame()
-            print(frame_1.finded_reactions)
+
+        rod1_diagram_M1 = [0, 4.88]
+        rod2_diagram_M1 = [4.88, 2.44]
+        rod3_diagram_M1 = [2.44, 0]
+        rod4_diagram_M1 = [0, -2.08]
+        rod5_diagram_M1 = [-0.15, -0.43]
+        rod6_diagram_M1 = [0, -0.15]
+        rod7_diagram_M1 = [-2.5, 0]
+
+        rod1_diagram_M2 = [0, 0.51]
+        rod2_diagram_M2 = [0.51, 0.255]
+        rod3_diagram_M2 = [0.255, 0]
+        rod4_diagram_M2 = [0, -0.21]
+        rod5_diagram_M2 = [-0.27, -0.78]
+        rod6_diagram_M2 = [0, -0.27]
+        rod7_diagram_M2 = [-1, -1]
+
+        rod1_diagram_M3 = [0, 1.29]
+        rod2_diagram_M3 = [1.29, 0.645]
+        rod3_diagram_M3 = [0.645, 0]
+        rod4_diagram_M3 = [0, -0.53]
+        rod5_diagram_M3 = [1.8, 0.53]
+        rod6_diagram_M3 = [0, 1.8]
+        rod7_diagram_M3 = [0, 0]
+
+        rod1_diagram_Mp = [0, -0.46]
+        rod2_diagram_Mp = [-0.46, -17.3]
+        rod3_diagram_Mp = [-17.3, 0]
+        rod4_diagram_Mp = [0, 14.81]
+        rod5_diagram_Mp = [0.25, 0.71]
+        rod6_diagram_Mp = [0, 0.25]
+        rod7_diagram_Mp = [15.49, 0, 1.6]
+
+
+        m1 = [rod1_diagram_M1, rod2_diagram_M1, rod3_diagram_M1, rod4_diagram_M1, rod5_diagram_M1, rod6_diagram_M1, rod7_diagram_M1]
+        m2 = [rod1_diagram_M2, rod2_diagram_M2, rod3_diagram_M2, rod4_diagram_M2, rod5_diagram_M2, rod6_diagram_M2, rod7_diagram_M2]
+        m3 = [rod1_diagram_M3, rod2_diagram_M3, rod3_diagram_M3, rod4_diagram_M3, rod5_diagram_M3, rod6_diagram_M3, rod7_diagram_M3]
+        mp = [rod1_diagram_Mp, rod2_diagram_Mp, rod3_diagram_Mp, rod4_diagram_Mp, rod5_diagram_Mp, rod6_diagram_Mp, rod7_diagram_Mp]
+
+        rods = calculation_frame.rods
+        i = 0
+        for rod in rods:
+            rod.diagram_M1 = m1[i]
+            rod.diagram_M2 = m2[i]
+            rod.diagram_M3 = m3[i]
+            rod.diagram_Mp = mp[i]
+            i += 1
+
+        print('-------"Эпюра Мs"-------')
+        for rod in rods:
+            Ms_1 = rod.diagram_M1[0] + rod.diagram_M2[0] + rod.diagram_M3[0]
+            Ms_2 = rod.diagram_M1[1] + rod.diagram_M2[1] + rod.diagram_M3[1]
+            rod.diagram_Ms = [round_up(Ms_1), round_up(Ms_2)]
+            print(f'{rod} ------ {rod.diagram_Ms}')
+
+        multiply_M1_M1 = []
+        for rod in rods:
+            multiply_M1_M1.append(rod.multiply_diagrams_Simpson('M1', 'M1'))
+        delta_11_text, delta_11 = making_report_of_multiply(multiply_M1_M1)
+        print("11 ----", delta_11_text)
+        "Сделать из этого метод в SolvableFrame, чтобы тут просто вызывать его"
+
 
         # inner_reactions = []
         # for i, part in enumerate(parts_of_frame):

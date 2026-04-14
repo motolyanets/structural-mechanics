@@ -41,13 +41,14 @@ class Force:
         # M = r × F = |r| * |F| * sin(θ)
         # В 2D: M = (dx * Fy - dy * Fx)
         moment_arm = dx * force_y - dy * force_x
+        moment_arm = round_up(moment_arm, 3)
 
         return moment_arm
 
     def get_moment_about(self, point: Tuple[float, float]) -> float:
         lever_arm = self.get_lever_arm(point=point)
         moment = round_up(lever_arm * self.value)
-        text = f'{self.name} * {lever_arm}'
+        text = f'{self.name}·{lever_arm}'
         return text, moment
 
     def get_projection_on_axis(self, axis_name: str) -> float:
@@ -60,9 +61,9 @@ class Force:
             raise Exception('Название оси должно быть \'x\' или \'y\'')
         projection = round(projection, 2)
         if projection >= 0:
-            expression = f'+{self.name}'
+            expression = f' + {self.name}'
         else:
-            expression = f'-{self.name}'
+            expression = f' - {self.name}'
         return projection, expression
 
     def __repr__(self) -> str:
@@ -116,9 +117,9 @@ class DistributedForce:
             raise Exception('Название оси должно быть \'x\' или \'y\'')
         projection = round(projection, 2)
         if projection >= 0:
-            expression = f'+{self.name}*{self.length}'
+            expression = f' + {self.name}·{self.length}'
         else:
-            expression = f'-{self.name}*{self.length}'
+            expression = f' - {self.name}·{self.length}'
         return projection, expression
 
 
@@ -148,10 +149,11 @@ class DistributedForce:
         # M = r × F = |r| * |F| * sin(θ)
         # В 2D: M = (dx * Fy - dy * Fx)
         moment_arm = dx * force_y - dy * force_x
-
+        moment_arm = round_up(moment_arm, 3)
         return moment_arm
 
     def get_moment_about(self, point: Tuple[float, float]) -> float:
         lever_arm = self.get_lever_arm(point=point)
-        moment = lever_arm * self.Q()
-        return round_up(number=moment)
+        moment = round_up(lever_arm * self.Q())
+        text = f'{self.name}·{self.length}·{lever_arm}'
+        return text, moment

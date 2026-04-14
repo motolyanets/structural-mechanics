@@ -121,7 +121,7 @@ def create_primary_system_29(params: dict):
     if load_index == 1:
         rod7 = Rod(start_node=node5, end_node=node9, stiffness=i3)
         load_P = Force(name='P', node=node3, value=P, rotation=270)
-        load_q = DistributedForce(name='q', rod=rod7, value=q, rotation=180)
+        load_q = DistributedForce(name='q', rod=rod7, value=q, rotation=270)
         loads_p = [load_P, load_q]
         nodes = [node1, node2, node3, node4, node5, node6, node7, node9]
         rods = [rod1, rod2, rod3, rod4, rod5, rod6, rod7]

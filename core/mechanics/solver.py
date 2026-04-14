@@ -7,7 +7,7 @@ from core.mechanics.node import Node
 from core.mechanics.rod import Rod
 from core.mechanics.load import Force, Momentum, DistributedForce
 from core.mechanics.support import Support
-from services.services import round_up
+from services.services import round_up, normalize_equation
 
 
 class SolvableFrame:
@@ -32,6 +32,33 @@ class SolvableFrame:
                 reactions.append(Force(name=f'Y{support.node.name}', node=support.node, rotation=90))
                 reactions.append(Momentum(name=f'M{support.node.name}', node=support.node, rotation=True))
         return reactions
+
+    def sum_momentum_about_node(self, node: Node):
+        all_loads = self.loads + self.finded_reactions
+
+        point = (node.x, node.y)
+        moment = 0
+        equation = ''
+        for load in all_loads:
+            if isinstance(load, Force):
+                text, moment_of_load = load.get_moment_about(point=point)
+                moment += moment_of_load
+                equation += f'+ {text} '
+            elif isinstance(load, Momentum):
+                if load.rotation:
+                    moment += load.value
+                    equation += f'+{load.name} '
+                else:
+                    moment -= load.value
+                    equation += f'-{load.name} '
+            if isinstance(load, DistributedForce):
+                text, moment_of_load = load.get_moment_about(point=point)
+                moment += moment_of_load
+                equation += f'+ {text} '
+
+        moment = round_up(moment, 3)
+        equation = normalize_equation(equation) + ' = 0'
+        return moment, equation
 
     def find_node_with_single_unknown(self):
         reactions = self.reactions()
@@ -73,24 +100,31 @@ class SolvableFrame:
         return [reaction.name, round_up(reaction_value, 2), equation]
 
     def sum_force_projections(self, axis: str):
-        sum_force_expression = ''
+        sum_force_expression_names = ''
+        sum_force_expression_values = ''
         sum_of_projections = 0
+
         all_loads = self.loads + self.finded_reactions
+        loads_taken_into_account = []
         for load in all_loads:
-            if isinstance(load, Force):
-                projection, expression = load.get_projection_on_axis(axis_name=axis)
-                sum_of_projections += projection
-                sum_force_expression += expression
-            elif isinstance(load, DistributedForce):
-                projection, expression = load.get_projection_on_axis(axis_name=axis)
-                sum_of_projections += projection
-                sum_force_expression += expression
-        return sum_of_projections, sum_force_expression
+            if isinstance(load, (Force, DistributedForce)):
+                if load.rotation in [0, 180] and axis in ['x', 'X']:
+                    loads_taken_into_account.append(load)
+                elif load.rotation in [90, 270] and axis in ['y', 'Y']:
+                    loads_taken_into_account.append(load)
+
+        for load in loads_taken_into_account:
+            projection, expression = load.get_projection_on_axis(axis_name=axis)
+            sum_of_projections += projection
+            sum_force_expression_names += expression
+            if projection >= 0:
+                sum_force_expression_values += f'+ {projection}'
+            else:
+                sum_force_expression_values += f' {projection} '
+        return sum_of_projections, sum_force_expression_names, sum_force_expression_values
 
     def find_reaction_from_force_projection(self, axis: str):
-        sum_of_loads, expression = self.sum_force_projections(axis=axis)
-        expression = f'∑F({axis}): {expression}=0'
-        print(expression)
+        sum_of_loads, sum_force_expression_names, sum_force_expression_values = self.sum_force_projections(axis=axis)
         finded_reactions_names = [i.name for i in self.finded_reactions]
         unknown_count = []
 
@@ -107,10 +141,26 @@ class SolvableFrame:
         else:
             reaction = unknown_count[0]
             rotation_radians = math.radians(reaction.rotation)
+
+            if axis == 'x':
+                projection = math.cos(rotation_radians)
+            elif axis == 'y':
+                projection = math.sin(rotation_radians)
+
+            if projection > 0:
+                expression_with_names = f'∑{axis}: {reaction.name}{sum_force_expression_names} = 0'
+                expression_with_values = f'{reaction.name}{sum_force_expression_values} = 0'
+            else:
+                expression_with_names = f'∑{axis}: -{reaction.name}{sum_force_expression_names} = 0'
+                expression_with_values = f'-{reaction.name}{sum_force_expression_values} = 0'
+            print(expression_with_names)
+            print(f'    {expression_with_values}')
+
             if axis == 'x':
                 reaction.value = round_up(- sum_of_loads * math.cos(rotation_radians))
             elif axis == 'y':
                 reaction.value = round_up(- sum_of_loads * math.sin(rotation_radians))
+            print(f'    {reaction.name} = {reaction.value}')
             self.finded_reactions.append(reaction)
 
     def get_unknown_reactions_from_part(self) -> List[Force]:
@@ -129,6 +179,7 @@ class SolvableFrame:
     def create_moment_equation_with_two_unknowns(self, point: Tuple[float, float], unknown_reactions: List[Force]) -> str:
         coefficients = {}
         constant_term = 0
+        constant_term_expression = ''
 
         for reaction in unknown_reactions:
             reaction.value = None
@@ -144,17 +195,21 @@ class SolvableFrame:
                 text, moment = load.get_moment_about(point=point)
                 if abs(moment) > 1e-10:
                     constant_term += moment
+                    constant_term_expression += text
             elif isinstance(load, Momentum):
                 if load.rotation:
                     moment = load.value
+                    constant_term_expression += f'+{load.name}'
                 else:
                     moment = -load.value
+                    constant_term_expression += f'-{load.name}'
                 if abs(moment) > 1e-10:
                     constant_term += moment
             elif isinstance(load, DistributedForce):
-                moment = load.get_moment_about(point=point)
+                text, moment = load.get_moment_about(point=point)
                 if abs(moment) > 1e-10:
                     constant_term += moment
+                    constant_term_expression += f' +{text}'
 
         for reaction in unknown_reactions:
             lever_arm = reaction.get_lever_arm(point=point)
@@ -185,6 +240,8 @@ class SolvableFrame:
                     else:
                         equation_parts.append(f"+ {coeff_str}{name}")
 
+
+
         if abs(constant_term) > 1e-10:
             if is_first_term:
                 if constant_term < 0:
@@ -197,15 +254,21 @@ class SolvableFrame:
                 else:
                     equation_parts.append(f"+ {self._format_number(constant_term)}")
 
-        if equation_parts:
-            equation = " ".join(equation_parts)
-            equation = equation.replace("  ", " ")
-            equation += " = 0"
-        else:
-            equation = "0 = 0"
-
         point_label = self._get_point_label(point)
-        return f"∑M{point_label}: {equation}"
+        if equation_parts:
+            if constant_term_expression:
+                long_equation = f"∑M{point_label}: {equation_parts[0]} {equation_parts[1]} + {constant_term_expression} = 0"
+            else:
+                long_equation = f"∑M{point_label}: {equation_parts[0]} {equation_parts[1]} = 0"
+
+            short_equation = " ".join(equation_parts)
+            long_equation = long_equation.replace("  ", " ")
+            short_equation = short_equation.replace("  ", " ")
+            short_equation += " = 0"
+        else:
+            long_equation = "0 = 0"
+            short_equation = "0 = 0"
+        return long_equation, short_equation
 
     def _format_number(self, num: float) -> str:
         rounded = round(num, 2)
@@ -247,7 +310,6 @@ class SolvableFrame:
             )
         else:
             raise Exception(f"Вид рамы не определен: reactions={amount_of_reactions}, hinges={amount_of_hinges}")
-
 
 
 class BaseFrame(ABC):
@@ -649,13 +711,20 @@ class ThreeHingedFrame(SolvableFrame, BaseFrame):
 
         left_part, right_part, hinge_node = self.split_three_hinged_frame()
 
-        equation1 = self.create_equation_for_half_about_hinge(left_part, hinge_node)
+        long_equation1, short_equation1 = self.create_equation_for_half_about_hinge(left_part, hinge_node)
         intersection_point = self.find_intersection_point_of_reactions(right_part)
-        equation2 = self.create_equation_for_whole_frame_about_point(intersection_point)
-        print(equation1)
-        print(equation2)
+        long_equation2, short_equation2 = self.create_equation_for_whole_frame_about_point(intersection_point)
 
-        solution = self.solve_system_of_equations(equation1, equation2)
+        solution = self.solve_system_of_equations(short_equation1, short_equation2)
+
+
+        print(long_equation1)
+        print(long_equation2)
+        print(short_equation1)
+        print(short_equation2)
+        for var, value in solution.items():
+            print(f'{var} = {value}')
+
 
         for var, value in solution.items():
             for reaction in self.reactions():
@@ -667,8 +736,25 @@ class ThreeHingedFrame(SolvableFrame, BaseFrame):
         self.find_reaction_from_force_projection('x')
         self.find_reaction_from_force_projection('y')
 
+        print('Найденные реакции:')
         for reaction in self.finded_reactions:
             print(f'{reaction.name}={reaction.value} ------ {reaction.rotation}')
+
+
+        print('Проверка:')
+        for node in self.nodes:
+            if node.is_hinge:
+                node_for_checking = node
+        check_moment, check_equation = self.sum_momentum_about_node(node=node_for_checking)
+        print(check_equation)
+        print(f'{check_moment} = 0')
+        if check_moment <= 0.1:
+            print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}")
+        else:
+            print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}")
+
+
         print(50 * '-')
+
 
         return self

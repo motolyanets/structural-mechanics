@@ -73,18 +73,18 @@ class Rod:
             result = (length / (6 * stiffness)) * (d1_start * d2_start + 4 * d1_center * d2_center + d1_end * d2_end)
             if result:
                 text = (
-                    f'({length} / (6 * {stiffness}EI)) * ({d1_start} * {d2_start} + 4 * {round_up(d1_center)} * {round_up(d2_center)} + '
-                    f'{d1_end} * {d2_end})')
+                    f'({length} / (6·{stiffness}·EI)) · ({d1_start}·{d2_start} + 4·{round_up(d1_center)}·{round_up(d2_center)} + '
+                    f'{d1_end}·{d2_end})')
                 multiplied_diagram.append(text)
                 multiplied_diagram.append(round_up(result))
         else:
             result = (length / (6 * stiffness)) * (
-                        d1_start * d2_start + 4 * d1_center * d2_center + d1_end * d2_end + 4 * d1_center * diagram_2[
+                        d1_start * d2_start + 4 * d1_center * d2_center + d1_end * d2_end - 4 * d1_center * diagram_2[
                     2] * length ** 2 / 8)
             if result:
                 text = (
-                    f'({length} / (6 * {stiffness}EI)) * ({d1_start} * {d2_start} + 4 * {round_up(d1_center)} * {round_up(d2_center)} + '
-                    f'{d1_end} * {d2_end} + 4 * {d1_center} * {diagram_2[2]} * {length}^2 / 8)')
+                    f'({length} / (6·{stiffness}·EI)) * ({d1_start}·{d2_start} + 4·{round_up(d1_center)}·{round_up(d2_center)} + '
+                    f'{d1_end}·{d2_end} - 4·{d1_center}·{diagram_2[2]}·{length}^2 / 8)')
                 multiplied_diagram.append(text)
                 multiplied_diagram.append(round_up(result))
 

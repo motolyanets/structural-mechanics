@@ -7,7 +7,7 @@ from core.mechanics.node import Node
 from core.mechanics.rod import Rod
 from core.mechanics.load import Force, Momentum, DistributedForce
 from core.mechanics.support import Support
-from services.services import round_up, normalize_equation
+from services.services import round_up, normalize_equation, making_report_of_multiply
 
 
 class SolvableFrame:
@@ -240,8 +240,6 @@ class SolvableFrame:
                     else:
                         equation_parts.append(f"+ {coeff_str}{name}")
 
-
-
         if abs(constant_term) > 1e-10:
             if is_first_term:
                 if constant_term < 0:
@@ -310,6 +308,13 @@ class SolvableFrame:
             )
         else:
             raise Exception(f"Вид рамы не определен: reactions={amount_of_reactions}, hinges={amount_of_hinges}")
+
+    def multiply_M_diagrams_by_Simpson(self, diagram_1_name: str, diagram_2_name: str):
+        multiply_beam_diagrams = []
+        for rod in self.rods:
+            multiply_beam_diagrams.append(rod.multiply_diagrams_Simpson(diagram_1_name, diagram_2_name))
+        delta_text, delta = making_report_of_multiply(multiply_beam_diagrams)
+        return delta_text, delta
 
 
 class BaseFrame(ABC):

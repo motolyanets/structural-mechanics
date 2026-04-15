@@ -133,3 +133,20 @@ def making_report_of_multiply(lst):
     text = f'{text_1[:-3]} = {text_2[:-3]} = {result}/EI'
 
     return text, result
+
+def relative_error_percent(number1: float, number2: float, tolerance_percent: float):
+    number1 = abs(number1)
+    number2 = abs(number2)
+    E = round_up((max(number1, number2) - min(number1, number2)) / min(number1, number2) * 100, 4)
+    text = f'ε = ({max(number1, number2)} - {min(number1, number2)}) / {min(number1, number2)} · 100% = {E}%'
+
+    if E <= tolerance_percent:
+        e_text = f'{text} ≤ {tolerance_percent}'
+        print(f'{e_text}')
+        print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}\n")
+    else:
+        e_text = f'{text} > {tolerance_percent}'
+        print(f'{e_text}')
+        print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}\n")
+
+    return E, e_text

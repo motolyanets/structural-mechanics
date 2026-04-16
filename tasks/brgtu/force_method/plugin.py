@@ -1,12 +1,10 @@
-from pathlib import Path
 from typing import Dict, Any
 
 import numpy
 
 from core.mechanics.solver import SolvableFrame
-from services.services import round_up, making_report_of_multiply, relative_error_percent
+from services.services import round_up, relative_error_percent
 from tasks.base import TaskPlugin
-from core.mechanics.load import Force, Momentum
 from tasks.brgtu.force_method.loader import ForceMethodLoader
 
 
@@ -45,41 +43,6 @@ class BRGTUForceMethod(TaskPlugin):
         print(f"  load_index = {params['load_index']}")
         print(f"{'=' * 60}")
 
-        # print("Создаем исходную раму")
-        # print("Создаем объект ОС")
-        # print("\nРешаем М1")
-        # print(" - Реакции опор")
-        # print(" - Проверка")
-        # print(" - Построение эпюры")
-        # print("\nРешаем М2")
-        # print(" - Реакции опор")
-        # print(" - Проверка")
-        # print(" - Построение эпюры")
-        # print("\nРешаем М3")
-        # print(" - Реакции опор")
-        # print(" - Проверка")
-        # print(" - Построение эпюры")
-        # print("\nРешаем Мs")
-        # print("\nРешаем Мp")
-        # print(" - Реакции опор")
-        # print(" - Проверка")
-        # print(" - Построение эпюры")
-        # print("\nОпределяем коэффициенты с помощью перемножения эпюр")
-        # print("\nУниверсальная проверка Ms^2")
-        # print("\nСтолбцовая проверка Ms*Mp")
-        # print("\nРешение системы уравнений")
-        # print("\nРешаем Мok")
-        # print("\nДеформационная проверка Ms*Mok")
-        # print("\nПостроение Qok")
-        # print("\nПостроение Nok")
-        # print("\nПостроение Nok")
-        # print("\nСтатическая проверка исходной рамы")
-        # print("\nОпределение перемещения в точке К")
-        # print(" - Реакции опор")
-        # print(" - Проверка")
-        # print(" - Построение эпюры Mk")
-        # print(" - Перемножение  Mk*Mok")
-
         if circuit_number == 27:
             from schemes.brgtu.force_method.frame_27 import create_frame_27, create_primary_system_27
             nodes, rods, supports, loads = create_frame_27(params)
@@ -91,8 +54,8 @@ class BRGTUForceMethod(TaskPlugin):
         else:
             raise ValueError(f"Схема {circuit_number} не реализована")
 
-        from schemes.base import Frame
-        frame = Frame(nodes, rods, supports, loads)
+        from schemes.brgtu.composite_frame.base_composit_frame import CompositeFrame
+        frame = CompositeFrame(nodes, rods, supports, loads)
 
         sf = {}
         calculation_frame = SolvableFrame(nodes=ps_nodes, rods=ps_rods, supports=ps_supports, loads=loads)
@@ -231,53 +194,81 @@ class BRGTUForceMethod(TaskPlugin):
         else:
             print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}\n")
 
-        # minus_results = 0
-        # plus_results = 0
+        print('-------"Эпюра Q"-------')
+        for rod in rods:
+            if len(rod.diagram_Mok) == 2:
+                Q = (rod.diagram_Mok[0] - rod.diagram_Mok[1]) / rod.length()
+                rod.diagram_Q = [round_up(Q), round_up(Q)]
+            else:
+                rod.diagram_Q = []
+            print(f'{rod} ------ {rod.diagram_Q}')
 
-        # for m in multiply_Ms_Mok:
-        #     if m[1] > 0:
-        #         plus_results += m[1]
-        #     else:
-        #         minus_results += m[1]
+        r = [1.13, 8.63, 0.01, 13.41, -0.01, 13.41, -1.13, 8.63]
+        i = 0
+        for reaction in frame.reactions():
+            reaction.value = r[i]
+            frame.finded_reactions.append(reaction)
+            i += 1
 
-        # delta_sok_text, delta_sok = making_report_of_multiply(multiply_Ms_Mok)
-        # print("sok ----", delta_sok_text)
-        # E = (minus_results + plus_results) / min(abs(minus_results), plus_results) * 100
-        # print(f'({minus_results} + {plus_results}) / {min(abs(minus_results), plus_results)} * 100 = {E}')
+        for reaction in frame.finded_reactions:
+            print(reaction)
 
-        # inner_reactions = []
-        # for i, part in enumerate(parts_of_frame):
-        #     if i > 1:
-        #         break
-        #
-        #     if inner_reactions:
-        #         for reaction in inner_reactions:
-        #             if reaction.node in part.nodes:
-        #                 new_reaction = Force(
-        #                     name=reaction.name,
-        #                     node=reaction.node,
-        #                     rotation=reaction.rotation + 180,
-        #                     value=reaction.value
-        #                 )
-        #                 part.loads.append(new_reaction)
-        #
-        #     part.solve_frame()
-        #
-        #     for reaction in part.finded_reactions:
-        #         if reaction not in inner_reactions:
-        #             inner_reactions.append(reaction)
-        #
-        # result = {
-        #     "cipher": cipher,
-        #     "scheme": circuit_number,
-        #     "params": params,
-        #     "reactions": {}
-        # }
-        #
-        # for reaction in inner_reactions:
-        #     result["reactions"][reaction.name] = {
-        #         "value": reaction.value,
-        #         "rotation": reaction.rotation
-        #     }
-        #
-        # return result
+
+        print(f'\n')
+
+        print('-------Статическая проверка-------')
+        # node_name = str(input("\nВведите имя, относительно которого хотите составить уравнение моментов: "))
+        node_name = 'E'
+        for node in frame.nodes:
+            if node.name == node_name:
+                node_for_checking = node
+        if node_for_checking:
+            check_moment, check_equation = frame.sum_momentum_about_node(node=node_for_checking)
+        else:
+            raise Exception("Задано неверное имя узла")
+        print(check_equation)
+        print(f'   {check_moment} = 0')
+        if check_moment <= 0.1:
+            print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}")
+        else:
+            print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}")
+
+        sum_of_projections, sum_force_expression_names, sum_force_expression_values = frame.sum_force_projections('x')
+        print(f'∑x: {sum_force_expression_names} = 0')
+        print(f'    {sum_force_expression_values} = 0')
+        print(f'    {sum_of_projections} = 0')
+        if sum_of_projections <= 0.1:
+            print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}")
+        else:
+            print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}")
+
+        sum_of_projections, sum_force_expression_names, sum_force_expression_values = frame.sum_force_projections('y')
+        print(f'∑y: {sum_force_expression_names} = 0')
+        print(f'    {sum_force_expression_values} = 0')
+        print(f'    {sum_of_projections} = 0')
+        if sum_of_projections <= 0.1:
+            print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}")
+        else:
+            print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}")
+
+
+        rod1_diagram_Mk = [0, 0.51]
+        rod2_diagram_Mk = [0.51, -0.88]
+        rod3_diagram_Mk = [-0.88, 0]
+        rod4_diagram_Mk = [0, 0.78]
+        rod5_diagram_Mk = [-0.27, -0.78]
+        rod6_diagram_Mk = [0, -0.27]
+        rod7_diagram_Mk = [0, 0]
+
+
+        mk = [rod1_diagram_Mk, rod2_diagram_Mk, rod3_diagram_Mk, rod4_diagram_Mk, rod5_diagram_Mk, rod6_diagram_Mk, rod7_diagram_Mk]
+
+        rods = calculation_frame.rods
+        i = 0
+        for rod in rods:
+            rod.diagram_Mk = mk[i]
+            i += 1
+
+
+        delta_kok_text, delta_kok = calculation_frame.multiply_M_diagrams_by_Simpson('Mk', 'Mok')
+        print(f'Δk = {delta_kok_text}\n')

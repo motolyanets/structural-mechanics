@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Dict, Any
 
 from tasks.base import TaskPlugin
@@ -50,8 +49,8 @@ class BRGTUCompositeFrame(TaskPlugin):
         else:
             raise ValueError(f"Схема {circuit_number} не реализована")
 
-        from schemes.base import Frame
-        frame = Frame(nodes, rods, supports, loads, splitted_order)
+        from schemes.brgtu.composite_frame.base_composit_frame import CompositeFrame
+        frame = CompositeFrame(nodes, rods, supports, loads, splitted_order)
 
         parts_of_frame = frame.split_frame()
 

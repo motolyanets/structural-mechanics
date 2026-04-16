@@ -1,64 +1,20 @@
 from abc import ABC, abstractmethod
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 import math
 import sympy as sp
 
+from core.mechanics.frame import Frame
 from core.mechanics.node import Node
 from core.mechanics.rod import Rod
 from core.mechanics.load import Force, Momentum, DistributedForce
 from core.mechanics.support import Support
-from services.services import round_up, normalize_equation, making_report_of_multiply
+from services.services import round_up, making_report_of_multiply
 
 
-class SolvableFrame:
+class SolvableFrame(Frame):
     def __init__(self, nodes: List[Node], rods: List[Rod], supports: List[Support], loads: list,
                  finded_reactions=None):
-        self.nodes = nodes
-        self.rods = rods
-        self.supports = supports
-        self.loads = loads
-        self.finded_reactions = finded_reactions if finded_reactions is not None else []
-
-    def reactions(self):
-        reactions = []
-        for support in self.supports:
-            if support.number_of_reactions == 1:
-                reactions.append(Force(name=f'R{support.node.name}', node=support.node, rotation=support.rotation))
-            elif support.number_of_reactions == 2:
-                reactions.append(Force(name=f'X{support.node.name}', node=support.node, rotation=0))
-                reactions.append(Force(name=f'Y{support.node.name}', node=support.node, rotation=90))
-            else:
-                reactions.append(Force(name=f'X{support.node.name}', node=support.node, rotation=0))
-                reactions.append(Force(name=f'Y{support.node.name}', node=support.node, rotation=90))
-                reactions.append(Momentum(name=f'M{support.node.name}', node=support.node, rotation=True))
-        return reactions
-
-    def sum_momentum_about_node(self, node: Node):
-        all_loads = self.loads + self.finded_reactions
-
-        point = (node.x, node.y)
-        moment = 0
-        equation = ''
-        for load in all_loads:
-            if isinstance(load, Force):
-                text, moment_of_load = load.get_moment_about(point=point)
-                moment += moment_of_load
-                equation += f'+ {text} '
-            elif isinstance(load, Momentum):
-                if load.rotation:
-                    moment += load.value
-                    equation += f'+{load.name} '
-                else:
-                    moment -= load.value
-                    equation += f'-{load.name} '
-            if isinstance(load, DistributedForce):
-                text, moment_of_load = load.get_moment_about(point=point)
-                moment += moment_of_load
-                equation += f'+ {text} '
-
-        moment = round_up(moment, 3)
-        equation = normalize_equation(equation) + ' = 0'
-        return moment, equation
+        super().__init__(nodes, rods, supports, loads, finded_reactions)
 
     def find_node_with_single_unknown(self):
         reactions = self.reactions()
@@ -98,30 +54,6 @@ class SolvableFrame:
         reaction_lever_arm = reaction.get_lever_arm(point=point)
         reaction_value = -moment / reaction_lever_arm
         return [reaction.name, round_up(reaction_value, 2), equation]
-
-    def sum_force_projections(self, axis: str):
-        sum_force_expression_names = ''
-        sum_force_expression_values = ''
-        sum_of_projections = 0
-
-        all_loads = self.loads + self.finded_reactions
-        loads_taken_into_account = []
-        for load in all_loads:
-            if isinstance(load, (Force, DistributedForce)):
-                if load.rotation in [0, 180] and axis in ['x', 'X']:
-                    loads_taken_into_account.append(load)
-                elif load.rotation in [90, 270] and axis in ['y', 'Y']:
-                    loads_taken_into_account.append(load)
-
-        for load in loads_taken_into_account:
-            projection, expression = load.get_projection_on_axis(axis_name=axis)
-            sum_of_projections += projection
-            sum_force_expression_names += expression
-            if projection >= 0:
-                sum_force_expression_values += f'+ {projection}'
-            else:
-                sum_force_expression_values += f' {projection} '
-        return sum_of_projections, sum_force_expression_names, sum_force_expression_values
 
     def find_reaction_from_force_projection(self, axis: str):
         sum_of_loads, sum_force_expression_names, sum_force_expression_values = self.sum_force_projections(axis=axis)

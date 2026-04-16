@@ -1,4 +1,6 @@
 from typing import List, Tuple
+
+from core.mechanics.frame import Frame
 from core.mechanics.node import Node
 from core.mechanics.rod import Rod
 from core.mechanics.load import Force, Momentum
@@ -6,28 +8,11 @@ from core.mechanics.support import Support
 from core.mechanics.solver import SolvableFrame, SimpleFrame, Tightening, ThreeHingedFrame
 
 
-class Frame:
+class CompositeFrame(Frame):
     def __init__(self, nodes: List[Node], rods: List[Rod], supports: List[Support],
                  loads: list, splitted_frames_order: Tuple[Tuple[str, ...], ...] | None = None):
-        self.nodes = nodes
-        self.rods = rods
-        self.supports = supports
-        self.loads = loads
+        super().__init__(nodes, rods, supports, loads)
         self.splitted_frames_order = splitted_frames_order
-
-    def reactions(self):
-        reactions = []
-        for support in self.supports:
-            if support.number_of_reactions == 1:
-                reactions.append(Force(name=f'R{support.node.name}', node=support.node, rotation=support.rotation))
-            elif support.number_of_reactions == 2:
-                reactions.append(Force(name=f'X{support.node.name}', node=support.node, rotation=0))
-                reactions.append(Force(name=f'Y{support.node.name}', node=support.node, rotation=90))
-            else:
-                reactions.append(Force(name=f'X{support.node.name}', node=support.node, rotation=0))
-                reactions.append(Force(name=f'Y{support.node.name}', node=support.node, rotation=90))
-                reactions.append(Momentum(name=f'M{support.node.name}', node=support.node, rotation=True))
-        return reactions
 
     def split_frame(self):
         print(50 * '-')

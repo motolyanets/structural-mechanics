@@ -18,6 +18,7 @@ class BRGTUForceMethod(TaskPlugin):
 
     def get_available_schemes(self) -> list:
         return [
+            {"scheme_id": 10, "name": "Схема 10"},
             {"scheme_id": 27, "name": "Схема 27"},
             {"scheme_id": 29, "name": "Схема 29"},
         ]
@@ -43,7 +44,11 @@ class BRGTUForceMethod(TaskPlugin):
         print(f"  load_index = {params['load_index']}")
         print(f"{'=' * 60}")
 
-        if circuit_number == 27:
+        if circuit_number == 10:
+            from schemes.brgtu.force_method.frame_10 import create_frame_10, create_primary_system_10
+            nodes, rods, supports, loads = create_frame_10(params)
+            ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_10(params)
+        elif circuit_number == 27:
             from schemes.brgtu.force_method.frame_27 import create_frame_27, create_primary_system_27
             nodes, rods, supports, loads = create_frame_27(params)
             ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_27(params)
@@ -68,43 +73,43 @@ class BRGTUForceMethod(TaskPlugin):
             frame_1 = sf[f]
             frame_1.solve_frame()
 
-        rod1_diagram_M1 = [0, 4.88]
-        rod2_diagram_M1 = [4.88, 2.44]
-        rod3_diagram_M1 = [2.44, 0]
-        rod4_diagram_M1 = [0, -2.08]
-        rod5_diagram_M1 = [-0.15, -0.43]
-        rod6_diagram_M1 = [0, -0.15]
-        rod7_diagram_M1 = [-2.5, 0]
+        rod11_diagram_M1 = [0, -1.5]
+        rod12_diagram_M1 = [-1.5, -3]
+        rod2_diagram_M1 = [0, 0]
+        rod3_diagram_M1 = [0, 0]
+        rod4_diagram_M1 = [-3, 0]
+        rod5_diagram_M1 = [0, 0]
+        rod6_diagram_M1 = [0, 0]
 
-        rod1_diagram_M2 = [0, 0.51]
-        rod2_diagram_M2 = [0.51, 0.255]
-        rod3_diagram_M2 = [0.255, 0]
-        rod4_diagram_M2 = [0, -0.21]
-        rod5_diagram_M2 = [-0.27, -0.78]
-        rod6_diagram_M2 = [0, -0.27]
-        rod7_diagram_M2 = [-1, -1]
+        rod11_diagram_M2 = [0, 0]
+        rod12_diagram_M2 = [0, 0]
+        rod2_diagram_M2 = [2.25, 4.5]
+        rod3_diagram_M2 = [0, 2.25]
+        rod4_diagram_M2 = [4.5, 3.1]
+        rod5_diagram_M2 = [0, -3.1]
+        rod6_diagram_M2 = [0, 0]
 
-        rod1_diagram_M3 = [0, 1.29]
-        rod2_diagram_M3 = [1.29, 0.645]
-        rod3_diagram_M3 = [0.645, 0]
-        rod4_diagram_M3 = [0, -0.53]
-        rod5_diagram_M3 = [1.8, 0.53]
-        rod6_diagram_M3 = [0, 1.8]
-        rod7_diagram_M3 = [0, 0]
+        rod11_diagram_M3 = [0, 0]
+        rod12_diagram_M3 = [0, 0]
+        rod2_diagram_M3 = [0.63, 1.26]
+        rod3_diagram_M3 = [0, 0.63]
+        rod4_diagram_M3 = [1.26, 0.88]
+        rod5_diagram_M3 = [0, -0.88]
+        rod6_diagram_M3 = [1, 0]
 
-        rod1_diagram_Mp = [0, -0.46]
-        rod2_diagram_Mp = [-0.46, -17.3]
-        rod3_diagram_Mp = [-17.3, 0]
-        rod4_diagram_Mp = [0, 14.81]
-        rod5_diagram_Mp = [0.25, 0.71]
-        rod6_diagram_Mp = [0, 0.25]
-        rod7_diagram_Mp = [15.49, 0, 1.6]
+        rod11_diagram_Mp = [0, 0]
+        rod12_diagram_Mp = [0, 12.75]
+        rod2_diagram_Mp = [8.49, 24.07, 1.4]
+        rod3_diagram_Mp = [0, 8.49, 1.4]
+        rod4_diagram_Mp = [36.85, 0]
+        rod5_diagram_Mp = [0, 0]
+        rod6_diagram_Mp = [0, 0]
 
 
-        m1 = [rod1_diagram_M1, rod2_diagram_M1, rod3_diagram_M1, rod4_diagram_M1, rod5_diagram_M1, rod6_diagram_M1, rod7_diagram_M1]
-        m2 = [rod1_diagram_M2, rod2_diagram_M2, rod3_diagram_M2, rod4_diagram_M2, rod5_diagram_M2, rod6_diagram_M2, rod7_diagram_M2]
-        m3 = [rod1_diagram_M3, rod2_diagram_M3, rod3_diagram_M3, rod4_diagram_M3, rod5_diagram_M3, rod6_diagram_M3, rod7_diagram_M3]
-        mp = [rod1_diagram_Mp, rod2_diagram_Mp, rod3_diagram_Mp, rod4_diagram_Mp, rod5_diagram_Mp, rod6_diagram_Mp, rod7_diagram_Mp]
+        m1 = [rod11_diagram_M1, rod12_diagram_M1, rod2_diagram_M1, rod3_diagram_M1, rod4_diagram_M1, rod5_diagram_M1, rod6_diagram_M1]
+        m2 = [rod11_diagram_M2, rod12_diagram_M2, rod2_diagram_M2, rod3_diagram_M2, rod4_diagram_M2, rod5_diagram_M2, rod6_diagram_M2]
+        m3 = [rod11_diagram_M3, rod12_diagram_M3, rod2_diagram_M3, rod3_diagram_M3, rod4_diagram_M3, rod5_diagram_M3, rod6_diagram_M3]
+        mp = [rod11_diagram_Mp, rod12_diagram_Mp, rod2_diagram_Mp, rod3_diagram_Mp, rod4_diagram_Mp, rod5_diagram_Mp, rod6_diagram_Mp]
 
         rods = calculation_frame.rods
         i = 0
@@ -203,7 +208,7 @@ class BRGTUForceMethod(TaskPlugin):
                 rod.diagram_Q = []
             print(f'{rod} ------ {rod.diagram_Q}')
 
-        r = [1.13, 8.63, 0.01, 13.41, -0.01, 13.41, -1.13, 8.63]
+        r = [4.65, -1.09, 9.8, -0.05, -5.95, -0.17, -0.05, -5.95, -0.17, 1.09, 9.8, 4.65]
         i = 0
         for reaction in frame.reactions():
             reaction.value = r[i]
@@ -218,7 +223,7 @@ class BRGTUForceMethod(TaskPlugin):
 
         print('-------Статическая проверка-------')
         # node_name = str(input("\nВведите имя, относительно которого хотите составить уравнение моментов: "))
-        node_name = 'E'
+        node_name = 'L'
         for node in frame.nodes:
             if node.name == node_name:
                 node_for_checking = node
@@ -228,7 +233,7 @@ class BRGTUForceMethod(TaskPlugin):
             raise Exception("Задано неверное имя узла")
         print(check_equation)
         print(f'   {check_moment} = 0')
-        if check_moment <= 0.1:
+        if abs(check_moment) <= 0.1:
             print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}")
         else:
             print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}")

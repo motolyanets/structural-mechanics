@@ -2,6 +2,9 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any
 from pathlib import Path
 
+from core.mechanics.frame import Frame
+from core.mechanics.solver import SolvableFrame
+
 
 class TaskPlugin(ABC):
     task_id: str
@@ -22,4 +25,8 @@ class TaskPlugin(ABC):
 
     @abstractmethod
     def get_available_schemes(self) -> list:
+        pass
+
+    @abstractmethod
+    def make_report(self, main_frame: Frame, primary_system: SolvableFrame, msp):
         pass

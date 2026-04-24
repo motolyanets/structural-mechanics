@@ -1,6 +1,8 @@
 import math
 from typing import Tuple
 
+from ezdxf.math import Vec2
+
 from core.mechanics.node import Node
 from core.mechanics.rod import Rod
 from services.services import round_up
@@ -66,6 +68,24 @@ class Force:
             expression = f' - {self.name}'
         return projection, expression
 
+    def drow(self, insert_point: Tuple[float, float], msp):
+        msp.add_blockref('Сосредоточенная сила', insert=insert_point,
+                         dxfattribs={
+                             "layer": "Loads",
+                             "rotation": self.rotation,
+                         })
+        text = f'{self.name} = {self.value}'
+
+        # Рассчитываем вектор направления
+        angle_rad = math.radians(self.rotation)
+        direction = Vec2(math.cos(angle_rad), math.sin(angle_rad))
+
+        # Вычисляем точку на конце стрелки
+        tip_point = Vec2(insert_point) + direction * 0.6
+
+        msp.add_text(text=text, height=0.2, dxfattribs={"layer": "Loads",}).set_placement(tip_point)
+        return msp
+
     def __repr__(self) -> str:
         return f"Force({self.name}={self.value} ---- {self.rotation}, node - {self.node.name})"
 
@@ -78,6 +98,24 @@ class Momentum:
         self.node = node
         self.value = value
         self.rotation = rotation
+
+    def drow(self, insert_point: Tuple[float, float], msp):
+        if self.rotation:
+            block_name = 'Момент (по часовой)'
+        else:
+            block_name = 'Момент (против часовой)'
+
+        msp.add_blockref(block_name, insert=insert_point,
+                         dxfattribs={
+                             "layer": "Loads",
+                         })
+        text = f'{self.name} = {self.value}'
+        placement = (insert_point[0] + 0.2, insert_point[1] - 0.2)
+        msp.add_text(text=text, height=0.2, dxfattribs={"layer": "Loads",}).set_placement(placement)
+        return msp
+
+    def __repr__(self) -> str:
+        return f"Momentum({self.name}={self.value} ---- {self.rotation}, node - {self.node.name})"
 
 
 class DistributedForce:
@@ -157,3 +195,17 @@ class DistributedForce:
         moment = round_up(lever_arm * self.Q())
         text = f'{self.name}·{self.length}·{lever_arm}'
         return text, moment
+
+    def drow(self, insert_point: Tuple[float, float], msp):
+        msp.add_blockref('Распределенная нагрузка', insert=insert_point,
+                         dxfattribs={
+                             "layer": "Loads",
+                             "rotation": self.rotation,
+                             "yscale": self.length,
+                         #     !!!!!!!!!!!!!!!!!!!!!!!!!! Тут нужно сделать взависимости от направления
+                         })
+        text = f'{self.name} = {self.value}'
+        placement = (insert_point[0] + 0.2, insert_point[1] - 0.2)
+        msp.add_text(text=text, height=0.2, dxfattribs={"layer": "Loads",}).set_placement(placement)
+        return msp
+

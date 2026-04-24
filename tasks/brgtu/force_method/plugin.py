@@ -1,8 +1,12 @@
 from typing import Dict, Any
 
+import ezdxf
 import numpy
+from ezdxf import zoom
 
+from core.mechanics.frame import Frame
 from core.mechanics.solver import SolvableFrame
+from services.authocad import drow_frame
 from services.services import round_up, relative_error_percent
 from tasks.base import TaskPlugin
 from tasks.brgtu.force_method.loader import ForceMethodLoader
@@ -256,7 +260,9 @@ class BRGTUForceMethod(TaskPlugin):
         else:
             print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}")
 
+        print(f'\n')
 
+        print('-------Перемещение точки К-------')
         rod1_diagram_Mk = [0, 0.51]
         rod2_diagram_Mk = [0.51, -0.88]
         rod3_diagram_Mk = [-0.88, 0]
@@ -277,3 +283,22 @@ class BRGTUForceMethod(TaskPlugin):
 
         delta_kok_text, delta_kok = calculation_frame.multiply_M_diagrams_by_Simpson('Mk', 'Mok')
         print(f'Δk = {delta_kok_text}\n')
+
+
+        # Создаем новый DXF документ
+        doc = ezdxf.readfile('Шаблон.dxf')
+        msp = doc.modelspace()
+        msp.delete_all_entities()
+
+        msp = self.make_report(main_frame=frame, primary_system=calculation_frame, msp=msp)
+        zoom.extents(msp)
+        doc.saveas(f'report.dxf')
+
+    def make_report(self, main_frame: Frame, primary_system: SolvableFrame, msp):
+        base_point = [0, 0]
+        msp, base_point = drow_frame(frame=main_frame, base_point=base_point, msp=msp)
+        msp, base_point = drow_frame(frame=primary_system, base_point=base_point, msp=msp)
+        return msp
+
+
+

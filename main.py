@@ -51,17 +51,17 @@ def main():
         plugin.loader.print_summary()
         result = plugin.solve(cipher)
 
-        print("\n" + "=" * 60)
-        print("РЕЗУЛЬТАТ:")
-        print("=" * 60)
-
-        if "reactions" in result and result["reactions"]:
-            print("\nНайденные реакции:")
-            for name, data in result["reactions"].items():
-                print(f"  {name} = {data['value']} (угол: {data['rotation']}°)")
-
-        if "message" in result:
-            print(f"\n{result['message']}")
+        # print("\n" + "=" * 60)
+        # print("РЕЗУЛЬТАТ:")
+        # print("=" * 60)
+        #
+        # if "reactions" in result and result["reactions"]:
+        #     print("\nНайденные реакции:")
+        #     for name, data in result["reactions"].items():
+        #         print(f"  {name} = {data['value']} (угол: {data['rotation']}°)")
+        #
+        # if "message" in result:
+        #     print(f"\n{result['message']}")
 
     except Exception as e:
         print(f"\n❌ Ошибка: {e}")

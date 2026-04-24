@@ -1,23 +1,16 @@
 import math
 from typing import List
 
-import ezdxf as ezdxf
+from core.mechanics.frame import Frame
+from core.mechanics.load import Force, Momentum, DistributedForce
+from core.mechanics.node import Node
+from core.mechanics.rod import Rod
 
-from data_base.frames import Node, Rod
-from problem_condition import circuit_number
-
-# Создаем новый DXF документ
-doc = ezdxf.new('R2010')
-
-# Получаем модель пространства
-msp = doc.modelspace()
-
-
-def drow_hinge(base_point, direction_point, hinge_radius, msp):
+def drow_hinge(hinge_point, direction_point, hinge_radius, msp):
     # Вычисляем вектор направления линии
-    dx = direction_point.x - base_point.x
-    dy = direction_point.y - base_point.y
-    dz = direction_point.z - base_point.z
+    dx = direction_point.x - hinge_point.x
+    dy = direction_point.y - hinge_point.y
+    dz = direction_point.z - hinge_point.z
 
     # Длина линии
     line_length = math.sqrt(dx ** 2 + dy ** 2 + dz ** 2)
@@ -30,9 +23,9 @@ def drow_hinge(base_point, direction_point, hinge_radius, msp):
 
         # Вычисляем точку на заданном расстоянии ОТ конца ВДОЛЬ линии
         circle_center = (
-            base_point.x + dx * hinge_radius,
-            base_point.y + dy * hinge_radius,
-            base_point.z + dz * hinge_radius
+            hinge_point.x + dx * hinge_radius,
+            hinge_point.y + dy * hinge_radius,
+            hinge_point.z + dz * hinge_radius
         )
 
         # Рисуем круг
@@ -46,41 +39,80 @@ def drow_hinge(base_point, direction_point, hinge_radius, msp):
         )
 
 
-def drow_frame(nodes: List[Node], rods: List[Rod], msp=msp):
+def drow_frame(frame: Frame, base_point: List[float], msp):
     hinge_radius = 0.1
 
+    nodes = frame.nodes
+    rods = frame.rods
+    supports = frame.supports
+    loads = frame.loads
+    finded_reactions = frame.finded_reactions
+
     for node in nodes:
+        node_point = (node.x + base_point[0], node.y + base_point[1])
+        try:
+            int(node.name)
+        except:
+            placement = (node_point[0] + 0.2, node_point[1] + 0.2)
+            msp.add_text(text=node.name, height=0.2, dxfattribs={"layer": "Node", }).set_placement(placement)
+
         if node.is_hinge:
             circle_radius = hinge_radius
 
-            center = (node.x, node.y)
             msp.add_circle(
-                center=center,
+                center=node_point,
                 radius=circle_radius,
                 dxfattribs={
-                    'layer': 'CIRCLES',
+                    'layer': 'HINGE',
                     'lineweight': 30
                 }
             )
 
     for rod in rods:
         line = msp.add_line(
-            start=(rod.start_node.x, rod.start_node.y),
-            end=(rod.end_node.x, rod.end_node.y),
+            start=(rod.start_node.x + base_point[0], rod.start_node.y + base_point[1]),
+            end=(rod.end_node.x + base_point[0], rod.end_node.y + base_point[1]),
             dxfattribs={
-                'layer': 'LINES',
+                'layer': 'ROD',
                 'lineweight': 30
             }
         )
 
         if rod.is_start_hinge:
-            base_point = line.dxf.start
+            hinge_point = line.dxf.start
             direction_point = line.dxf.end
-            drow_hinge(base_point, direction_point, hinge_radius, msp)
+            drow_hinge(hinge_point, direction_point, hinge_radius, msp)
         if rod.is_end_hinge:
-            base_point = line.dxf.end
+            hinge_point = line.dxf.end
             direction_point = line.dxf.start
-            drow_hinge(base_point, direction_point, hinge_radius, msp)
+            drow_hinge(hinge_point, direction_point, hinge_radius, msp)
 
-    doc.saveas(f'{circuit_number}.dxf')
-    print(f'Чертеж создан: {circuit_number}.dxf')
+    for support in supports:
+        insert_point = (support.node.x + base_point[0], support.node.y + base_point[1])
+        msp = support.drow(insert_point, msp)
+
+    for load in loads:
+        if isinstance(load, Force):
+            insert_point = (load.node.x + base_point[0], load.node.y + base_point[1])
+            msp = load.drow(insert_point, msp)
+        elif isinstance(load, Momentum):
+            insert_point = (load.node.x + base_point[0], load.node.y + base_point[1])
+            msp = load.drow(insert_point, msp)
+        elif isinstance(load, DistributedForce):
+            insert_point = (load.center()[0] + base_point[0], load.center()[1] + base_point[1])
+            msp = load.drow(insert_point, msp)
+
+    for reaction in finded_reactions:
+        if isinstance(reaction, Force):
+            insert_point = (reaction.node.x + base_point[0], reaction.node.y + base_point[1])
+            msp = reaction.drow(insert_point, msp)
+        elif isinstance(reaction, Momentum):
+            insert_point = (reaction.node.x + base_point[0], reaction.node.y + base_point[1])
+            msp = reaction.drow(insert_point, msp)
+
+
+
+
+    print(f'Рама нарисована')
+    base_point = [base_point[0] + 30, base_point[1]]
+    return msp, base_point

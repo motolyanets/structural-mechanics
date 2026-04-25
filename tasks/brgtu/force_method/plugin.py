@@ -6,7 +6,7 @@ from ezdxf import zoom
 
 from core.mechanics.frame import Frame
 from core.mechanics.solver import SolvableFrame
-from services.authocad import drow_frame
+from services.authocad import draw_frame
 from services.services import round_up, relative_error_percent
 from tasks.base import TaskPlugin
 from tasks.brgtu.force_method.loader import ForceMethodLoader
@@ -30,6 +30,26 @@ class BRGTUForceMethod(TaskPlugin):
     def solve(self, cipher: str) -> Dict[str, Any]:
         params = self.loader.load_cipher(cipher)
         circuit_number = params["circuit_number"]
+
+        # Создаем новый DXF документ
+        doc = ezdxf.readfile('Шаблон.dxf')
+        msp = doc.modelspace()
+        msp.delete_all_entities()
+        layout = doc.layouts.get("Шаблон")
+        base_point = [0, 0]
+
+        task_condition_text = (f'{cipher}\n'
+                               f'Схема - {circuit_number}       Нагрузка - {params['load_index']}\n'
+                               f"l\\H0.5x;1\\H2.0x;={params['l1']}м          l\\H0.5x;2\\H2.0x;={params['l2']}м\n"
+                               f"P = {params['P']}кН\n"
+                               f"h\\H0.5x;1\\H2.0x;={params['h1']}м          h\\H0.5x;2\\H2.0x;={params['h2']}м\n"
+                               f"q = {params['q']}кН/м\n"
+                               f"I2/I1 = {params['i2']}\n"
+                               f"I3/I1 = {params['i3']}")
+
+        for entity in layout:
+            if entity.dxf.layer == "Условие задачи":
+                entity.text = task_condition_text
 
         print(f"\n{'=' * 60}")
         print(f"Задача: {self.task_name}")
@@ -66,6 +86,13 @@ class BRGTUForceMethod(TaskPlugin):
         from schemes.brgtu.composite_frame.base_composit_frame import CompositeFrame
         frame = CompositeFrame(nodes, rods, supports, loads)
 
+        for entity in layout:
+            if entity.dxf.layer == "1.Главная рама" and entity.dxftype() == 'VIEWPORT':
+                if entity:
+                    entity.dxf.view_center_point = (base_point[0], base_point[1], 0.0)
+        msp, base_point = draw_frame(frame=frame, base_point=base_point, msp=msp)
+
+
         sf = {}
         calculation_frame = SolvableFrame(nodes=ps_nodes, rods=ps_rods, supports=ps_supports, loads=loads)
         for load in ps_loads:
@@ -75,7 +102,15 @@ class BRGTUForceMethod(TaskPlugin):
         for f in sf:
             print(f)
             frame_1 = sf[f]
-            frame_1.solve_frame()
+            report = frame_1.solve_frame()
+            for entity in layout:
+                if entity.dxf.layer == f and entity.dxftype() == 'VIEWPORT':
+                    if entity:
+                        entity.dxf.view_center_point = (base_point[0], base_point[1], 0.0)
+                elif entity.dxf.layer == f'{f} нахождение опорных реакций':
+                    entity.text = report
+            msp, base_point = draw_frame(frame=frame_1, base_point=base_point, msp=msp)
+
 
         rod11_diagram_M1 = [0, -1.5]
         rod12_diagram_M1 = [-1.5, -3]
@@ -131,6 +166,7 @@ class BRGTUForceMethod(TaskPlugin):
             rod.diagram_Ms = [round_up(Ms_1), round_up(Ms_2)]
             print(f'{rod} ------ {rod.diagram_Ms}')
 
+        odds_text = '\n\n'
         delta_11_text, delta_11 = calculation_frame.multiply_M_diagrams_by_Simpson('M1', 'M1')
         delta_12_text, delta_12 = calculation_frame.multiply_M_diagrams_by_Simpson('M1', 'M2')
         delta_13_text, delta_13 = calculation_frame.multiply_M_diagrams_by_Simpson('M1', 'M3')
@@ -140,6 +176,16 @@ class BRGTUForceMethod(TaskPlugin):
         delta_1p_text, delta_1p = calculation_frame.multiply_M_diagrams_by_Simpson('M1', 'Mp')
         delta_2p_text, delta_2p = calculation_frame.multiply_M_diagrams_by_Simpson('M2', 'Mp')
         delta_3p_text, delta_3p = calculation_frame.multiply_M_diagrams_by_Simpson('M3', 'Mp')
+
+        odds_text += (f'δ\\H0.5x;11\\H2.0x; = {delta_11_text}\n' + '\n' + f'δ\\H0.5x;12\\H2.0x; = {delta_12_text}\n' + '\n' +
+                      f'δ\\H0.5x;13\\H2.0x; = {delta_13_text}\n' + '\n' + f'δ\\H0.5x;22\\H2.0x; = {delta_22_text}\n' + '\n' +
+                      f'δ\\H0.5x;23\\H2.0x; = {delta_23_text}\n' + '\n' + f'δ\\H0.5x;33\\H2.0x; = {delta_33_text}\n' + '\n' +
+                      f'Δ\\H0.5x;1p\\H2.0x; = {delta_1p_text}\n' + '\n' + f'Δ\\H0.5x;2p\\H2.0x; = {delta_2p_text}\n' + '\n' +
+                      f'Δ\\H0.5x;3p\\H2.0x; = {delta_3p_text}')
+        for entity in layout:
+            if entity.dxf.layer == 'Определение коэффициентов при неизвестных':
+                entity.text += odds_text
+
         print(f'δ11 = {delta_11_text}\n')
         print(f'δ12 = {delta_12_text}\n')
         print(f'δ13 = {delta_13_text}\n')
@@ -151,23 +197,54 @@ class BRGTUForceMethod(TaskPlugin):
         print(f'Δ3p = {delta_3p_text}\n')
 
         print('-------Универсальная проверка-------')
+
+        universal_check = '\n\n'
         delta_ss_text, delta_ss = calculation_frame.multiply_M_diagrams_by_Simpson('Ms', 'Ms')
+        universal_check += f'δ\\H0.5x;ss\\H2.0x; = {delta_ss_text}\n'
         print(f'δss = {delta_ss_text}\n')
         sum_delta = delta_11 + delta_12 * 2 + delta_13 * 2 + delta_22 + delta_23 * 2 + delta_33
+        uni_check_text = (f'δ\\H0.5x;11\\H2.0x; + δ\\H0.5x;12\\H2.0x;·2 + δ\\H0.5x;13\\H2.0x;·2 + δ\\H0.5x;22\\H2.0x; + '
+                          f'δ\\H0.5x;23\\H2.0x;·2 + δ\\H0.5x;33\\H2.0x; = {delta_11}/EI + 2·{delta_12}/EI + 2·{delta_13}/EI + {delta_22}/EI + 2·{delta_23}/EI + {delta_33}/EI = {sum_delta}/EI\n')
         print(f'δ11 + δ12·2 + δ13·2 + δ22 + δ23·2 + δ33 = {delta_11}/EI + 2·{delta_12}/EI + 2·{delta_13}/EI + {delta_22}/EI + 2·{delta_23}/EI + {delta_33}/EI = {sum_delta}/EI\n')
         E_uni_check, e_text_uni_check = relative_error_percent(delta_ss, sum_delta, tolerance_percent=3)
+        universal_check += '\n' + uni_check_text + '\n' + e_text_uni_check + '\n' + 'Проверка выполняется'
+
+        for entity in layout:
+            if entity.dxf.layer == 'Универсальная проверка':
+                entity.text += universal_check
+
+
 
         print('-------Столбцовая проверка-------')
+        column_check = '\n\n'
         delta_sp_text, delta_sp = calculation_frame.multiply_M_diagrams_by_Simpson('Ms', 'Mp')
+        column_check += f'δ\\H0.5x;sp\\H2.0x; = {delta_sp_text}\n'
         print(f'δsp = {delta_sp_text}\n')
-        sum_delta = delta_1p + delta_2p + delta_3p
+        sum_delta = round_up(delta_1p + delta_2p + delta_3p, 2)
+        col_check_text = (f'Δ\\H0.5x;1p\\H2.0x; + Δ\\H0.5x;2p\\H2.0x; + Δ\\H0.5x;3p\\H2.0x; = {delta_1p}/EI + '
+                          f'{delta_2p}/EI + {delta_3p}/EI = {sum_delta}/EI\n')
         print(f'Δ1p + Δ2p + Δ3p = {delta_1p}/EI + {delta_2p}/EI + {delta_3p}/EI = {sum_delta}/EI\n')
-        E_uni_check, e_text_uni_check = relative_error_percent(delta_sp, sum_delta, tolerance_percent=3)
+        E_col_check, e_text_col_check = relative_error_percent(delta_sp, sum_delta, tolerance_percent=3)
+        column_check += '\n' + col_check_text + '\n' + e_text_col_check + '\n' + 'Проверка выполняется'
+
+        for entity in layout:
+            if entity.dxf.layer == 'Столбцовая проверка':
+                entity.text += column_check
+
+
+
 
         print('-------Решение системы уравнений-------')
-        print(f'({delta_11}/EI)·x1 + ({delta_12}/EI)·x2 +({delta_13}/EI)·x3 + {delta_1p}/EI = 0')
-        print(f'({delta_12}/EI)·x1 + ({delta_22}/EI)·x2 +({delta_23}/EI)·x3 + {delta_2p}/EI = 0')
-        print(f'({delta_13}/EI)·x1 + ({delta_23}/EI)·x2 +({delta_33}/EI)·x3 + {delta_3p}/EI = 0\n')
+        eq1 = f'({delta_11}/EI)·x1 + ({delta_12}/EI)·x2 +({delta_13}/EI)·x3 + {delta_1p}/EI = 0'
+        eq2 = f'({delta_12}/EI)·x1 + ({delta_22}/EI)·x2 +({delta_23}/EI)·x3 + {delta_2p}/EI = 0'
+        eq3 = f'({delta_13}/EI)·x1 + ({delta_23}/EI)·x2 +({delta_33}/EI)·x3 + {delta_3p}/EI = 0'
+
+        system_of_equations_1 = eq1 + '\n' + eq2 + '\n' + eq3 + '\n'
+
+        print(system_of_equations_1)
+
+
+
 
         # Матрица коэффициентов
         A = numpy.array([[delta_11, delta_12, delta_13],
@@ -182,7 +259,16 @@ class BRGTUForceMethod(TaskPlugin):
         x1 = round_up(solution[0], 3)
         x2 = round_up(solution[1], 3)
         x3 = round_up(solution[2], 3)
-        print(f"x1 = {x1}\nx2 = {x2}\nx3 = {x3}\n")
+
+        system_of_equations_2 = f"x1 = {x1}\nx2 = {x2}\nx3 = {x3}\n"
+        print(system_of_equations_2)
+
+        for entity in layout:
+            if entity.dxf.layer == 'Система уравнений 1':
+                entity.text = system_of_equations_1
+            elif entity.dxf.layer == 'Система уравнений 2':
+                entity.text = system_of_equations_2
+
 
         print('-------"Эпюра Мок"-------')
         for rod in rods:
@@ -195,6 +281,7 @@ class BRGTUForceMethod(TaskPlugin):
         print(f'\n')
 
         print('-------Деформационная проверка-------')
+        deformation_check = '\n\n'
         delta_sok_text, delta_sok = calculation_frame.multiply_M_diagrams_by_Simpson('Ms', 'Mok')
         print(f'δsok = {delta_sok_text}\n')
         print(f'δsok = {delta_sok}/EI ≈ 0')
@@ -202,6 +289,17 @@ class BRGTUForceMethod(TaskPlugin):
             print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}\n")
         else:
             print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}\n")
+
+        deformation_check += (f'δ\\H0.5x;sok\\H2.0x; = {delta_sok_text}\n' + '\n' + f'δ\\H0.5x;sok\\H2.0x; = {delta_sok}/EI ≈ 0\n' +
+                              'Проверка выполняется')
+
+        for entity in layout:
+            if entity.dxf.layer == 'Деформационная проверка':
+                entity.text += deformation_check
+
+
+
+
 
         print('-------"Эпюра Q"-------')
         for rod in rods:
@@ -221,11 +319,10 @@ class BRGTUForceMethod(TaskPlugin):
 
         for reaction in frame.finded_reactions:
             print(reaction)
-
-
         print(f'\n')
 
         print('-------Статическая проверка-------')
+        static_check = '\n\n'
         # node_name = str(input("\nВведите имя, относительно которого хотите составить уравнение моментов: "))
         node_name = 'L'
         for node in frame.nodes:
@@ -235,6 +332,7 @@ class BRGTUForceMethod(TaskPlugin):
             check_moment, check_equation = frame.sum_momentum_about_node(node=node_for_checking)
         else:
             raise Exception("Задано неверное имя узла")
+        static_check_1 = check_equation + '\n' + f'   {check_moment} = 0\n' + 'Проверка выполняется\n\n'
         print(check_equation)
         print(f'   {check_moment} = 0')
         if abs(check_moment) <= 0.1:
@@ -251,6 +349,9 @@ class BRGTUForceMethod(TaskPlugin):
         else:
             print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}")
 
+        static_check_2 = (f'∑x: {sum_force_expression_names} = 0\n' + f'    {sum_force_expression_values} = 0\n' +
+                          f'    {sum_of_projections} = 0\n' + 'Проверка выполняется\n\n')
+
         sum_of_projections, sum_force_expression_names, sum_force_expression_values = frame.sum_force_projections('y')
         print(f'∑y: {sum_force_expression_names} = 0')
         print(f'    {sum_force_expression_values} = 0')
@@ -259,6 +360,18 @@ class BRGTUForceMethod(TaskPlugin):
             print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}")
         else:
             print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}")
+
+        static_check_3 = (f'∑y: {sum_force_expression_names} = 0\n' + f'    {sum_force_expression_values} = 0\n' +
+                          f'    {sum_of_projections} = 0\n' + 'Проверка выполняется\n')
+
+        static_check = static_check_1 + static_check_2 + static_check_3
+        for entity in layout:
+            if entity.dxf.layer == 'Статическая проверка':
+                entity.text = static_check
+
+
+
+
 
         print(f'\n')
 
@@ -282,23 +395,14 @@ class BRGTUForceMethod(TaskPlugin):
 
 
         delta_kok_text, delta_kok = calculation_frame.multiply_M_diagrams_by_Simpson('Mk', 'Mok')
+        delta_k_text = f'Δ\\H0.5x;k\\H2.0x; = {delta_kok_text}\n'
         print(f'Δk = {delta_kok_text}\n')
 
+        for entity in layout:
+            if entity.dxf.layer == 'Перемещение точки К':
+                entity.text = delta_k_text
 
-        # Создаем новый DXF документ
-        doc = ezdxf.readfile('Шаблон.dxf')
-        msp = doc.modelspace()
-        msp.delete_all_entities()
 
-        msp = self.make_report(main_frame=frame, primary_system=calculation_frame, msp=msp)
+
         zoom.extents(msp)
         doc.saveas(f'report.dxf')
-
-    def make_report(self, main_frame: Frame, primary_system: SolvableFrame, msp):
-        base_point = [0, 0]
-        msp, base_point = drow_frame(frame=main_frame, base_point=base_point, msp=msp)
-        msp, base_point = drow_frame(frame=primary_system, base_point=base_point, msp=msp)
-        return msp
-
-
-

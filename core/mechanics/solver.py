@@ -56,6 +56,7 @@ class SolvableFrame(Frame):
         return [reaction.name, round_up(reaction_value, 2), equation]
 
     def find_reaction_from_force_projection(self, axis: str):
+        report = ''
         sum_of_loads, sum_force_expression_names, sum_force_expression_values = self.sum_force_projections(axis=axis)
         finded_reactions_names = [i.name for i in self.finded_reactions]
         unknown_count = []
@@ -87,13 +88,16 @@ class SolvableFrame(Frame):
                 expression_with_values = f'-{reaction.name}{sum_force_expression_values} = 0'
             print(expression_with_names)
             print(f'    {expression_with_values}')
+            report += expression_with_names + '\n' + f'      {expression_with_values}' + '\n'
 
             if axis == 'x':
                 reaction.value = round_up(- sum_of_loads * math.cos(rotation_radians))
             elif axis == 'y':
                 reaction.value = round_up(- sum_of_loads * math.sin(rotation_radians))
             print(f'    {reaction.name} = {reaction.value}')
+            report += f'      {reaction.name} = {reaction.value}' + '\n'
             self.finded_reactions.append(reaction)
+            return report
 
     def get_unknown_reactions_from_part(self) -> List[Force]:
         all_reactions = self.reactions()
@@ -645,6 +649,7 @@ class ThreeHingedFrame(SolvableFrame, BaseFrame):
     def solve_frame(self):
         print(50 * '-')
         print('Решаем трехшарнирную раму')
+        report = 'Опорные реакции:\n'
 
         left_part, right_part, hinge_node = self.split_three_hinged_frame()
 
@@ -654,13 +659,14 @@ class ThreeHingedFrame(SolvableFrame, BaseFrame):
 
         solution = self.solve_system_of_equations(short_equation1, short_equation2)
 
-
+        report += long_equation1 + '\n' + long_equation2 + '\n' + short_equation1 + '\n' + short_equation2 + '\n'
         print(long_equation1)
         print(long_equation2)
         print(short_equation1)
         print(short_equation2)
         for var, value in solution.items():
             print(f'{var} = {value}')
+            report += f'{var} = {value}\n'
 
 
         for var, value in solution.items():
@@ -670,8 +676,10 @@ class ThreeHingedFrame(SolvableFrame, BaseFrame):
                     self.finded_reactions.append(reaction)
                     # print(f"Реакция {var} = {value:.2f} сохранена")
 
-        self.find_reaction_from_force_projection('x')
-        self.find_reaction_from_force_projection('y')
+        r1 = self.find_reaction_from_force_projection('x')
+        r2 = self.find_reaction_from_force_projection('y')
+
+        report += r1 + r2
 
         print('Найденные реакции:')
         for reaction in self.finded_reactions:
@@ -686,12 +694,17 @@ class ThreeHingedFrame(SolvableFrame, BaseFrame):
         print(check_equation)
         print(f'{check_moment} = 0')
         if check_moment <= 0.1:
-            print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}")
+            check_result = 'Проверка выполняется'
+            print(f"{"\033[92m"}{check_result}{"\033[0m"}")
         else:
-            print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}")
+            check_result = 'Проверка НЕ выполняется'
+            check_result = f"{"\033[91m"}{check_result}{"\033[0m"}"
+
+
+        report += 'Проверка:\n' + check_equation + '\n' + f'{check_moment} = 0\n' + check_result
 
 
         print(50 * '-')
 
 
-        return self
+        return report

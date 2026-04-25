@@ -26,7 +26,3 @@ class TaskPlugin(ABC):
     @abstractmethod
     def get_available_schemes(self) -> list:
         pass
-
-    @abstractmethod
-    def make_report(self, main_frame: Frame, primary_system: SolvableFrame, msp):
-        pass

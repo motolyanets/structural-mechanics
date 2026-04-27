@@ -6,7 +6,7 @@ from ezdxf import zoom
 
 from core.mechanics.frame import Frame
 from core.mechanics.solver import SolvableFrame
-from services.authocad import draw_frame
+from services.authocad import draw_frame, draw_diagram_m
 from services.services import round_up, relative_error_percent
 from tasks.base import TaskPlugin
 from tasks.brgtu.force_method.loader import ForceMethodLoader
@@ -90,7 +90,7 @@ class BRGTUForceMethod(TaskPlugin):
             if entity.dxf.layer == "1.Главная рама" and entity.dxftype() == 'VIEWPORT':
                 if entity:
                     entity.dxf.view_center_point = (base_point[0], base_point[1], 0.0)
-        msp, base_point = draw_frame(frame=frame, base_point=base_point, msp=msp)
+        frame, msp, base_point = draw_frame(frame=frame, base_point=base_point, msp=msp)
 
 
         sf = {}
@@ -103,13 +103,15 @@ class BRGTUForceMethod(TaskPlugin):
             print(f)
             frame_1 = sf[f]
             report = frame_1.solve_frame()
+            frame_1.base_point = base_point
             for entity in layout:
                 if entity.dxf.layer == f and entity.dxftype() == 'VIEWPORT':
                     if entity:
                         entity.dxf.view_center_point = (base_point[0], base_point[1], 0.0)
                 elif entity.dxf.layer == f'{f} нахождение опорных реакций':
                     entity.text = report
-            msp, base_point = draw_frame(frame=frame_1, base_point=base_point, msp=msp)
+
+
 
 
         rod11_diagram_M1 = [0, -1.5]
@@ -158,6 +160,9 @@ class BRGTUForceMethod(TaskPlugin):
             rod.diagram_M3 = m3[i]
             rod.diagram_Mp = mp[i]
             i += 1
+
+
+
 
         print('-------"Эпюра Мs"-------')
         for rod in rods:
@@ -378,8 +383,8 @@ class BRGTUForceMethod(TaskPlugin):
         print('-------Перемещение точки К-------')
         rod1_diagram_Mk = [0, 0.51]
         rod2_diagram_Mk = [0.51, -0.88]
-        rod3_diagram_Mk = [-0.88, 0]
-        rod4_diagram_Mk = [0, 0.78]
+        rod3_diagram_Mk = [0.88, 0]
+        rod4_diagram_Mk = [0, 0.88]
         rod5_diagram_Mk = [-0.27, -0.78]
         rod6_diagram_Mk = [0, -0.27]
         rod7_diagram_Mk = [0, 0]
@@ -402,6 +407,9 @@ class BRGTUForceMethod(TaskPlugin):
             if entity.dxf.layer == 'Перемещение точки К':
                 entity.text = delta_k_text
 
+        for f in sf:
+            frame_1 = sf[f]
+            frame_1, msp, base_point = draw_frame(frame=frame_1, base_point=base_point, msp=msp, diagram_name=f[3:])
 
 
         zoom.extents(msp)

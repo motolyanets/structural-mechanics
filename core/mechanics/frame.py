@@ -9,12 +9,13 @@ from services.services import round_up, normalize_equation
 
 class Frame:
     def __init__(self, nodes: List[Node], rods: List[Rod], supports: List[Support],
-                 loads: list, finded_reactions=None):
+                 loads: list, finded_reactions=None, base_point=None):
         self.nodes = nodes
         self.rods = rods
         self.supports = supports
         self.loads = loads
         self.finded_reactions = finded_reactions if finded_reactions is not None else []
+        self.base_point = base_point
 
     def reactions(self):
         reactions = []
@@ -82,3 +83,15 @@ class Frame:
         sum_of_projections = round_up(sum_of_projections, 4)
         return sum_of_projections, sum_force_expression_names, sum_force_expression_values
 
+    def find_max_value_diagram_m(self, diagram_name: str) -> float:
+        max_value = 0
+        for rod in self.rods:
+            diagram = rod.__getattribute__(f'diagram_M{diagram_name}')
+            print(diagram)
+            m1, m2 = diagram[0], diagram[1]
+            if abs(m1) > max_value:
+                max_value = abs(m1)
+            if abs(m2) > max_value:
+                max_value = abs(m2)
+        print(max_value)
+        return max_value

@@ -119,7 +119,7 @@ def create_primary_system_10(params: dict):
     load_x1 = Force(name='x1', node=node1, value=1, rotation=90)
     load_x2 = Force(name='x2', node=node7, value=1, rotation=180)
     load_x3 = Momentum(name='x3', node=node8, value=1, rotation=False)
-    load_K = Force(name='x', node=node4, value=1, rotation=180)
+    load_k = Force(name='x', node=node4, value=1, rotation=180)
 
     if load_index == 1:
         rod1 = Rod(start_node=node1, end_node=node3, stiffness=i2)
@@ -145,7 +145,7 @@ def create_primary_system_10(params: dict):
     loads['2'] = [load_x2]
     loads['3'] = [load_x3]
     loads['p'] = loads_p
-    loads['K'] = [load_K]
+    loads['k'] = [load_k]
     supports = [support1, support2]
 
     return nodes, rods, supports, loads

@@ -1,6 +1,7 @@
 import math
 from typing import List
 
+from ezdxf.lldxf.const import HATCH_PATTERN_TYPE, HATCH_TYPE_PREDEFINED, HATCH_TYPE_CUSTOM
 from ezdxf.math import Vec2
 
 from core.mechanics.frame import Frame
@@ -120,6 +121,22 @@ def draw_frame(frame: Frame, base_point: List[float], msp, diagram_name: str = N
     return frame, msp, base_point
 
 
+def find_perpendicular_angle(start_point: Vec2, end_point: Vec2) -> float:
+
+    # Вычисляем угол перпендикуляра
+    dx = end_point.x - start_point.x
+    dy = end_point.y - start_point.y
+    angle_deg = math.degrees(math.atan2(dy, dx))
+    perpendicular_angle = (angle_deg + 90) % 180
+
+    if perpendicular_angle < 0:
+        perpendicular_angle += 180
+    elif perpendicular_angle >= 180:
+        perpendicular_angle -= 180
+
+    return perpendicular_angle
+
+
 def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp, scale: float = 1.0):
     """
     Отрисовка эпюры моментов.
@@ -156,7 +173,7 @@ def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp,
 
     # Рассчитываем локальные координаты для эпюры
     num_segments = 2  # Количество сегментов для интерполяции
-    points = []
+    points = [start_point]
 
     for i in range(num_segments + 1):
         t = i / num_segments  # параметр от 0 до 1
@@ -190,10 +207,23 @@ def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp,
             diagram_point = point_on_rod + offset_direction * offset_value
 
         points.append(diagram_point)
+    points.append(end_point)
 
     # Рисуем эпюру как полилинию
     if len(points) > 1:
-        msp.add_lwpolyline(points, dxfattribs={'color': 3, 'linetype': 'CONTINUOUS'})
+        polyline = msp.add_lwpolyline(points, dxfattribs={'color': 3, 'linetype': 'CONTINUOUS'})
+        polyline.closed = True
+
+    perpendicular_angle = find_perpendicular_angle(start_point=start_point, end_point=end_point)
+
+    hatch = msp.add_hatch(color=3)
+
+    hatch.dxf.pattern_name = 'LINE'
+    hatch.dxf.pattern_angle = perpendicular_angle
+    hatch.dxf.pattern_scale = 0.05
+
+    # Добавляем весь контур целиком
+    hatch.paths.add_polyline_path(points, is_closed=True)
 
     # Рисуем базовую линию (стержень) для справки (опционально)
     # msp.add_line(start_point, end_point, dxfattribs={'color': 7, 'linetype': 'DASHED'})
@@ -211,7 +241,7 @@ def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp,
             offset_dir = perpendicular if M_start >= 0 else -perpendicular
 
         text_point = start_point + offset_dir * abs(M_start) * scale
-        msp.add_text(f"{M_start}", dxfattribs={'height': 0.2, 'color': 3}).set_placement(text_point)
+        msp.add_text(f"{abs(M_start)}", dxfattribs={'height': 0.2, 'color': 3}).set_placement(text_point)
 
     # Подпись в конце стержня
     if abs(M_end) > 0.01:
@@ -225,7 +255,7 @@ def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp,
             offset_dir = perpendicular if M_end >= 0 else -perpendicular
 
         text_point = end_point + offset_dir * abs(M_end) * scale
-        msp.add_text(f"{M_end}", dxfattribs={'height': 0.2, 'color': 3}).set_placement(text_point)
+        msp.add_text(f"{abs(M_end)}", dxfattribs={'height': 0.2, 'color': 3}).set_placement(text_point)
 
     return msp
 

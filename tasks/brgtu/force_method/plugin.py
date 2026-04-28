@@ -381,16 +381,16 @@ class BRGTUForceMethod(TaskPlugin):
         print(f'\n')
 
         print('-------Перемещение точки К-------')
-        rod1_diagram_Mk = [0, 0.51]
-        rod2_diagram_Mk = [0.51, -0.88]
-        rod3_diagram_Mk = [0.88, 0]
-        rod4_diagram_Mk = [0, 0.88]
-        rod5_diagram_Mk = [-0.27, -0.78]
-        rod6_diagram_Mk = [0, -0.27]
-        rod7_diagram_Mk = [0, 0]
+        rod11_diagram_Mk = [0, 0]
+        rod12_diagram_Mk = [0, 0]
+        rod2_diagram_Mk = [2.25, 2.25, 1.4]
+        rod3_diagram_Mk = [0, 2.25, 1.4]
+        rod4_diagram_Mk = [2.25, 0]
+        rod5_diagram_Mk = [0, 0]
+        rod6_diagram_Mk = [0, 0]
 
 
-        mk = [rod1_diagram_Mk, rod2_diagram_Mk, rod3_diagram_Mk, rod4_diagram_Mk, rod5_diagram_Mk, rod6_diagram_Mk, rod7_diagram_Mk]
+        mk = [rod11_diagram_Mk, rod12_diagram_Mk, rod2_diagram_Mk, rod3_diagram_Mk, rod4_diagram_Mk, rod5_diagram_Mk, rod6_diagram_Mk]
 
         rods = calculation_frame.rods
         i = 0

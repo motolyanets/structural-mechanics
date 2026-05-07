@@ -84,6 +84,26 @@ def draw_rod(rod: Rod, base_point: List[float], msp, hinge_radius=h_r):
         direction_point = line.dxf.start
         drow_hinge(hinge_point, direction_point, msp)
 
+    draw_section(rod=rod, base_point=base_point, msp=msp)
+
+
+def draw_section(rod: Rod, base_point: List[float], msp):
+    if rod.sections:
+        for section in rod.sections:
+            section_point = (section.x_drawing + base_point[0], section.y_drawing + base_point[1])
+            perpendicular_angle = find_perpendicular_angle(
+                start_point=Vec2(rod.start_node.x, rod.start_node.y),
+                end_point=Vec2(rod.end_node.x, rod.end_node.y)
+            )
+
+            msp.add_blockref('Сечение', insert=section_point,
+                             dxfattribs={
+                                 'layer': 'SECTIONS',
+                                 'rotation': perpendicular_angle,
+                             })
+            msp.add_text(text=section.name, height=0.1, dxfattribs={'layer': 'SECTIONS', 'color': 1}).set_placement(section_point)
+    return msp
+
 
 def draw_frame(frame: Frame, base_point: List[float], msp, diagram_name: str = None):
     frame.base_point = base_point
@@ -116,7 +136,6 @@ def draw_frame(frame: Frame, base_point: List[float], msp, diagram_name: str = N
         msp = reaction.drow(insert_point, msp)
 
 
-    print(f'Рама нарисована')
     base_point = [base_point[0] + 30, base_point[1]]
     return frame, msp, base_point
 
@@ -211,7 +230,7 @@ def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp,
 
     # Рисуем эпюру как полилинию
     if len(points) > 1:
-        polyline = msp.add_lwpolyline(points, dxfattribs={'color': 3, 'linetype': 'CONTINUOUS'})
+        polyline = msp.add_lwpolyline(points, dxfattribs={'layer': 'diagram M', 'color': 3, 'linetype': 'CONTINUOUS'})
         polyline.closed = True
 
     perpendicular_angle = find_perpendicular_angle(start_point=start_point, end_point=end_point)
@@ -241,7 +260,7 @@ def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp,
             offset_dir = perpendicular if M_start >= 0 else -perpendicular
 
         text_point = start_point + offset_dir * abs(M_start) * scale
-        msp.add_text(f"{abs(M_start)}", dxfattribs={'height': 0.2, 'color': 3}).set_placement(text_point)
+        msp.add_text(f"{abs(M_start)}", dxfattribs={'layer': 'diagram M', 'height': 0.2, 'color': 3}).set_placement(text_point)
 
     # Подпись в конце стержня
     if abs(M_end) > 0.01:
@@ -255,7 +274,7 @@ def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp,
             offset_dir = perpendicular if M_end >= 0 else -perpendicular
 
         text_point = end_point + offset_dir * abs(M_end) * scale
-        msp.add_text(f"{abs(M_end)}", dxfattribs={'height': 0.2, 'color': 3}).set_placement(text_point)
+        msp.add_text(f"{abs(M_end)}", dxfattribs={'layer': 'diagram M', 'height': 0.2, 'color': 3}).set_placement(text_point)
 
     return msp
 

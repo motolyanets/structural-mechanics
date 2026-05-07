@@ -63,6 +63,7 @@ def create_frame_10(params: dict):
         loads = [load_P1, load_P2, load_q1, load_q2]
         nodes = [node1, node3, node4, node5, node6, node7, node8, node9, node11, node12, node13, node14, node16]
         rods = [rod1, rod2, rod3, rod4, rod5, rod6, rod7, rod8, rod9, rod10, rod11_1, rod11_2, rod12]
+
     else:
         rod1_1 = Rod(start_node=node1, end_node=node2, stiffness=i2)
         rod1_2 = Rod(start_node=node2, end_node=node3, stiffness=i2)
@@ -83,6 +84,7 @@ def create_frame_10(params: dict):
 
     supports = [support1, support2, support3, support4, support5, support6]
 
+    # return nodes, rods, supports, loads, calkulate_diagram_rods_order
     return nodes, rods, supports, loads
 
 
@@ -129,6 +131,14 @@ def create_primary_system_10(params: dict):
         loads_p = [load_P, load_q]
         nodes = [node1, node3, node4, node5, node6, node7, node8]
         rods = [rod1, rod2, rod3, rod4, rod5, rod6]
+
+        # splitted_frames_for_diagram_order = (
+        #     ['A', '2', '3'],
+        #     ['B', 'K', '3'],
+        #     ['A', '2', '3', 'B', 'K', '3', '6', 'L'],
+        #     ['C', 'L'],
+        # )
+
     else:
         rod1_1 = Rod(start_node=node1, end_node=node2, stiffness=i2)
         rod1_2 = Rod(start_node=node2, end_node=node3, stiffness=i2)
@@ -141,6 +151,13 @@ def create_primary_system_10(params: dict):
         nodes = [node1, node2, node3, node4, node5, node6, node7, node8]
         rods = [rod1_1, rod1_2, rod2, rod3, rod4, rod5, rod6]
 
+        # splitted_frames_for_diagram_order = (
+        #     [rod1_1, rod1_2],
+        #     [rod2, rod3],
+        #     [rod1_1, rod1_2, rod2, rod3, rod4, rod5.],
+        #     [rod6],
+        # )
+
     loads['1'] = [load_x1]
     loads['2'] = [load_x2]
     loads['3'] = [load_x3]
@@ -149,4 +166,5 @@ def create_primary_system_10(params: dict):
     supports = [support1, support2]
 
     return nodes, rods, supports, loads
+    # return nodes, rods, supports, loads, splitted_frames_for_diagram_order
 

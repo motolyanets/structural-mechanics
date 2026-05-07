@@ -8,7 +8,11 @@ from core.mechanics.rod import Rod
 from services.services import round_up
 
 
-class Force:
+class Load:
+    pass
+
+
+class Force(Load):
     """Создаем класс для сосредоточенного усилия"""
 
     def __init__(self, name: str, node: Node, rotation: int, value: float | None = None):
@@ -47,13 +51,13 @@ class Force:
 
         return moment_arm
 
-    def get_moment_about(self, point: Tuple[float, float]) -> float:
+    def get_moment_about(self, point: Tuple[float, float]) -> tuple:
         lever_arm = self.get_lever_arm(point=point)
         moment = round_up(lever_arm * self.value)
         text = f'{self.name}·{lever_arm}'
         return text, moment
 
-    def get_projection_on_axis(self, axis_name: str) -> float:
+    def get_projection_on_axis(self, axis_name: str) -> tuple:
         rotation_radians = math.radians(self.rotation)
         if axis_name == 'x':
             projection = self.value * math.cos(rotation_radians)
@@ -90,7 +94,7 @@ class Force:
         return f"Force({self.name}={self.value} ---- {self.rotation}, node - {self.node.name})"
 
 
-class Momentum:
+class Momentum(Load):
     """Создаем класс для момента"""
 
     def __init__(self, name: str, node: Node, rotation: bool, value: float | None = None):
@@ -118,19 +122,29 @@ class Momentum:
         return f"Momentum({self.name}={self.value} ---- {self.rotation}, node - {self.node.name})"
 
 
-class DistributedForce:
+class DistributedForce(Load):
     """Создаем класс для распределенной нагрузки"""
 
-    def __init__(self, name: str, rod: Rod, value: float, rotation: int):
+    def __init__(self, name: str, rod: Rod | None, value: float, rotation: int,
+                 start_coordinates: Tuple[float, float] | None = None, end_coordinates: Tuple[float, float] | None = None):
         self.name = name
         self.rod = rod
         self.value = float(value)
         self.rotation = int(rotation)
 
+        if rod:
+            self.start_coordinates = (self.rod.start_node.x, self.rod.start_node.y)
+            self.end_coordinates = (self.rod.end_node.x, self.rod.end_node.y)
+        else:
+            self.start_coordinates = start_coordinates
+            self.end_coordinates = end_coordinates
+
         if self.rotation in [90, 270]:
-            self.length = round_up(self.rod.dx())
+            dx = math.fabs(self.end_coordinates[0] - self.start_coordinates[0])
+            self.length = round_up(dx)
         elif self.rotation in [0, 180]:
-            self.length = round_up(self.rod.dy())
+            dy = math.fabs(self.end_coordinates[1] - self.start_coordinates[1])
+            self.length = round_up(dy)
         else:
             raise Exception("Направление распределенной нагрузки должно быть 0, 90, 180 или 270")
 
@@ -138,14 +152,14 @@ class DistributedForce:
         return self.value * self.length
 
     def center(self) -> Tuple[float, float]:
-        start_point = (self.rod.start_node.x, self.rod.start_node.y)
-        end_point = (self.rod.end_node.x, self.rod.end_node.y)
+        start_point = (self.start_coordinates[0], self.start_coordinates[1])
+        end_point = (self.end_coordinates[0], self.end_coordinates[1])
         center_x = (start_point[0] + end_point[0]) / 2
         center_y = (start_point[1] + end_point[1]) / 2
         return center_x, center_y
 
 
-    def get_projection_on_axis(self, axis_name: str) -> float:
+    def get_projection_on_axis(self, axis_name: str) -> tuple:
         rotation_radians = math.radians(self.rotation)
         if axis_name == 'x':
             projection = self.Q() * math.cos(rotation_radians)
@@ -190,11 +204,19 @@ class DistributedForce:
         moment_arm = round_up(moment_arm, 3)
         return moment_arm
 
-    def get_moment_about(self, point: Tuple[float, float]) -> float:
+    def get_moment_about(self, point: Tuple[float, float]) -> tuple:
         lever_arm = self.get_lever_arm(point=point)
         moment = round_up(lever_arm * self.Q())
         text = f'{self.name}·{self.length}·{lever_arm}'
         return text, moment
+
+    def split_load_for_calculation_section(self):
+        center_point = self.center()
+        load1 = DistributedForce(name=self.name, rod=None, value=self.value, start_coordinates=self.start_coordinates,
+                                 end_coordinates=center_point, rotation=self.rotation, )
+        load2 = DistributedForce(name=self.name, rod=None, value=self.value, start_coordinates=center_point,
+                                 end_coordinates=self.end_coordinates, rotation=self.rotation, )
+        return [load1, load2]
 
     def drow(self, insert_point: Tuple[float, float], msp):
         msp.add_blockref('Распределенная нагрузка', insert=insert_point,
@@ -208,4 +230,8 @@ class DistributedForce:
         placement = (insert_point[0] + 0.2, insert_point[1] - 0.2)
         msp.add_text(text=text, height=0.2, dxfattribs={"layer": "Loads",}).set_placement(placement)
         return msp
+
+    def __repr__(self) -> str:
+        return f"DistributedForce({self.name}={self.value} ---- {self.rotation}, rod - ({self.start_coordinates}:{self.end_coordinates}))"
+
 

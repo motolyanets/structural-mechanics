@@ -7,7 +7,6 @@ def round_up(number: float, decimals: int = 2):
         return int(number * multiplier + 0.5) / multiplier
     return int(number * multiplier - 0.5) / multiplier
 
-
 def normalize_equation(expr: str) -> str:
     # Убираем пробелы в начале и конце
     expr = expr.strip()

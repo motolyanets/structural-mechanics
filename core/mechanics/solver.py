@@ -245,12 +245,34 @@ class SolvableFrame(Frame):
         else:
             raise Exception(f"Вид рамы не определен: reactions={amount_of_reactions}, hinges={amount_of_hinges}")
 
+    # def making_cuts_for_diagrams(self, splitted_frames_for_diagram_order: List[List[str]]):
+    #     rods = self.rods
+
     def multiply_M_diagrams_by_Simpson(self, diagram_1_name: str, diagram_2_name: str):
+        rods_with_distributed_load = dict()
+        for load in self.loads:
+            if isinstance(load, DistributedForce):
+                rods_with_distributed_load[f'{load.rod.start_node.name}-{load.rod.end_node.name}'] = load.value
         multiply_beam_diagrams = []
         for rod in self.rods:
-            multiply_beam_diagrams.append(rod.multiply_diagrams_Simpson(diagram_1_name, diagram_2_name))
+            str = f'{rod.start_node.name}-{rod.end_node.name}'
+            q = None
+            if str in rods_with_distributed_load:
+                q = rods_with_distributed_load[str]
+            multiply_beam_diagrams.append(rod.multiply_diagrams_Simpson(diagram_1_name, diagram_2_name, q=q))
         delta_text, delta = making_report_of_multiply(multiply_beam_diagrams)
         return delta_text, delta
+
+    # def calculate_diagram_m(self, splitted_frames_for_diagram_order: List[List[str]]):
+    #     all_loads = self.loads + self.finded_reactions
+    #     cut = 1
+    #     using_nodes = []
+    #
+    #     for part_of_frame in splitted_frames_for_diagram_order:
+    #         for node_name in part_of_frame:
+    #             for rod in self.rods:
+    #                 if rod.start_node.name == node_name or rod.end_node.name == node_name:
+    #
 
 
 class BaseFrame(ABC):

@@ -1,6 +1,3 @@
-from dataclasses import dataclass
-
-
 class Node:
     """Узел расчётной схемы"""
     def __init__(

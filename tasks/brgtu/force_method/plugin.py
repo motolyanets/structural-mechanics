@@ -5,6 +5,7 @@ import numpy
 from ezdxf import zoom
 
 from core.mechanics.frame import Frame
+from core.mechanics.rod import Rod
 from core.mechanics.solver import SolvableFrame
 from services.authocad import draw_frame, draw_diagram_m
 from services.services import round_up, relative_error_percent
@@ -70,7 +71,9 @@ class BRGTUForceMethod(TaskPlugin):
 
         if circuit_number == 10:
             from schemes.brgtu.force_method.frame_10 import create_frame_10, create_primary_system_10
+            # nodes, rods, supports, loads, splitted_frames_for_diagram_order = create_frame_10(params)
             nodes, rods, supports, loads = create_frame_10(params)
+            # ps_nodes, ps_rods, ps_supports, ps_loads, splitted_frames_for_diagram_order = create_primary_system_10(params)
             ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_10(params)
         elif circuit_number == 27:
             from schemes.brgtu.force_method.frame_27 import create_frame_27, create_primary_system_27
@@ -110,56 +113,57 @@ class BRGTUForceMethod(TaskPlugin):
                         entity.dxf.view_center_point = (base_point[0], base_point[1], 0.0)
                 elif entity.dxf.layer == f'{f} нахождение опорных реакций':
                     entity.text = report
+            frame_1.create_sections_for_diagrams()
+            for rod in frame_1.rods:
+                rod.calculate_diagram_m(f'{f[3:]}')
+                print(rod.__getattribute__(f'diagram_M{f[3:]}'))
 
-
-
-
-        rod11_diagram_M1 = [0, -1.5]
-        rod12_diagram_M1 = [-1.5, -3]
-        rod2_diagram_M1 = [0, 0]
-        rod3_diagram_M1 = [0, 0]
-        rod4_diagram_M1 = [-3, 0]
-        rod5_diagram_M1 = [0, 0]
-        rod6_diagram_M1 = [0, 0]
-
-        rod11_diagram_M2 = [0, 0]
-        rod12_diagram_M2 = [0, 0]
-        rod2_diagram_M2 = [2.25, 4.5]
-        rod3_diagram_M2 = [0, 2.25]
-        rod4_diagram_M2 = [4.5, 3.1]
-        rod5_diagram_M2 = [0, -3.1]
-        rod6_diagram_M2 = [0, 0]
-
-        rod11_diagram_M3 = [0, 0]
-        rod12_diagram_M3 = [0, 0]
-        rod2_diagram_M3 = [0.63, 1.26]
-        rod3_diagram_M3 = [0, 0.63]
-        rod4_diagram_M3 = [1.26, 0.88]
-        rod5_diagram_M3 = [0, -0.88]
-        rod6_diagram_M3 = [1, 0]
-
-        rod11_diagram_Mp = [0, 0]
-        rod12_diagram_Mp = [0, 12.75]
-        rod2_diagram_Mp = [8.49, 24.07, 1.4]
-        rod3_diagram_Mp = [0, 8.49, 1.4]
-        rod4_diagram_Mp = [36.85, 0]
-        rod5_diagram_Mp = [0, 0]
-        rod6_diagram_Mp = [0, 0]
-
-
-        m1 = [rod11_diagram_M1, rod12_diagram_M1, rod2_diagram_M1, rod3_diagram_M1, rod4_diagram_M1, rod5_diagram_M1, rod6_diagram_M1]
-        m2 = [rod11_diagram_M2, rod12_diagram_M2, rod2_diagram_M2, rod3_diagram_M2, rod4_diagram_M2, rod5_diagram_M2, rod6_diagram_M2]
-        m3 = [rod11_diagram_M3, rod12_diagram_M3, rod2_diagram_M3, rod3_diagram_M3, rod4_diagram_M3, rod5_diagram_M3, rod6_diagram_M3]
-        mp = [rod11_diagram_Mp, rod12_diagram_Mp, rod2_diagram_Mp, rod3_diagram_Mp, rod4_diagram_Mp, rod5_diagram_Mp, rod6_diagram_Mp]
-
+        #
+        # rod11_diagram_M1 = [0, -1.5]
+        # rod12_diagram_M1 = [-1.5, -3]
+        # rod2_diagram_M1 = [0, 0]
+        # rod3_diagram_M1 = [0, 0]
+        # rod4_diagram_M1 = [-3, 0]
+        # rod5_diagram_M1 = [0, 0]
+        # rod6_diagram_M1 = [0, 0]
+        #
+        # rod11_diagram_M2 = [0, 0]
+        # rod12_diagram_M2 = [0, 0]
+        # rod2_diagram_M2 = [2.25, 4.5]
+        # rod3_diagram_M2 = [0, 2.25]
+        # rod4_diagram_M2 = [4.5, 3.1]
+        # rod5_diagram_M2 = [0, -3.1]
+        # rod6_diagram_M2 = [0, 0]
+        #
+        # rod11_diagram_M3 = [0, 0]
+        # rod12_diagram_M3 = [0, 0]
+        # rod2_diagram_M3 = [0.63, 1.26]
+        # rod3_diagram_M3 = [0, 0.63]
+        # rod4_diagram_M3 = [1.26, 0.88]
+        # rod5_diagram_M3 = [0, -0.88]
+        # rod6_diagram_M3 = [1, 0]
+        #
+        # rod11_diagram_Mp = [0, 0]
+        # rod12_diagram_Mp = [0, 12.75]
+        # rod2_diagram_Mp = [8.49, 24.07, 1.4]
+        # rod3_diagram_Mp = [0, 8.49, 1.4]
+        # rod4_diagram_Mp = [36.85, 0]
+        # rod5_diagram_Mp = [0, 0]
+        # rod6_diagram_Mp = [0, 0]
+        #
+        # m1 = [rod11_diagram_M1, rod12_diagram_M1, rod2_diagram_M1, rod3_diagram_M1, rod4_diagram_M1, rod5_diagram_M1, rod6_diagram_M1]
+        # m2 = [rod11_diagram_M2, rod12_diagram_M2, rod2_diagram_M2, rod3_diagram_M2, rod4_diagram_M2, rod5_diagram_M2, rod6_diagram_M2]
+        # m3 = [rod11_diagram_M3, rod12_diagram_M3, rod2_diagram_M3, rod3_diagram_M3, rod4_diagram_M3, rod5_diagram_M3, rod6_diagram_M3]
+        # mp = [rod11_diagram_Mp, rod12_diagram_Mp, rod2_diagram_Mp, rod3_diagram_Mp, rod4_diagram_Mp, rod5_diagram_Mp, rod6_diagram_Mp]
+        #
         rods = calculation_frame.rods
-        i = 0
-        for rod in rods:
-            rod.diagram_M1 = m1[i]
-            rod.diagram_M2 = m2[i]
-            rod.diagram_M3 = m3[i]
-            rod.diagram_Mp = mp[i]
-            i += 1
+        # i = 0
+        # for rod in rods:
+        #     rod.diagram_M1 = m1[i]
+        #     rod.diagram_M2 = m2[i]
+        #     rod.diagram_M3 = m3[i]
+        #     rod.diagram_Mp = mp[i]
+        #     i += 1
 
 
 
@@ -277,11 +281,17 @@ class BRGTUForceMethod(TaskPlugin):
 
         print('-------"Эпюра Мок"-------')
         for rod in rods:
-            Mok_1 = rod.diagram_M1[0] * x1 + rod.diagram_M2[0] * x2 + rod.diagram_M3[0] * x3 + rod.diagram_Mp[0]
-            Mok_2 = rod.diagram_M1[1] * x1 + rod.diagram_M2[1] * x2 + rod.diagram_M3[1] * x3 + rod.diagram_Mp[1]
-            rod.diagram_Mok = [round_up(Mok_1), round_up(Mok_2)]
-            if len(rod.diagram_Mp) == 3:
-                rod.diagram_Mok.append(rod.diagram_Mp[2])
+            Mok_st = rod.diagram_M1[0] * x1 + rod.diagram_M2[0] * x2 + rod.diagram_M3[0] * x3 + rod.diagram_Mp[0]
+            Mok_end = rod.diagram_M1[1] * x1 + rod.diagram_M2[1] * x2 + rod.diagram_M3[1] * x3 + rod.diagram_Mp[-1]
+
+            if len(rod.diagram_Mp) == 2:
+                rod.diagram_Mok = [round_up(Mok_st), round_up(Mok_end)]
+            elif len(rod.diagram_Mp) == 3:
+                m1 = (rod.diagram_M1[0] + rod.diagram_M1[1]) / 2
+                m2 = (rod.diagram_M2[0] + rod.diagram_M2[1]) / 2
+                m3 = (rod.diagram_M3[0] + rod.diagram_M3[1]) / 2
+                Mok_midl = m1 * x1 + m2 * x2 + m3 * x3 + rod.diagram_Mp[1]
+                rod.diagram_Mok = [round_up(Mok_st), round_up(Mok_midl), round_up(Mok_end)]
             print(f'{rod} ------ {rod.diagram_Mok}')
         print(f'\n')
 
@@ -381,22 +391,22 @@ class BRGTUForceMethod(TaskPlugin):
         print(f'\n')
 
         print('-------Перемещение точки К-------')
-        rod11_diagram_Mk = [0, 0]
-        rod12_diagram_Mk = [0, 0]
-        rod2_diagram_Mk = [2.25, 2.25, 1.4]
-        rod3_diagram_Mk = [0, 2.25, 1.4]
-        rod4_diagram_Mk = [2.25, 0]
-        rod5_diagram_Mk = [0, 0]
-        rod6_diagram_Mk = [0, 0]
-
-
-        mk = [rod11_diagram_Mk, rod12_diagram_Mk, rod2_diagram_Mk, rod3_diagram_Mk, rod4_diagram_Mk, rod5_diagram_Mk, rod6_diagram_Mk]
-
-        rods = calculation_frame.rods
-        i = 0
-        for rod in rods:
-            rod.diagram_Mk = mk[i]
-            i += 1
+        # rod11_diagram_Mk = [0, 0]
+        # rod12_diagram_Mk = [0, 0]
+        # rod2_diagram_Mk = [2.25, 2.25, 1.4]
+        # rod3_diagram_Mk = [0, 2.25, 1.4]
+        # rod4_diagram_Mk = [2.25, 0]
+        # rod5_diagram_Mk = [0, 0]
+        # rod6_diagram_Mk = [0, 0]
+        #
+        #
+        # mk = [rod11_diagram_Mk, rod12_diagram_Mk, rod2_diagram_Mk, rod3_diagram_Mk, rod4_diagram_Mk, rod5_diagram_Mk, rod6_diagram_Mk]
+        #
+        # rods = calculation_frame.rods
+        # i = 0
+        # for rod in rods:
+        #     rod.diagram_Mk = mk[i]
+        #     i += 1
 
 
         delta_kok_text, delta_kok = calculation_frame.multiply_M_diagrams_by_Simpson('Mk', 'Mok')

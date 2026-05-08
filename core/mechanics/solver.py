@@ -12,7 +12,7 @@ from services.services import round_up, making_report_of_multiply
 
 
 class SolvableFrame(Frame):
-    def __init__(self, nodes: List[Node], rods: List[Rod], supports: List[Support], loads: list,
+    def __init__(self, nodes: List[Node], rods: List[Rod], supports: List[Support] | None, loads: list | None,
                  finded_reactions=None):
         super().__init__(nodes, rods, supports, loads, finded_reactions)
 

@@ -71,9 +71,7 @@ class BRGTUForceMethod(TaskPlugin):
 
         if circuit_number == 10:
             from schemes.brgtu.force_method.frame_10 import create_frame_10, create_primary_system_10
-            # nodes, rods, supports, loads, splitted_frames_for_diagram_order = create_frame_10(params)
             nodes, rods, supports, loads = create_frame_10(params)
-            # ps_nodes, ps_rods, ps_supports, ps_loads, splitted_frames_for_diagram_order = create_primary_system_10(params)
             ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_10(params)
         elif circuit_number == 27:
             from schemes.brgtu.force_method.frame_27 import create_frame_27, create_primary_system_27
@@ -107,66 +105,24 @@ class BRGTUForceMethod(TaskPlugin):
             frame_1 = sf[f]
             report = frame_1.solve_frame()
             frame_1.base_point = base_point
+            frame_1.create_sections_for_diagrams()
+            finding_moments_report = ''
+            for rod in frame_1.rods:
+                section_equation = rod.calculate_diagram_m(f'{f[3:]}')
+                print(rod.__getattribute__(f'diagram_M{f[3:]}'))
+                finding_moments_report += section_equation + '\n'
+
             for entity in layout:
                 if entity.dxf.layer == f and entity.dxftype() == 'VIEWPORT':
                     if entity:
                         entity.dxf.view_center_point = (base_point[0], base_point[1], 0.0)
                 elif entity.dxf.layer == f'{f} нахождение опорных реакций':
                     entity.text = report
-            frame_1.create_sections_for_diagrams()
-            for rod in frame_1.rods:
-                rod.calculate_diagram_m(f'{f[3:]}')
-                print(rod.__getattribute__(f'diagram_M{f[3:]}'))
+                elif entity.dxf.layer == f'{f} расчет эпюры моментов':
+                    entity.text = finding_moments_report
 
-        #
-        # rod11_diagram_M1 = [0, -1.5]
-        # rod12_diagram_M1 = [-1.5, -3]
-        # rod2_diagram_M1 = [0, 0]
-        # rod3_diagram_M1 = [0, 0]
-        # rod4_diagram_M1 = [-3, 0]
-        # rod5_diagram_M1 = [0, 0]
-        # rod6_diagram_M1 = [0, 0]
-        #
-        # rod11_diagram_M2 = [0, 0]
-        # rod12_diagram_M2 = [0, 0]
-        # rod2_diagram_M2 = [2.25, 4.5]
-        # rod3_diagram_M2 = [0, 2.25]
-        # rod4_diagram_M2 = [4.5, 3.1]
-        # rod5_diagram_M2 = [0, -3.1]
-        # rod6_diagram_M2 = [0, 0]
-        #
-        # rod11_diagram_M3 = [0, 0]
-        # rod12_diagram_M3 = [0, 0]
-        # rod2_diagram_M3 = [0.63, 1.26]
-        # rod3_diagram_M3 = [0, 0.63]
-        # rod4_diagram_M3 = [1.26, 0.88]
-        # rod5_diagram_M3 = [0, -0.88]
-        # rod6_diagram_M3 = [1, 0]
-        #
-        # rod11_diagram_Mp = [0, 0]
-        # rod12_diagram_Mp = [0, 12.75]
-        # rod2_diagram_Mp = [8.49, 24.07, 1.4]
-        # rod3_diagram_Mp = [0, 8.49, 1.4]
-        # rod4_diagram_Mp = [36.85, 0]
-        # rod5_diagram_Mp = [0, 0]
-        # rod6_diagram_Mp = [0, 0]
-        #
-        # m1 = [rod11_diagram_M1, rod12_diagram_M1, rod2_diagram_M1, rod3_diagram_M1, rod4_diagram_M1, rod5_diagram_M1, rod6_diagram_M1]
-        # m2 = [rod11_diagram_M2, rod12_diagram_M2, rod2_diagram_M2, rod3_diagram_M2, rod4_diagram_M2, rod5_diagram_M2, rod6_diagram_M2]
-        # m3 = [rod11_diagram_M3, rod12_diagram_M3, rod2_diagram_M3, rod3_diagram_M3, rod4_diagram_M3, rod5_diagram_M3, rod6_diagram_M3]
-        # mp = [rod11_diagram_Mp, rod12_diagram_Mp, rod2_diagram_Mp, rod3_diagram_Mp, rod4_diagram_Mp, rod5_diagram_Mp, rod6_diagram_Mp]
-        #
+
         rods = calculation_frame.rods
-        # i = 0
-        # for rod in rods:
-        #     rod.diagram_M1 = m1[i]
-        #     rod.diagram_M2 = m2[i]
-        #     rod.diagram_M3 = m3[i]
-        #     rod.diagram_Mp = mp[i]
-        #     i += 1
-
-
-
 
         print('-------"Эпюра Мs"-------')
         for rod in rods:
@@ -174,6 +130,17 @@ class BRGTUForceMethod(TaskPlugin):
             Ms_2 = rod.diagram_M1[1] + rod.diagram_M2[1] + rod.diagram_M3[1]
             rod.diagram_Ms = [round_up(Ms_1), round_up(Ms_2)]
             print(f'{rod} ------ {rod.diagram_Ms}')
+
+
+        fr = SolvableFrame(nodes=ps_nodes, rods=ps_rods, supports=ps_supports, loads=None).classify_part()
+        sf[f'sf_s'] = fr
+
+        fr.base_point = base_point
+        for entity in layout:
+            if entity.dxf.layer == 'Ms' and entity.dxftype() == 'VIEWPORT':
+                if entity:
+                    entity.dxf.view_center_point = (base_point[0], base_point[1], 0.0)
+
 
         odds_text = '\n\n'
         delta_11_text, delta_11 = calculation_frame.multiply_M_diagrams_by_Simpson('M1', 'M1')
@@ -205,8 +172,9 @@ class BRGTUForceMethod(TaskPlugin):
         print(f'Δ2p = {delta_2p_text}\n')
         print(f'Δ3p = {delta_3p_text}\n')
 
-        print('-------Универсальная проверка-------')
 
+
+        print('-------Универсальная проверка-------')
         universal_check = '\n\n'
         delta_ss_text, delta_ss = calculation_frame.multiply_M_diagrams_by_Simpson('Ms', 'Ms')
         universal_check += f'δ\\H0.5x;ss\\H2.0x; = {delta_ss_text}\n'
@@ -252,9 +220,6 @@ class BRGTUForceMethod(TaskPlugin):
 
         print(system_of_equations_1)
 
-
-
-
         # Матрица коэффициентов
         A = numpy.array([[delta_11, delta_12, delta_13],
                          [delta_12, delta_22, delta_23],
@@ -279,6 +244,7 @@ class BRGTUForceMethod(TaskPlugin):
                 entity.text = system_of_equations_2
 
 
+
         print('-------"Эпюра Мок"-------')
         for rod in rods:
             Mok_st = rod.diagram_M1[0] * x1 + rod.diagram_M2[0] * x2 + rod.diagram_M3[0] * x3 + rod.diagram_Mp[0]
@@ -293,7 +259,18 @@ class BRGTUForceMethod(TaskPlugin):
                 Mok_midl = m1 * x1 + m2 * x2 + m3 * x3 + rod.diagram_Mp[1]
                 rod.diagram_Mok = [round_up(Mok_st), round_up(Mok_midl), round_up(Mok_end)]
             print(f'{rod} ------ {rod.diagram_Mok}')
+
+        fr = SolvableFrame(nodes=ps_nodes, rods=ps_rods, supports=ps_supports, loads=None).classify_part()
+        sf[f'sf_ok'] = fr
+
+        fr.base_point = base_point
+        for entity in layout:
+            if entity.dxf.layer == 'Mok' and entity.dxftype() == 'VIEWPORT':
+                if entity:
+                    entity.dxf.view_center_point = (base_point[0], base_point[1], 0.0)
         print(f'\n')
+
+
 
         print('-------Деформационная проверка-------')
         deformation_check = '\n\n'
@@ -311,8 +288,6 @@ class BRGTUForceMethod(TaskPlugin):
         for entity in layout:
             if entity.dxf.layer == 'Деформационная проверка':
                 entity.text += deformation_check
-
-
 
 
 
@@ -335,6 +310,8 @@ class BRGTUForceMethod(TaskPlugin):
         for reaction in frame.finded_reactions:
             print(reaction)
         print(f'\n')
+
+
 
         print('-------Статическая проверка-------')
         static_check = '\n\n'
@@ -384,31 +361,11 @@ class BRGTUForceMethod(TaskPlugin):
             if entity.dxf.layer == 'Статическая проверка':
                 entity.text = static_check
 
-
-
-
-
         print(f'\n')
 
+
+
         print('-------Перемещение точки К-------')
-        # rod11_diagram_Mk = [0, 0]
-        # rod12_diagram_Mk = [0, 0]
-        # rod2_diagram_Mk = [2.25, 2.25, 1.4]
-        # rod3_diagram_Mk = [0, 2.25, 1.4]
-        # rod4_diagram_Mk = [2.25, 0]
-        # rod5_diagram_Mk = [0, 0]
-        # rod6_diagram_Mk = [0, 0]
-        #
-        #
-        # mk = [rod11_diagram_Mk, rod12_diagram_Mk, rod2_diagram_Mk, rod3_diagram_Mk, rod4_diagram_Mk, rod5_diagram_Mk, rod6_diagram_Mk]
-        #
-        # rods = calculation_frame.rods
-        # i = 0
-        # for rod in rods:
-        #     rod.diagram_Mk = mk[i]
-        #     i += 1
-
-
         delta_kok_text, delta_kok = calculation_frame.multiply_M_diagrams_by_Simpson('Mk', 'Mok')
         delta_k_text = f'Δ\\H0.5x;k\\H2.0x; = {delta_kok_text}\n'
         print(f'Δk = {delta_kok_text}\n')

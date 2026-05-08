@@ -123,13 +123,14 @@ def draw_frame(frame: Frame, base_point: List[float], msp, diagram_name: str = N
         insert_point = (support.node.x + base_point[0], support.node.y + base_point[1])
         msp = support.drow(insert_point, msp)
 
-    for load in frame.loads:
-        if isinstance(load, (Force, Momentum)):
-            insert_point = (load.node.x + base_point[0], load.node.y + base_point[1])
-            msp = load.drow(insert_point, msp)
-        elif isinstance(load, DistributedForce):
-            insert_point = (load.center()[0] + base_point[0], load.center()[1] + base_point[1])
-            msp = load.drow(insert_point, msp)
+    if frame.loads:
+        for load in frame.loads:
+            if isinstance(load, (Force, Momentum)):
+                insert_point = (load.node.x + base_point[0], load.node.y + base_point[1])
+                msp = load.drow(insert_point, msp)
+            elif isinstance(load, DistributedForce):
+                insert_point = (load.center()[0] + base_point[0], load.center()[1] + base_point[1])
+                msp = load.drow(insert_point, msp)
 
     for reaction in frame.finded_reactions:
         insert_point = (reaction.node.x + base_point[0], reaction.node.y + base_point[1])
@@ -170,6 +171,9 @@ def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp,
     # Вычисляем глобальные координаты стержня
     start_point = Vec2(rod.start_node.x + base_point[0], rod.start_node.y + base_point[1])
     end_point = Vec2(rod.end_node.x + base_point[0], rod.end_node.y + base_point[1])
+    if len(diagram) == 3:
+        mdl = rod.middle()
+        middle_pint = Vec2(mdl[0] + base_point[0], mdl[1] + base_point[1])
 
     # Определяем вектор стержня и его длину
     rod_vector = end_point - start_point
@@ -184,7 +188,10 @@ def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp,
 
     # Получаем значения моментов
     M_start = diagram[0]
-    M_end = diagram[1]
+    M_end = diagram[-1]
+    if len(diagram) == 3:
+        M_mdl = diagram[1]
+
 
     # Определяем знаки и нормализуем значения
     # Для горизонтального стержня: + вверх, - вниз
@@ -277,4 +284,3 @@ def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp,
         msp.add_text(f"{abs(M_end)}", dxfattribs={'layer': 'diagram M', 'height': 0.2, 'color': 3}).set_placement(text_point)
 
     return msp
-

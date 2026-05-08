@@ -51,6 +51,11 @@ class Rod:
         dy = self.end_node.y - self.start_node.y
         return math.fabs(dy)
 
+    def middle(self) -> Tuple[float, float]:
+        x = (self.start_node.x + self.end_node.x) / 2
+        y = (self.start_node.y + self.end_node.y) / 2
+        return x, y
+
     def length(self) -> float:
         dx = self.dx()
         dy = self.dy()
@@ -222,8 +227,7 @@ class Rod:
         else:
             raise Exception(f'Такое название нагрузок ({diagram_name}) не определено')
 
-
-
+        finding_moments = []
         for section in self.sort_sections():
             section_moment, section_equation = section.sum_momentum_about_section()
             sign = self.determine_sign_of_section_m()
@@ -231,7 +235,15 @@ class Rod:
                 diagram.append(section_moment)
             else:
                 diagram.append(section_moment * sign)
+            finding_moments.append(section_equation)
             print(section_equation)
+
+        report = ''
+        for i in finding_moments:
+            report += f'{i}\n'
+        report.strip('\n')
+
+        return report
 
 
     def multiply_diagrams_Simpson(self, diagram_1_name, diagram_2_name, q: float | None = None):

@@ -114,10 +114,15 @@ def draw_frame(frame: Frame, base_point: List[float], msp, diagram_name: str = N
     for rod in frame.rods:
         draw_rod(rod, base_point, msp)
         if diagram_name:
-            max_value = frame.find_max_value_diagram_m(diagram_name=diagram_name)
+            max_value = frame.find_max_value_on_diagram(diagram_name=diagram_name)
             scale = 2 / max_value
-            diagram = rod.__getattribute__(f'diagram_M{diagram_name}')
-            draw_diagram_m(rod=rod, base_point=base_point, diagram=diagram, msp=msp, scale=scale)
+            diagram = rod.__getattribute__(f'diagram_{diagram_name}')
+            if diagram_name.startswith('M'):
+                draw_diagram_m(rod=rod, base_point=base_point, diagram=diagram, msp=msp, scale=scale)
+            elif diagram_name.startswith('Q'):
+                if diagram:
+                    draw_diagram_q(rod=rod, base_point=base_point, diagram=diagram, msp=msp, scale=scale)
+
 
     for support in frame.supports:
         insert_point = (support.node.x + base_point[0], support.node.y + base_point[1])
@@ -282,5 +287,127 @@ def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp,
 
         text_point = end_point + offset_dir * abs(M_end) * scale
         msp.add_text(f"{abs(M_end)}", dxfattribs={'layer': 'diagram M', 'height': 0.2, 'color': 3}).set_placement(text_point)
+
+    return msp
+
+def draw_diagram_q(rod: Rod, base_point: List[float], diagram: List[float], msp, scale: float = 1.0):
+    """
+    Отрисовка эпюры моментов.
+
+    Args:
+        rod: стержень с узлами (должен иметь start_node и end_node с атрибутами x, y)
+        base_point: базовая точка рамы [x, y]
+        diagram: список из двух значений [Q_start, Q_end] (начало и конец стержня)
+        msp: пространство листа ezdxf (Model Space)
+        scale: масштаб эпюры (коэффициент)
+    """
+    # Вычисляем глобальные координаты стержня
+    start_point = Vec2(rod.start_node.x + base_point[0], rod.start_node.y + base_point[1])
+    end_point = Vec2(rod.end_node.x + base_point[0], rod.end_node.y + base_point[1])
+
+    # Определяем вектор стержня и его длину
+    rod_vector = end_point - start_point
+    length = rod.length()
+
+    if length < 1e-6:
+        return  # Стержень нулевой длины
+
+    # Определяем ориентацию стержня
+    is_horizontal = abs(rod_vector.y) < 1e-6  # Горизонтальный
+    is_vertical = abs(rod_vector.x) < 1e-6  # Вертикальный
+
+    # Получаем значения моментов
+    Q_start = diagram[0]
+    Q_end = diagram[-1]
+
+    # Определяем знаки и нормализуем значения
+    # Для горизонтального стержня: + вверх, - вниз
+    # Для вертикального стержня: + влево, - вправо
+
+    # Рассчитываем локальные координаты для эпюры
+    num_segments = 1  # Количество сегментов для интерполяции
+    points = [start_point]
+
+    for i in range(num_segments + 1):
+        t = i / num_segments  # параметр от 0 до 1
+
+        # Точка на стержне
+        point_on_rod = start_point.lerp(end_point, t)
+
+        # Интерполяция момента (линейная)
+        Q = Q_start * (1 - t) + Q_end * t
+
+        # Определяем направление отступа
+        if is_horizontal:
+            # Для горизонтального стержня: положительный момент - вверх (увеличиваем y)
+            offset_direction = Vec2(0, 1) if Q >= 0 else Vec2(0, -1)
+            offset_value = abs(Q) * scale
+            diagram_point = point_on_rod + offset_direction * offset_value
+        elif is_vertical:
+            # Для вертикального стержня: положительный момент - влево (уменьшаем x)
+            offset_direction = Vec2(-1, 0) if Q >= 0 else Vec2(1, 0)
+            offset_value = abs(Q) * scale
+            diagram_point = point_on_rod + offset_direction * offset_value
+        else:
+            # Наклонный стержень: перпендикулярное направление
+            # Нормализуем вектор стержня и находим перпендикуляр
+            rod_dir = rod_vector.normalize()
+            # Перпендикуляр (поворот на 90 градусов)
+            perpendicular = Vec2(-rod_dir.y, rod_dir.x)
+            # Положительный момент в одну сторону, отрицательный - в другую
+            offset_direction = perpendicular if Q >= 0 else -perpendicular
+            offset_value = abs(Q) * scale
+            diagram_point = point_on_rod + offset_direction * offset_value
+
+        points.append(diagram_point)
+    points.append(end_point)
+
+    # Рисуем эпюру как полилинию
+    if len(points) > 1:
+        polyline = msp.add_lwpolyline(points, dxfattribs={'layer': 'diagram Q', 'color': 3, 'linetype': 'CONTINUOUS'})
+        polyline.closed = True
+
+    perpendicular_angle = find_perpendicular_angle(start_point=start_point, end_point=end_point)
+
+    hatch = msp.add_hatch(color=3)
+
+    hatch.dxf.pattern_name = 'LINE'
+    hatch.dxf.pattern_angle = perpendicular_angle
+    hatch.dxf.pattern_scale = 0.05
+
+    # Добавляем весь контур целиком
+    hatch.paths.add_polyline_path(points, is_closed=True)
+
+    # Рисуем базовую линию (стержень) для справки (опционально)
+    # msp.add_line(start_point, end_point, dxfattribs={'color': 7, 'linetype': 'DASHED'})
+
+    # Добавляем подписи значений (опционально)
+    # Подпись в начале стержня
+    if abs(Q_start) > 0.01:
+        if is_horizontal:
+            offset_dir = Vec2(0, 1) if Q_start >= 0 else Vec2(0, -1)
+        elif is_vertical:
+            offset_dir = Vec2(-1, 0) if Q_start >= 0 else Vec2(1, 0)
+        else:
+            rod_dir = rod_vector.normalize()
+            perpendicular = Vec2(-rod_dir.y, rod_dir.x)
+            offset_dir = perpendicular if Q_start >= 0 else -perpendicular
+
+        text_point = start_point + offset_dir * abs(Q_start) * scale
+        msp.add_text(f"{Q_start}", dxfattribs={'layer': 'diagram Q', 'height': 0.2, 'color': 3}).set_placement(text_point)
+
+    # Подпись в конце стержня
+    if abs(Q_end) > 0.01:
+        if is_horizontal:
+            offset_dir = Vec2(0, 1) if Q_end >= 0 else Vec2(0, -1)
+        elif is_vertical:
+            offset_dir = Vec2(-1, 0) if Q_end >= 0 else Vec2(1, 0)
+        else:
+            rod_dir = rod_vector.normalize()
+            perpendicular = Vec2(-rod_dir.y, rod_dir.x)
+            offset_dir = perpendicular if Q_end >= 0 else -perpendicular
+
+        text_point = end_point + offset_dir * abs(Q_end) * scale
+        msp.add_text(f"{Q_end}", dxfattribs={'layer': 'diagram Q', 'height': 0.2, 'color': 3}).set_placement(text_point)
 
     return msp

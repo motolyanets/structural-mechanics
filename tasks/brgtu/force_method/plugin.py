@@ -1,13 +1,12 @@
+from copy import deepcopy
 from typing import Dict, Any
 
 import ezdxf
 import numpy
 from ezdxf import zoom
 
-from core.mechanics.frame import Frame
-from core.mechanics.rod import Rod
 from core.mechanics.solver import SolvableFrame
-from services.authocad import draw_frame, draw_diagram_m
+from services.authocad import draw_frame
 from services.services import round_up, relative_error_percent
 from tasks.base import TaskPlugin
 from tasks.brgtu.force_method.loader import ForceMethodLoader
@@ -98,7 +97,7 @@ class BRGTUForceMethod(TaskPlugin):
         calculation_frame = SolvableFrame(nodes=ps_nodes, rods=ps_rods, supports=ps_supports, loads=loads)
         for load in ps_loads:
             fr = SolvableFrame(nodes=ps_nodes, rods=ps_rods, supports=ps_supports, loads=ps_loads[load])
-            sf[f'sf_{load}'] = fr.classify_part()
+            sf[f'sf_M{load}'] = fr.classify_part()
 
         for f in sf:
             print(f)
@@ -108,14 +107,15 @@ class BRGTUForceMethod(TaskPlugin):
             frame_1.create_sections_for_diagrams()
             finding_moments_report = ''
             for rod in frame_1.rods:
-                section_equation = rod.calculate_diagram_m(f'{f[3:]}')
-                print(rod.__getattribute__(f'diagram_M{f[3:]}'))
+                section_equation = rod.calculate_diagram_m(f'{f[4:]}')
                 finding_moments_report += section_equation + '\n'
+            finding_moments_report = finding_moments_report.replace('\n\n', '\n')
+            finding_moments_report = finding_moments_report.replace('= =', '=')
 
             for entity in layout:
                 if entity.dxf.layer == f and entity.dxftype() == 'VIEWPORT':
                     if entity:
-                        entity.dxf.view_center_point = (base_point[0], base_point[1], 0.0)
+                        entity.dxf.view_center_point = (frame_1.base_point[0], frame_1.base_point[1], 0.0)
                 elif entity.dxf.layer == f'{f} нахождение опорных реакций':
                     entity.text = report
                 elif entity.dxf.layer == f'{f} расчет эпюры моментов':
@@ -133,7 +133,7 @@ class BRGTUForceMethod(TaskPlugin):
 
 
         fr = SolvableFrame(nodes=ps_nodes, rods=ps_rods, supports=ps_supports, loads=None).classify_part()
-        sf[f'sf_s'] = fr
+        sf[f'sf_Ms'] = fr
 
         fr.base_point = base_point
         for entity in layout:
@@ -261,7 +261,7 @@ class BRGTUForceMethod(TaskPlugin):
             print(f'{rod} ------ {rod.diagram_Mok}')
 
         fr = SolvableFrame(nodes=ps_nodes, rods=ps_rods, supports=ps_supports, loads=None).classify_part()
-        sf[f'sf_ok'] = fr
+        sf[f'sf_Mok'] = fr
 
         fr.base_point = base_point
         for entity in layout:
@@ -292,13 +292,35 @@ class BRGTUForceMethod(TaskPlugin):
 
 
         print('-------"Эпюра Q"-------')
+        calculating_Q_report = ''
+        i = 1
         for rod in rods:
+            Q = (rod.diagram_Mok[0] - rod.diagram_Mok[-1]) / rod.length()
             if len(rod.diagram_Mok) == 2:
-                Q = (rod.diagram_Mok[0] - rod.diagram_Mok[1]) / rod.length()
+                report = f'Q{i} = ({rod.diagram_Mok[0]} - {rod.diagram_Mok[-1]}) / {rod.length()} = {round_up(Q)} кН'
                 rod.diagram_Q = [round_up(Q), round_up(Q)]
-            else:
-                rod.diagram_Q = []
+            elif len(rod.diagram_Mok) == 3:
+                q = params['q']
+                Q1 = Q + q * rod.length() / 2
+                Q2 = Q - q * rod.length() / 2
+                report = (f'Q{i} = ({rod.diagram_Mok[0]} - {rod.diagram_Mok[-1]}) / {rod.length()} + {q} · {rod.length()} / 2 = {round_up(Q1)} кН\n'
+                          f'Q{i} = ({rod.diagram_Mok[0]} - {rod.diagram_Mok[-1]}) / {rod.length()} - {q} · {rod.length()} / 2 = {round_up(Q2)} кН')
+                rod.diagram_Q = [round_up(Q1), round_up(Q2)]
+            calculating_Q_report += report + '\n'
+            i += 1
             print(f'{rod} ------ {rod.diagram_Q}')
+
+        fr = SolvableFrame(nodes=ps_nodes, rods=ps_rods, supports=ps_supports, loads=None).classify_part()
+        sf[f'sf_Q'] = fr
+
+        fr.base_point = base_point
+        for entity in layout:
+            if entity.dxf.layer == 'Q' and entity.dxftype() == 'VIEWPORT':
+                if entity:
+                    entity.dxf.view_center_point = (base_point[0], base_point[1], 0.0)
+            elif entity.dxf.layer == 'Расчет эпюры Q':
+                entity.text = calculating_Q_report
+
 
         r = [4.65, -1.09, 9.8, -0.05, -5.95, -0.17, -0.05, -5.95, -0.17, 1.09, 9.8, 4.65]
         i = 0
@@ -310,7 +332,6 @@ class BRGTUForceMethod(TaskPlugin):
         for reaction in frame.finded_reactions:
             print(reaction)
         print(f'\n')
-
 
 
         print('-------Статическая проверка-------')
@@ -363,8 +384,6 @@ class BRGTUForceMethod(TaskPlugin):
 
         print(f'\n')
 
-
-
         print('-------Перемещение точки К-------')
         delta_kok_text, delta_kok = calculation_frame.multiply_M_diagrams_by_Simpson('Mk', 'Mok')
         delta_k_text = f'Δ\\H0.5x;k\\H2.0x; = {delta_kok_text}\n'
@@ -378,6 +397,10 @@ class BRGTUForceMethod(TaskPlugin):
             frame_1 = sf[f]
             frame_1, msp, base_point = draw_frame(frame=frame_1, base_point=base_point, msp=msp, diagram_name=f[3:])
 
+            for entity in layout:
+                if entity.dxf.layer == f and entity.dxftype() == 'VIEWPORT':
+                    if entity:
+                        entity.dxf.view_center_point = (frame_1.base_point[0], frame_1.base_point[1], 0.0)
 
         zoom.extents(msp)
         doc.saveas(f'report.dxf')

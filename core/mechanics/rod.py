@@ -254,7 +254,6 @@ class Rod:
         stiffness = self.stiffness
 
         multiplied_diagram = []
-        print(diagram_1, diagram_2)
 
         d1_start = diagram_1[0]
         d1_center = round_up((diagram_1[0] + diagram_1[-1]) / 2, 3)

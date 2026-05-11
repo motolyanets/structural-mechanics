@@ -43,7 +43,7 @@ $EXTMAX
  10
 11.77293077957258
  20
-5.556343792633013
+10.28284550695166
  30
 0.0
   9
@@ -501,19 +501,19 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461169.652280093
+2461172.673854167
   9
 $TDUUPDATE
  40
-2461169.527280093
+2461172.548854167
   9
 $TDINDWG
  40
-2.7318634259
+2.8311458333
   9
 $TDUSRTIMER
  40
-2.7318634259
+2.8311458333
   9
 $USRTIMER
  70
@@ -553,7 +553,7 @@ $SPLINESEGS
   9
 $HANDSEED
   5
-E00
+EFD
   9
 $SURFTAB1
  70
@@ -937,7 +937,7 @@ $FINGERPRINTGUID
   9
 $VERSIONGUID
   2
-{03555FB8-05CF-FE41-B70A-92A750920FA5}
+{EF4EF148-3ED0-554E-9EC9-C5C10BBF94D9}
   9
 $EXTNAMES
 290
@@ -1247,7 +1247,7 @@ ObjectDBX Classes
  90
      1152
  91
-        7
+        4
 280
      0
 281
@@ -1407,7 +1407,7 @@ ObjectDBX Classes
  90
      1153
  91
-        1
+        0
 280
      0
 281
@@ -1423,7 +1423,7 @@ AcAeEditorObj
  90
      1024
  91
-        1
+        0
 280
      0
 281
@@ -1455,7 +1455,7 @@ ObjectDBX Classes
  90
      1153
  91
-        1
+        0
 280
      0
 281
@@ -1647,7 +1647,7 @@ ObjectDBX Classes
  90
         0
  91
-        6
+        3
 280
      0
 281
@@ -1747,9 +1747,9 @@ AcDbViewportTableRecord
  21
 1.0
  12
-11.93251150435238
+13.61689544386083
  22
-5.231030482925024
+3.65767105823825
  13
 0.0
  23
@@ -1775,7 +1775,7 @@ AcDbViewportTableRecord
  37
 0.0
  40
-1.488448837295089
+25.17431240812511
  41
 2.470827679782903
  42
@@ -1865,7 +1865,7 @@ LTYPE
 100
 AcDbSymbolTable
  70
-     1
+     2
   0
 LTYPE
   5
@@ -1951,7 +1951,7 @@ LAYER
 100
 AcDbSymbolTable
  70
-    33
+    35
   0
 LAYER
   5
@@ -2239,7 +2239,7 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-sf_1
+sf_M1
  70
      0
  62
@@ -2275,7 +2275,7 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-sf_2
+sf_M2
  70
      0
  62
@@ -2311,7 +2311,7 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-sf_3
+sf_M3
  70
      0
  62
@@ -2347,7 +2347,7 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-sf_p
+sf_Mp
  70
      0
  62
@@ -2383,7 +2383,7 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-sf_K
+sf_Mk
  70
      0
  62
@@ -2419,7 +2419,7 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-sf_1 нахождение опорных реакций
+sf_M1 нахождение опорных реакций
  70
      0
  62
@@ -2455,7 +2455,7 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-sf_2 нахождение опорных реакций
+sf_M2 нахождение опорных реакций
  70
      0
  62
@@ -2491,7 +2491,7 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-sf_3 нахождение опорных реакций
+sf_M3 нахождение опорных реакций
  70
      0
  62
@@ -2527,7 +2527,7 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-sf_p нахождение опорных реакций
+sf_Mp нахождение опорных реакций
  70
      0
  62
@@ -2563,7 +2563,7 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-sf_K нахождение опорных реакций
+sf_Mk нахождение опорных реакций
  70
      0
  62
@@ -2887,7 +2887,7 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-Mok
+sf_Mok
  70
      0
  62
@@ -2923,7 +2923,7 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-Ms
+sf_Ms
  70
      0
  62
@@ -2959,7 +2959,7 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-sf_1 расчет эпюры моментов
+sf_M1 расчет эпюры моментов
  70
      0
  62
@@ -2995,7 +2995,7 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-sf_2 расчет эпюры моментов
+sf_M2 расчет эпюры моментов
  70
      0
  62
@@ -3031,7 +3031,7 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-sf_3 расчет эпюры моментов
+sf_M3 расчет эпюры моментов
  70
      0
  62
@@ -3067,7 +3067,7 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-sf_K расчет эпюры моментов
+sf_Mk расчет эпюры моментов
  70
      0
  62
@@ -3103,7 +3103,79 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-sf_p расчет эпюры моментов
+sf_Mp расчет эпюры моментов
+ 70
+     0
+ 62
+     7
+  6
+Continuous
+370
+    -3
+390
+F
+347
+EE
+348
+0
+1001
+AcAecLayerStandard
+1000
+
+1000
+
+1001
+AcCmTransparency
+1071
+        0
+  0
+LAYER
+  5
+E2B
+330
+2
+100
+AcDbSymbolTableRecord
+100
+AcDbLayerTableRecord
+  2
+sf_Q
+ 70
+     0
+ 62
+     7
+  6
+Continuous
+370
+    -3
+390
+F
+347
+EE
+348
+0
+1001
+AcAecLayerStandard
+1000
+
+1000
+
+1001
+AcCmTransparency
+1071
+        0
+  0
+LAYER
+  5
+ED0
+330
+2
+100
+AcDbSymbolTableRecord
+100
+AcDbLayerTableRecord
+  2
+Расчет эпюры Q
  70
      0
  62
@@ -3189,7 +3261,7 @@ VIEW
 100
 AcDbSymbolTable
  70
-     7
+     4
   0
 ENDTAB
   0
@@ -3763,7 +3835,7 @@ BLOCK_RECORD
 100
 AcDbSymbolTable
  70
-    17
+    13
   0
 BLOCK_RECORD
   5
@@ -8293,6 +8365,96 @@ AcDbBlockReference
  30
 0.0
   0
+HATCH
+  5
+EAE
+330
+1F
+100
+AcDbEntity
+  8
+0
+ 62
+     3
+100
+AcDbHatch
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+210
+0.0
+220
+0.0
+230
+1.0
+  2
+LINE
+ 70
+     0
+ 71
+     0
+ 91
+        1
+ 92
+        3
+ 72
+     0
+ 73
+     1
+ 93
+        5
+ 10
+2.421446029740536
+ 20
+6.804310223567483
+ 10
+1.615968801208495
+ 20
+8.634940288413014
+ 10
+4.237429653129993
+ 20
+9.458892897682339
+ 10
+6.858890505051491
+ 20
+10.28284550695166
+ 10
+7.421446029740536
+ 20
+9.004310223567483
+ 97
+        0
+ 75
+     0
+ 76
+     1
+ 52
+0.0
+ 41
+0.1
+ 77
+     0
+ 78
+     1
+ 53
+0.0
+ 43
+0.0
+ 44
+0.0
+ 45
+0.0
+ 46
+0.3175
+ 79
+     0
+ 98
+        0
+  0
 VIEWPORT
   5
 8E2
@@ -8315,23 +8477,23 @@ F5
 100
 AcDbViewport
  10
-2345.52340235132
+977.620860389401
  20
-203.3610932791353
+46.82817020081841
  30
 0.0
  40
-204.2632826160375
+320.1892811038106
  41
-82.66998313455225
+129.5878639063747
  68
      1
  69
      1
  12
-2345.52340235132
+977.620860389401
  22
-203.3610932791353
+46.82817020081841
  13
 0.0
  23
@@ -8363,7 +8525,7 @@ AcDbViewport
  44
 0.0
  45
-82.66998313455225
+129.5878639063747
  50
 0.0
  51
@@ -9287,7 +9449,7 @@ AcDbEntity
  67
      1
   8
-sf_1
+sf_M1
 348
 F5
 100
@@ -9529,7 +9691,7 @@ AcDbEntity
  67
      1
   8
-sf_2
+sf_M2
 348
 F5
 100
@@ -9657,7 +9819,7 @@ AcDbEntity
  67
      1
   8
-sf_3
+sf_M3
 348
 F5
 100
@@ -9673,7 +9835,7 @@ AcDbViewport
  41
 72.72649760734076
  68
-    -1
+    10
  69
      7
  12
@@ -9863,7 +10025,7 @@ AcDbEntity
  67
      1
   8
-Ms
+sf_Ms
 348
 F5
 100
@@ -10183,7 +10345,7 @@ AcDbEntity
  67
      1
   8
-sf_p
+sf_Mp
 348
 F5
 100
@@ -10889,7 +11051,7 @@ AcDbEntity
  67
      1
   8
-Mok
+sf_Mok
 348
 F5
 100
@@ -11345,7 +11507,7 @@ AcDbViewport
  41
 106.2743128621628
  68
-    11
+    -1
  69
     11
  12
@@ -11699,7 +11861,7 @@ AcDbEntity
  67
      1
   8
-Defpoints
+sf_Q
 348
 F5
 100
@@ -11955,7 +12117,7 @@ AcDbEntity
  67
      1
   8
-sf_K
+sf_Mk
 348
 F5
 100
@@ -11971,7 +12133,7 @@ AcDbViewport
  41
 72.56976154206904
  68
-    15
+    -1
  69
     15
  12
@@ -12197,7 +12359,7 @@ AcDbEntity
  67
      1
   8
-sf_1 нахождение опорных реакций
+sf_M1 нахождение опорных реакций
 100
 AcDbMText
  10
@@ -12509,7 +12671,7 @@ AcDbEntity
  67
      1
   8
-sf_2 нахождение опорных реакций
+sf_M2 нахождение опорных реакций
 100
 AcDbMText
  10
@@ -12821,7 +12983,7 @@ AcDbEntity
  67
      1
   8
-sf_3 нахождение опорных реакций
+sf_M3 нахождение опорных реакций
 100
 AcDbMText
  10
@@ -13133,7 +13295,7 @@ AcDbEntity
  67
      1
   8
-sf_p нахождение опорных реакций
+sf_Mp нахождение опорных реакций
 100
 AcDbMText
  10
@@ -13757,7 +13919,7 @@ AcDbEntity
  67
      1
   8
-sf_K нахождение опорных реакций
+sf_Mk нахождение опорных реакций
 100
 AcDbMText
  10
@@ -14303,7 +14465,7 @@ AcDbEntity
  67
      1
   8
-sf_1 расчет эпюры моментов
+sf_M1 расчет эпюры моментов
 100
 AcDbMText
  10
@@ -14381,11 +14543,11 @@ AcDbEntity
  67
      1
   8
-sf_2 расчет эпюры моментов
+sf_M2 расчет эпюры моментов
 100
 AcDbMText
  10
-870.6505234383548
+870.6505234383547
  20
 207.6058282588251
  30
@@ -14459,7 +14621,7 @@ AcDbEntity
  67
      1
   8
-sf_3 расчет эпюры моментов
+sf_M3 расчет эпюры моментов
 100
 AcDbMText
  10
@@ -14537,7 +14699,7 @@ AcDbEntity
  67
      1
   8
-sf_p расчет эпюры моментов
+sf_Mp расчет эпюры моментов
 100
 AcDbMText
  10
@@ -14615,7 +14777,7 @@ AcDbEntity
  67
      1
   8
-sf_K расчет эпюры моментов
+sf_Mk расчет эпюры моментов
 100
 AcDbMText
  10
@@ -14636,6 +14798,84 @@ AcDbMText
      5
   1
 \A1;Опорные реакции:
+ 73
+     1
+ 44
+1.0
+1001
+ACAD
+1000
+ACAD_MTEXT_COLUMN_INFO_BEGIN
+1070
+    75
+1070
+     2
+1070
+    79
+1070
+     0
+1070
+    76
+1070
+     1
+1070
+    78
+1070
+     0
+1070
+    48
+1040
+95.8686864485835
+1070
+    49
+1040
+12.5
+1070
+    50
+1070
+     1
+1040
+0.0
+1000
+ACAD_MTEXT_COLUMN_INFO_END
+  0
+MTEXT
+  5
+ECD
+102
+{ACAD_XDICTIONARY
+360
+ECE
+102
+}
+330
+D2
+100
+AcDbEntity
+ 67
+     1
+  8
+Расчет эпюры Q
+100
+AcDbMText
+ 10
+1872.347720989843
+ 20
+196.1392811046616
+ 30
+0.0
+ 40
+2.5
+ 41
+95.8686864485835
+ 46
+0.0
+ 71
+     1
+ 72
+     5
+  1
+\A1;Расчет эпюры Q
  73
      1
  44
@@ -14755,7 +14995,7 @@ EF
   3
 ACDB_RECOMPOSE_DATA
 350
-DF3
+EF0
   3
 AcDbVariableDictionary
 350
@@ -14763,7 +15003,7 @@ AcDbVariableDictionary
   3
 AcDsDecomposeData
 350
-DF9
+EF6
   3
 AEC_PROPERTY_SET_DEFS
 350
@@ -14935,7 +15175,7 @@ AcDbDictionary
   3
 ACAD_MTEXT_2008_RT
 360
-DF2
+EEF
   0
 DICTIONARY
   5
@@ -15757,6 +15997,18 @@ AcDbDictionary
 281
      1
   0
+DICTIONARY
+  5
+ECE
+330
+ECD
+100
+AcDbDictionary
+280
+     1
+281
+     1
+  0
 XRECORD
   5
 216
@@ -15777,7 +16029,7 @@ ACD
 300
 2019
 300
-ACD_F_S
+
   0
 DICTIONARY
   5
@@ -16245,7 +16497,7 @@ X-Ray
   0
 XRECORD
   5
-DF3
+EF0
 102
 {ACAD_REACTORS
 330
@@ -16384,6 +16636,8 @@ DD4
 DDE
 330
 DE8
+330
+ECD
   0
 DICTIONARY
   5
@@ -16447,7 +16701,7 @@ LAYERNOTIFY
   0
 DICTIONARY
   5
-DF9
+EF6
 102
 {ACAD_REACTORS
 330
@@ -16463,11 +16717,11 @@ AcDbDictionary
   3
 AcDsRecords
 350
-DFB
+EF8
   3
 AcDsSchemas
 350
-DFA
+EF7
 1001
 ACAD
 1070
@@ -16667,7 +16921,7 @@ AcDbXrecord
   0
 XRECORD
   5
-DF2
+EEF
 102
 {ACAD_REACTORS
 330
@@ -16951,7 +17205,7 @@ ACDBDETAILVIEWSTYLE
 102
 {ACAD_XDICTIONARY
 360
-DFE
+EFB
 102
 }
 102
@@ -18563,7 +18817,7 @@ ACDBSECTIONVIEWSTYLE
 102
 {ACAD_XDICTIONARY
 360
-DFC
+EF9
 102
 }
 102
@@ -25469,15 +25723,15 @@ DictionaryVariables
   0
 DICTIONARY
   5
-DFB
+EF8
 102
 {ACAD_REACTORS
 330
-DF9
+EF6
 102
 }
 330
-DF9
+EF6
 100
 AcDbDictionary
 281
@@ -25485,39 +25739,39 @@ AcDbDictionary
   0
 DICTIONARY
   5
-DFA
+EF7
 102
 {ACAD_REACTORS
 330
-DF9
+EF6
 102
 }
 330
-DF9
+EF6
 100
 AcDbDictionary
 281
      1
   3
-1762504076480
+1978856272784
 350
-DF4
+EF1
   3
-1762504076496
+1978856272800
 350
-DF5
+EF2
   3
-1762504076512
+1978856272816
 350
-DF6
+EF3
   3
-1762504076528
+1978856272832
 350
-DF7
+EF4
   3
-1762504076544
+1978856272848
 350
-DF8
+EF5
   0
 XRECORD
   5
@@ -25793,7 +26047,7 @@ DFDD729855E51A446D79C0146B3A4BB9F5507623FC7719A03741EDDB2CE289279E304FC31D85EBDB
   0
 DICTIONARY
   5
-DFE
+EFB
 330
 21C
 100
@@ -25805,7 +26059,7 @@ AcDbDictionary
   3
 ACAD_XREC_ROUNDTRIP
 360
-DFF
+EFC
   0
 DICTIONARY
   5
@@ -25885,7 +26139,7 @@ REFLECTIONTILE
   0
 DICTIONARY
   5
-DFC
+EF9
 330
 21A
 100
@@ -25897,7 +26151,7 @@ AcDbDictionary
   3
 ACAD_XREC_ROUNDTRIP
 360
-DFD
+EFA
   0
 DICTIONARY
   5
@@ -25913,19 +26167,19 @@ AcDbDictionary
   3
 ACAD_ROUNDTRIP_2008_TABLESTYLE_CELLSTYLEMAP
 360
-DF1
+EEE
   0
 XRECORD
   5
-DF4
+EF1
 102
 {ACAD_REACTORS
 330
-DFA
+EF7
 102
 }
 330
-DFA
+EF7
 100
 AcDbXrecord
 280
@@ -25935,7 +26189,7 @@ AcDb_Thumbnail_Schema
 102
 {ATTRRECORD
 341
-DF5
+EF2
   2
 AcDbDs::TreatedAsObjectData
 280
@@ -25947,7 +26201,7 @@ ATTRRECORD}
 102
 {ATTRRECORD
 341
-DF6
+EF3
   2
 AcDbDs::Legacy
 280
@@ -25965,7 +26219,7 @@ AcDbDs::ID
 102
 {ATTRRECORD
 341
-DF7
+EF4
   2
 AcDs:Indexable
 280
@@ -25977,7 +26231,7 @@ ATTRRECORD}
 102
 {ATTRRECORD
 341
-DF8
+EF5
   2
 AcDbDs::HandleAttribute
 280
@@ -25995,15 +26249,15 @@ Thumbnail_Data
   0
 XRECORD
   5
-DF5
+EF2
 102
 {ACAD_REACTORS
 330
-DFA
+EF7
 102
 }
 330
-DFA
+EF7
 100
 AcDbXrecord
 280
@@ -26019,15 +26273,15 @@ AcDbDs::TreatedAsObjectData
   0
 XRECORD
   5
-DF6
+EF3
 102
 {ACAD_REACTORS
 330
-DFA
+EF7
 102
 }
 330
-DFA
+EF7
 100
 AcDbXrecord
 280
@@ -26043,15 +26297,15 @@ AcDbDs::Legacy
   0
 XRECORD
   5
-DF7
+EF4
 102
 {ACAD_REACTORS
 330
-DFA
+EF7
 102
 }
 330
-DFA
+EF7
 100
 AcDbXrecord
 280
@@ -26067,15 +26321,15 @@ AcDs:Indexable
   0
 XRECORD
   5
-DF8
+EF5
 102
 {ACAD_REACTORS
 330
-DFA
+EF7
 102
 }
 330
-DFA
+EF7
 100
 AcDbXrecord
 280
@@ -26093,15 +26347,15 @@ AcDbDs::HandleAttribute
   0
 XRECORD
   5
-DFF
+EFC
 102
 {ACAD_REACTORS
 330
-DFE
+EFB
 102
 }
 330
-DFE
+EFB
 100
 AcDbXrecord
 280
@@ -27259,15 +27513,15 @@ AcDbXrecord
   0
 XRECORD
   5
-DFD
+EFA
 102
 {ACAD_REACTORS
 330
-DFC
+EF9
 102
 }
 330
-DFC
+EF9
 100
 AcDbXrecord
 280
@@ -27283,7 +27537,7 @@ FLAGS
   0
 CELLSTYLEMAP
   5
-DF1
+EEE
 102
 {ACAD_REACTORS
 330
@@ -28115,9 +28369,9 @@ FF3366FF6666FF9966FFCC66FFFF9900009900339900669900999900CC9900FF9933009933339933
 310
 FF3366FF3399FF33CCFF33FFFF6600FF6633FF6666FF6699FF66CCFF66FFFF9900FF9933FF9966FF9999FF99CCFF99FFFFCC00FFCC33FFCC66FFCC99FFCCCCFFCCFFFFFF00FFFF33FFFF66FFFF99FFFFCCFFFFFF0000000D0D0D1A1A1A2828283535354343435050505D5D5D6B6B6B787878868686939393A1A1A1AEAEAEBB
 310
-BBBBC9C9C9D6D6D6E4E4E4F1F1F1FFFFFF0000000000000000000000000000000000000000000000000000000000002E4550F1000000AA4944415478DAEDD83112C2300C45C1DCFF50BE957A289814494CA546F9BB251D6F2CCB701C0000000000000000000010A41450A02AFD0054FA0854FA2550F197803BC01D600DB659
+BBBBC9C9C9D6D6D6E4E4E4F1F1F1FFFFFF0000000000000000000000000000000000000000000000000000000000002E4550F1000000A14944415478DAEDD73B0E84300C05C01CC7F73F406EE59EB051168A5D89822A9E2950F834CF3C14D11A0000000000006F8988D2E13F4A878FD215A85EFD9215881F4A870FDDA76C05
 310
-176123B01E448DC0C000BD6B706280D635382F40F71A9C3801CD6B70D8F9F76BD04BD04BD0081881EC9351E901362FC1EFA7390504080FB0767391524080EDC51852E031C08F009901CE2F9E5140803F6FC38802F7FFF1C202000000000000BCCC072BC8E05C9B55FF0A0000000049454E44AE426082
+6A0FA076057C0AFE7D00FEEA43EDF81B8E20BF87EB52E6B538D7F399DC74003993E63CE63A595747EE967D0DA06FDD805CD1F3762FC74B1FD1CFC1ECD98067339A3D990328BE0DD80A0100000000000000000000000078DD014E8C6A23C8A714A40000000049454E44AE4260820049454E44AE426082
   0
 ENDSEC
   0

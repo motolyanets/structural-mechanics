@@ -84,15 +84,16 @@ class Frame:
         sum_of_projections = round_up(sum_of_projections, 4)
         return sum_of_projections, sum_force_expression_names, sum_force_expression_values
 
-    def find_max_value_diagram_m(self, diagram_name: str) -> float:
+    def find_max_value_on_diagram(self, diagram_name: str) -> float:
         max_value = 0
         for rod in self.rods:
-            diagram = rod.__getattribute__(f'diagram_M{diagram_name}')
-            m1, m2 = diagram[0], diagram[1]
-            if abs(m1) > max_value:
-                max_value = abs(m1)
-            if abs(m2) > max_value:
-                max_value = abs(m2)
+            diagram = rod.__getattribute__(f'diagram_{diagram_name}')
+            if diagram:
+                m1, m2 = diagram[0], diagram[1]
+                if abs(m1) > max_value:
+                    max_value = abs(m1)
+                if abs(m2) > max_value:
+                    max_value = abs(m2)
         return max_value
 
     def is_that_frame_solved(self):

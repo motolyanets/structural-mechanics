@@ -334,7 +334,7 @@ class ThreeHingedFrame(SolvableFrame, BaseFrame):
 
         rods_connected_to_hinge = []
         for rod in self.rods:
-            if rod.start_node == hinge_node or rod.end_node == hinge_node:
+            if rod.start_node.name == hinge_node.name or rod.end_node.name == hinge_node.name:
                 rods_connected_to_hinge.append(rod)
 
         if len(rods_connected_to_hinge) != 2:

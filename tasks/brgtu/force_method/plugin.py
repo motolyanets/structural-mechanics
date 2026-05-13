@@ -72,6 +72,10 @@ class BRGTUForceMethod(TaskPlugin):
             from schemes.brgtu.force_method.frame_10 import create_frame_10, create_primary_system_10
             nodes, rods, supports, loads = create_frame_10(params)
             ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_10(params)
+        elif circuit_number == 24:
+            from schemes.brgtu.force_method.frame_24 import create_frame_24, create_primary_system_24
+            nodes, rods, supports, loads = create_frame_24(params)
+            ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_24(params)
         elif circuit_number == 27:
             from schemes.brgtu.force_method.frame_27 import create_frame_27, create_primary_system_27
             nodes, rods, supports, loads = create_frame_27(params)

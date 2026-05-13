@@ -103,7 +103,7 @@ class Frame:
     def next_rod(self, previous_rod:Rod, node: Node) -> Rod:
         rods_with_node = []
         for rod in self.rods:
-            if node is rod.start_node or node is rod.end_node:
+            if node.name == rod.start_node.name or node.name == rod.end_node.name:
                 rods_with_node.append(rod)
 
         if len(rods_with_node) == 1:

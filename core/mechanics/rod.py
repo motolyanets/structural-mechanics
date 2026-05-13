@@ -167,8 +167,8 @@ class Rod:
                 number_of_section += 1
                 loads_for_end = loads.copy()
                 loads_for_end.append(load_on_current_rod)
-                section3 = self.make_section(number_of_section=number_of_section, node=self.end_node, loads=loads_for_end)
-                next_node = self.end_node
+                section3 = self.make_section(number_of_section=number_of_section, node=self.start_node, loads=loads_for_end)
+                next_node = self.start_node
             sections = [section1, section2, section3]
         number_of_section += 1
         self.sections = sections
@@ -209,11 +209,22 @@ class Rod:
             sorted_sections = sorted(self.sections, key=lambda x: x.y)
         else:
             # Стержень наклонный или горизонтальный
-            sorted_sections = sorted(self.sections, key=lambda x: x.y)
+            sorted_sections = sorted(self.sections, key=lambda x: x.x)
         return sorted_sections
 
     def calculate_diagram_m(self, diagram_name: str):
         diagram = []
+
+        finding_moments = []
+        for section in self.sort_sections():
+            section_moment, section_equation = section.sum_momentum_about_section()
+            sign = self.determine_sign_of_section_m()
+            if section_moment == 0:
+                diagram.append(section_moment)
+            else:
+                diagram.append(section_moment * sign)
+            finding_moments.append(section_equation)
+
         if diagram_name == '1':
             self.diagram_M1 = diagram
         elif diagram_name == '2':
@@ -227,16 +238,6 @@ class Rod:
         else:
             raise Exception(f'Такое название нагрузок ({diagram_name}) не определено')
 
-        finding_moments = []
-        for section in self.sort_sections():
-            section_moment, section_equation = section.sum_momentum_about_section()
-            sign = self.determine_sign_of_section_m()
-            if section_moment == 0:
-                diagram.append(section_moment)
-            else:
-                diagram.append(section_moment * sign)
-            finding_moments.append(section_equation)
-            print(section_equation)
 
         report = ''
         for i in finding_moments:

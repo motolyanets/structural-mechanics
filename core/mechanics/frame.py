@@ -116,6 +116,11 @@ class Frame:
         else:
             return None
 
+    def is_all_rods_with_sections(self):
+        for rod in self.rods:
+            if not rod.sections:
+                raise Exception(f'Сечения на стержне {rod} не созданы')
+
     def create_sections_for_diagrams(self):
         self.is_that_frame_solved()
 
@@ -138,7 +143,7 @@ class Frame:
 
         print(all_loads)
 
-        # Находим узел с одним стержнем
+        # Проходим по всем цепочкам стержней, ведущих от свободного конца, до узла с множеством стержней
         for node in nodes_with_1_rod:
             using_loads = []
             load_on_current_rod = None
@@ -148,7 +153,6 @@ class Frame:
                 if node is rod.start_node or node is rod.end_node:
                     current_rod = rod
                     break
-            amount_of_sections = 2
             for load in all_loads:
                 # Добавляем нагрузки, действующие в текущем узле
                 if isinstance(load, (Force, Momentum)):
@@ -168,31 +172,98 @@ class Frame:
             sections += sections_on_rod
             if load_on_current_rod:
                 using_loads.append(load_on_current_rod)
-                load_on_current_rod = None
 
-            while True:
-                load_on_current_rod = None
-                current_rod = self.next_rod(previous_rod=current_rod, node=next_node)
-                for load in all_loads:
-                    # Добавляем нагрузки, действующие в текущем узле
-                    if isinstance(load, (Force, Momentum)):
-                        if load.node.name == next_node.name and load not in using_loads:
-                            using_loads.append(load)
-                    # Добавляем распределенную нагрузку, действующую на текущий стержень
-                    elif isinstance(load, DistributedForce):
-                        if load.rod == current_rod:
-                            load_on_current_rod = load
+            current_rod = self.next_rod(previous_rod=current_rod, node=next_node)
+            if current_rod:
+                while True:
+                    load_on_current_rod = None
+                    for load in all_loads:
+                        # Добавляем нагрузки, действующие в текущем узле
+                        if isinstance(load, (Force, Momentum)):
+                            if load.node.name == next_node.name and load not in using_loads:
+                                using_loads.append(load)
+                        # Добавляем распределенную нагрузку, действующую на текущий стержень
+                        elif isinstance(load, DistributedForce):
+                            if load.rod == current_rod:
+                                load_on_current_rod = load
 
 
-                sections_on_rod, number_of_section, next_node = current_rod.make_sections_on_rod(
-                    first_node=next_node,
-                    number_of_section=number_of_section,
-                    loads=using_loads,
-                    load_on_current_rod=load_on_current_rod,
-                )
-                sections += sections_on_rod
-                if load_on_current_rod:
-                    using_loads.append(load_on_current_rod)
+                    sections_on_rod, number_of_section, next_node = current_rod.make_sections_on_rod(
+                        first_node=next_node,
+                        number_of_section=number_of_section,
+                        loads=using_loads,
+                        load_on_current_rod=load_on_current_rod,
+                    )
+                    sections += sections_on_rod
+                    if load_on_current_rod:
+                        using_loads.append(load_on_current_rod)
 
-                if current_rod.start_node in nodes_with_3_or_more_rodes or current_rod.end_node in nodes_with_3_or_more_rodes:
-                    break
+                    current_rod = self.next_rod(previous_rod=current_rod, node=next_node)
+                    if current_rod.start_node in nodes_with_3_or_more_rodes or current_rod.end_node in nodes_with_3_or_more_rodes:
+                        break
+
+
+
+
+
+        # Проходим по узлам, где встречаются 3 и более стержней, находим есть ли такой узел в котором есть только один
+        # стержень где еще нет сечений
+        for node in nodes_with_3_or_more_rodes:
+            rods_with_node = []
+            for rod in self.rods:
+                if rod.start_node.name == node.name or rod.end_node.name == node.name:
+                    rods_with_node.append(rod)
+            rods_without_sections = []
+            rods_with_sections = []
+            for rod in rods_with_node:
+                if not rod.sections:
+                    rods_without_sections.append(rod)
+                else:
+                    rods_with_sections.append(rod)
+            if len(rods_without_sections) == 1:
+                current_rod = rods_without_sections[0]
+                next_node = node
+                current_loads = []
+                for rod in rods_with_sections:
+                    sections = rod.sections
+                    section_on_rod_with_node = None
+                    for section in sections:
+                        dx = section.x - node.x
+                        dy = section.y - node.y
+                        if dx <= 0.1 and dy <= 0.1:
+                            section_on_rod_with_node = section
+                    if section_on_rod_with_node:
+                        current_loads += section_on_rod_with_node.loads
+
+                if current_rod:
+                    while True:
+                        load_on_current_rod = None
+                        for load in all_loads:
+                            # Добавляем нагрузки, действующие в текущем узле
+                            if isinstance(load, (Force, Momentum)):
+                                if load.node.name == next_node.name and load not in using_loads:
+                                    using_loads.append(load)
+                            # Добавляем распределенную нагрузку, действующую на текущий стержень
+                            elif isinstance(load, DistributedForce):
+                                if load.rod == current_rod:
+                                    load_on_current_rod = load
+
+                        sections_on_rod, number_of_section, next_node = current_rod.make_sections_on_rod(
+                            first_node=next_node,
+                            number_of_section=number_of_section,
+                            loads=using_loads,
+                            load_on_current_rod=load_on_current_rod,
+                        )
+                        sections += sections_on_rod
+                        if load_on_current_rod:
+                            using_loads.append(load_on_current_rod)
+
+                        current_rod = self.next_rod(previous_rod=current_rod, node=next_node)
+                        if current_rod.start_node in nodes_with_3_or_more_rodes or current_rod.end_node in nodes_with_3_or_more_rodes:
+                            break
+
+        self.is_all_rods_with_sections()
+
+
+
+

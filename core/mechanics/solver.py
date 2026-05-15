@@ -189,11 +189,20 @@ class SolvableFrame(Frame):
                     equation_parts.append(f"+ {self._format_number(constant_term)}")
 
         point_label = self._get_point_label(point)
+        print(equation_parts)
+        print(point_label)
+
         if equation_parts:
             if constant_term_expression:
-                long_equation = f"∑M{point_label}: {equation_parts[0]} {equation_parts[1]} + {constant_term_expression} = 0"
+                if len(equation_parts) >= 2:
+                    long_equation = f"∑M{point_label}: {equation_parts[0]} {equation_parts[1]} + {constant_term_expression} = 0"
+                else:
+                    long_equation = f"∑M{point_label}: {equation_parts[0]} + {constant_term_expression} = 0"
             else:
-                long_equation = f"∑M{point_label}: {equation_parts[0]} {equation_parts[1]} = 0"
+                if len(equation_parts) >= 2:
+                    long_equation = f"∑M{point_label}: {equation_parts[0]} {equation_parts[1]} = 0"
+                else:
+                    long_equation = f"∑M{point_label}: {equation_parts[0]} = 0"
 
             short_equation = " ".join(equation_parts)
             long_equation = long_equation.replace("  ", " ")

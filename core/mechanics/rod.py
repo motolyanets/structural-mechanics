@@ -243,6 +243,7 @@ class Rod:
         for i in finding_moments:
             report += f'{i}\n'
         report.strip('\n')
+        print(f'{self}-------{diagram}')
 
         return report
 
@@ -262,7 +263,6 @@ class Rod:
         d2_start = diagram_2[0]
         d2_center = round_up((diagram_2[0] + diagram_2[-1]) / 2, 3)
         d2_end = diagram_2[-1]
-
         if len(diagram_1) == len(diagram_2) == 2:
             result = (length / (6 * stiffness)) * (d1_start * d2_start + 4 * d1_center * d2_center + d1_end * d2_end)
             if result:

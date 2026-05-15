@@ -23,8 +23,10 @@ class BRGTUForceMethod(TaskPlugin):
     def get_available_schemes(self) -> list:
         return [
             {"scheme_id": 10, "name": "Схема 10"},
-            {"scheme_id": 27, "name": "Схема 27"},
-            {"scheme_id": 29, "name": "Схема 29"},
+            {"scheme_id": 22, "name": "Схема 22"},
+            {"scheme_id": 24, "name": "Схема 24"},
+            # {"scheme_id": 27, "name": "Схема 27"},
+            # {"scheme_id": 29, "name": "Схема 29"},
         ]
 
     def solve(self, cipher: str) -> Dict[str, Any]:
@@ -72,16 +74,20 @@ class BRGTUForceMethod(TaskPlugin):
             from schemes.brgtu.force_method.frame_10 import create_frame_10, create_primary_system_10
             nodes, rods, supports, loads = create_frame_10(params)
             ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_10(params)
+        elif circuit_number == 22:
+            from schemes.brgtu.force_method.frame_22 import create_frame_22, create_primary_system_22
+            nodes, rods, supports, loads = create_frame_22(params)
+            ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_22(params)
         elif circuit_number == 24:
             from schemes.brgtu.force_method.frame_24 import create_frame_24, create_primary_system_24
             nodes, rods, supports, loads = create_frame_24(params)
             ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_24(params)
         elif circuit_number == 27:
-            from schemes.brgtu.force_method.frame_27 import create_frame_27, create_primary_system_27
+            from schemes.brgtu.force_method.frame_27_1 import create_frame_27, create_primary_system_27
             nodes, rods, supports, loads = create_frame_27(params)
             ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_27(params)
         elif circuit_number == 29:
-            from schemes.brgtu.force_method.frame_29 import create_frame_29, create_primary_system_29
+            from schemes.brgtu.force_method.frame_29_1 import create_frame_29, create_primary_system_29
             nodes, rods, supports, loads = create_frame_29(params)
             ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_29(params)
         else:

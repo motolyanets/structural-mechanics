@@ -78,10 +78,10 @@ class Frame:
             sum_of_projections += projection
             sum_force_expression_names += expression
             if projection >= 0:
-                sum_force_expression_values += f'+ {projection}'
+                sum_force_expression_values += f'+ {round_up(projection)}'
             else:
-                sum_force_expression_values += f' {projection} '
-        sum_of_projections = round_up(sum_of_projections, 4)
+                sum_force_expression_values += f' {round_up(projection)} '
+        # sum_of_projections = round_up(sum_of_projections, 4)
         return sum_of_projections, sum_force_expression_names, sum_force_expression_values
 
     def find_max_value_on_diagram(self, diagram_name: str) -> float:
@@ -124,6 +124,9 @@ class Frame:
     def create_sections_for_diagrams(self):
         self.is_that_frame_solved()
 
+        for rod in self.rods:
+            rod.sections = None
+
         nodes_with_1_rod = []
         nodes_with_3_or_more_rodes = []
         sections = []
@@ -140,8 +143,6 @@ class Frame:
 
         all_loads = self.loads + self.finded_reactions
         number_of_section = 1
-
-        print(all_loads)
 
         # Проходим по всем цепочкам стержней, ведущих от свободного конца, до узла с множеством стержней
         for node in nodes_with_1_rod:
@@ -225,24 +226,26 @@ class Frame:
                 next_node = node
                 current_loads = []
                 for rod in rods_with_sections:
-                    sections = rod.sections
+                    sections_on_rod = rod.sections
                     section_on_rod_with_node = None
-                    for section in sections:
+                    for section in sections_on_rod:
                         dx = section.x - node.x
                         dy = section.y - node.y
                         if dx <= 0.1 and dy <= 0.1:
                             section_on_rod_with_node = section
-                    if section_on_rod_with_node:
-                        current_loads += section_on_rod_with_node.loads
+                            for load in section_on_rod_with_node.loads:
+                                if load not in current_loads:
+                                    current_loads.append(load)
 
                 if current_rod:
+                    i = 0
                     while True:
                         load_on_current_rod = None
                         for load in all_loads:
                             # Добавляем нагрузки, действующие в текущем узле
                             if isinstance(load, (Force, Momentum)):
-                                if load.node.name == next_node.name and load not in using_loads:
-                                    using_loads.append(load)
+                                if load.node.name == next_node.name and load not in current_loads:
+                                    current_loads.append(load)
                             # Добавляем распределенную нагрузку, действующую на текущий стержень
                             elif isinstance(load, DistributedForce):
                                 if load.rod == current_rod:
@@ -251,16 +254,18 @@ class Frame:
                         sections_on_rod, number_of_section, next_node = current_rod.make_sections_on_rod(
                             first_node=next_node,
                             number_of_section=number_of_section,
-                            loads=using_loads,
+                            loads=current_loads,
                             load_on_current_rod=load_on_current_rod,
                         )
                         sections += sections_on_rod
                         if load_on_current_rod:
-                            using_loads.append(load_on_current_rod)
+                            current_loads.append(load_on_current_rod)
 
-                        current_rod = self.next_rod(previous_rod=current_rod, node=next_node)
-                        if current_rod.start_node in nodes_with_3_or_more_rodes or current_rod.end_node in nodes_with_3_or_more_rodes:
+                        if i != 0 and current_rod.start_node in nodes_with_3_or_more_rodes or current_rod.end_node in nodes_with_3_or_more_rodes:
                             break
+                        current_rod = self.next_rod(previous_rod=current_rod, node=next_node)
+                        i += 1
+
 
         self.is_all_rods_with_sections()
 

@@ -124,7 +124,7 @@ def making_report_of_multiply(lst):
     for i in lst:
         if i:
             text_1 += i[0] + ' + '
-            text_2 += f'{str(i[1])}/EI' + ' + '
+            text_2 += f'{str(round_up(i[1]))}/EI' + ' + '
             result += i[1]
 
     text_2 = text_2.replace("+ -", "- ")

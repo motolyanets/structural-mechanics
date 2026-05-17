@@ -53,8 +53,11 @@ class Force(Load):
 
     def get_moment_about(self, point: Tuple[float, float]) -> tuple:
         lever_arm = self.get_lever_arm(point=point)
-        moment = round_up(lever_arm * self.value)
-        text = f'{self.name}·{lever_arm}'
+        moment = lever_arm * self.value
+        if lever_arm >= 0:
+            text = f' + {self.name}·{round_up(abs(lever_arm))}'
+        else:
+            text = f' - {self.name}·{round_up(abs(lever_arm))}'
         return text, moment
 
     def get_projection_on_axis(self, axis_name: str) -> tuple:
@@ -65,7 +68,7 @@ class Force(Load):
             projection = self.value * math.sin(rotation_radians)
         else:
             raise Exception('Название оси должно быть \'x\' или \'y\'')
-        projection = round(projection, 2)
+        # projection = round(projection, 2)
         if projection >= 0:
             expression = f' + {self.name}'
         else:
@@ -207,7 +210,10 @@ class DistributedForce(Load):
     def get_moment_about(self, point: Tuple[float, float]) -> tuple:
         lever_arm = self.get_lever_arm(point=point)
         moment = round_up(lever_arm * self.Q())
-        text = f'{self.name}·{self.length}·{lever_arm}'
+        if lever_arm >= 0:
+            text = f' + {self.name}·{self.length}·{round_up(abs(lever_arm))}'
+        else:
+            text = f' - {self.name}·{self.length}·{round_up(abs(lever_arm))}'
         return text, moment
 
     def split_load_for_calculation_section(self):

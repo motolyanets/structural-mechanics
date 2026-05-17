@@ -119,7 +119,7 @@ def draw_frame(frame: Frame, base_point: List[float], msp, diagram_name: str = N
             diagram = rod.__getattribute__(f'diagram_{diagram_name}')
             if diagram_name.startswith('M'):
                 draw_diagram_m(rod=rod, base_point=base_point, diagram=diagram, msp=msp, scale=scale)
-            elif diagram_name.startswith('Q'):
+            elif diagram_name.startswith('Q') or diagram_name.startswith('N'):
                 if diagram:
                     draw_diagram_q(rod=rod, base_point=base_point, diagram=diagram, msp=msp, scale=scale)
 

@@ -80,8 +80,8 @@ class Section:
                     moment += moment_of_load
                     equation += f'+ {text} '
 
-            moment = round_up(moment, 3)
-            equation = f'M({self.name}) =' + normalize_equation(equation) + ' = ' + str(moment)
+            # moment = round_up(moment, 3)
+            equation = f'M({self.name}) =' + normalize_equation(equation) + ' = ' + str(round_up(moment, 2))
         return moment, equation
 
 

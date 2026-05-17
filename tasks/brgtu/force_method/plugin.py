@@ -122,6 +122,9 @@ class BRGTUForceMethod(TaskPlugin):
             finding_moments_report = finding_moments_report.replace('\n\n', '\n')
             finding_moments_report = finding_moments_report.replace('= =', '=')
 
+            frame_1, msp, base_point = draw_frame(frame=frame_1, base_point=base_point, msp=msp, diagram_name=f[3:])
+
+
             for entity in layout:
                 if entity.dxf.layer == f and entity.dxftype() == 'VIEWPORT':
                     if entity:
@@ -133,6 +136,8 @@ class BRGTUForceMethod(TaskPlugin):
 
 
         rods = calculation_frame.rods
+        for rod in rods:
+            print(f'{rod}-{rod.diagram_M1}-{rod.diagram_M2}-{rod.diagram_M3}-{rod.diagram_Mk}-{rod.diagram_Mp}')
 
         print('-------"Эпюра Мs"-------')
         for rod in rods:
@@ -315,7 +320,10 @@ class BRGTUForceMethod(TaskPlugin):
                 Q2 = Q - q * rod.length() / 2
                 report = (f'Q{i} = ({rod.diagram_Mok[0]} - {rod.diagram_Mok[-1]}) / {rod.length()} + {q} · {rod.length()} / 2 = {round_up(Q1)} кН\n'
                           f'Q{i} = ({rod.diagram_Mok[0]} - {rod.diagram_Mok[-1]}) / {rod.length()} - {q} · {rod.length()} / 2 = {round_up(Q2)} кН')
-                rod.diagram_Q = [round_up(Q1), round_up(Q2)]
+                if rod.dy() == 0:
+                    rod.diagram_Q = [round_up(Q1), round_up(Q2)]
+                else:
+                    rod.diagram_Q = [round_up(Q2), round_up(Q1)]
             calculating_Q_report += report + '\n'
             i += 1
             print(f'{rod} ------ {rod.diagram_Q}')
@@ -332,22 +340,51 @@ class BRGTUForceMethod(TaskPlugin):
                 entity.text = calculating_Q_report
 
 
-        r = [4.65, -1.09, 9.8, -0.05, -5.95, -0.17, -0.05, -5.95, -0.17, 1.09, 9.8, 4.65]
+        print(f'\n')
+
+        nn = [-2.21, -1.51, 0.09, 0.09, -4.99, -4.99, -5.41, 0, -12.72]
+        print('-------"Эпюра N"-------')
+        i = 0
+        for rod in rods:
+            # print(rod)
+            # N1 = float(input('Введите N1:'))
+            # # N2 = float(input('Введите N2:'))
+            N1 = nn[i]
+            rod.diagram_N = [N1, N1]
+            i += 1
+
+
+        fr = SolvableFrame(nodes=ps_nodes, rods=ps_rods, supports=ps_supports, loads=None).classify_part()
+        sf[f'sf_N'] = fr
+
+        fr.base_point = base_point
+        for entity in layout:
+            if entity.dxf.layer == 'N' and entity.dxftype() == 'VIEWPORT':
+                if entity:
+                    entity.dxf.view_center_point = (base_point[0], base_point[1], 0.0)
+
+
+
+
+        r = [4.9, 2.21, 14.76, 7.42, 12.72]
         i = 0
         for reaction in frame.reactions():
+            # print(reaction)
+            # v = float(input('Введите значение реакции:'))
+            # reaction.value = v
             reaction.value = r[i]
             frame.finded_reactions.append(reaction)
             i += 1
 
         for reaction in frame.finded_reactions:
             print(reaction)
-        print(f'\n')
+
 
 
         print('-------Статическая проверка-------')
         static_check = '\n\n'
         # node_name = str(input("\nВведите имя, относительно которого хотите составить уравнение моментов: "))
-        node_name = 'L'
+        node_name = 'C'
         for node in frame.nodes:
             if node.name == node_name:
                 node_for_checking = node
@@ -404,13 +441,14 @@ class BRGTUForceMethod(TaskPlugin):
                 entity.text = delta_k_text
 
         for f in sf:
-            frame_1 = sf[f]
-            frame_1, msp, base_point = draw_frame(frame=frame_1, base_point=base_point, msp=msp, diagram_name=f[3:])
+            if f not in ['sf_M1', 'sf_M2', 'sf_M3', 'sf_Mp', 'sf_Mk']:
+                frame_1 = sf[f]
+                frame_1, msp, base_point = draw_frame(frame=frame_1, base_point=base_point, msp=msp, diagram_name=f[3:])
 
-            for entity in layout:
-                if entity.dxf.layer == f and entity.dxftype() == 'VIEWPORT':
-                    if entity:
-                        entity.dxf.view_center_point = (frame_1.base_point[0], frame_1.base_point[1], 0.0)
+                for entity in layout:
+                    if entity.dxf.layer == f and entity.dxftype() == 'VIEWPORT':
+                        if entity:
+                            entity.dxf.view_center_point = (frame_1.base_point[0], frame_1.base_point[1], 0.0)
 
         zoom.extents(msp)
         doc.saveas(f'report.dxf')

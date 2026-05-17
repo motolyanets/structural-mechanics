@@ -53,7 +53,7 @@ class SolvableFrame(Frame):
         reaction = self.find_node_with_single_unknown()[1]
         reaction_lever_arm = reaction.get_lever_arm(point=point)
         reaction_value = -moment / reaction_lever_arm
-        return [reaction.name, round_up(reaction_value, 2), equation]
+        return [reaction.name, reaction_value, equation]
 
     def find_reaction_from_force_projection(self, axis: str):
         report = ''
@@ -91,11 +91,11 @@ class SolvableFrame(Frame):
             report += expression_with_names + '\n' + f'      {expression_with_values}' + '\n'
 
             if axis == 'x':
-                reaction.value = round_up(- sum_of_loads * math.cos(rotation_radians))
+                reaction.value = - sum_of_loads * math.cos(rotation_radians)
             elif axis == 'y':
-                reaction.value = round_up(- sum_of_loads * math.sin(rotation_radians))
+                reaction.value = - sum_of_loads * math.sin(rotation_radians)
             print(f'    {reaction.name} = {reaction.value}')
-            report += f'      {reaction.name} = {reaction.value}' + '\n'
+            report += f'      {reaction.name} = {round_up(reaction.value)}' + '\n'
             self.finded_reactions.append(reaction)
             return report
 
@@ -145,7 +145,7 @@ class SolvableFrame(Frame):
                 text, moment = load.get_moment_about(point=point)
                 if abs(moment) > 1e-10:
                     constant_term += moment
-                    constant_term_expression += f' +{text}'
+                    constant_term_expression += text
 
         for reaction in unknown_reactions:
             lever_arm = reaction.get_lever_arm(point=point)
@@ -194,12 +194,12 @@ class SolvableFrame(Frame):
 
         if equation_parts:
             if constant_term_expression:
-                if len(equation_parts) >= 2:
+                if len(equation_parts) >= 3:
                     long_equation = f"∑M{point_label}: {equation_parts[0]} {equation_parts[1]} + {constant_term_expression} = 0"
                 else:
                     long_equation = f"∑M{point_label}: {equation_parts[0]} + {constant_term_expression} = 0"
             else:
-                if len(equation_parts) >= 2:
+                if len(equation_parts) >= 3:
                     long_equation = f"∑M{point_label}: {equation_parts[0]} {equation_parts[1]} = 0"
                 else:
                     long_equation = f"∑M{point_label}: {equation_parts[0]} = 0"
@@ -261,7 +261,11 @@ class SolvableFrame(Frame):
         rods_with_distributed_load = dict()
         for load in self.loads:
             if isinstance(load, DistributedForce):
-                rods_with_distributed_load[f'{load.rod.start_node.name}-{load.rod.end_node.name}'] = load.value
+                if load.rotation in [0, 270]:
+                    q = -load.value
+                elif load.rotation in [90, 180]:
+                    q = load.value
+                rods_with_distributed_load[f'{load.rod.start_node.name}-{load.rod.end_node.name}'] = q
         multiply_beam_diagrams = []
         for rod in self.rods:
             str = f'{rod.start_node.name}-{rod.end_node.name}'
@@ -631,7 +635,7 @@ class ThreeHingedFrame(SolvableFrame, BaseFrame):
                 raise Exception(f"Нет уравнения для определения {var}")
 
             value = -const_sum / coeff_sum
-            value = round(value, 2)
+            # value = round(value, 2)
 
             # print(f"\n✅ Решение:")
             # print(f"   {var} = {value}")
@@ -665,8 +669,8 @@ class ThreeHingedFrame(SolvableFrame, BaseFrame):
             value1 = det_var1 / determinant
             value2 = det_var2 / determinant
 
-            value1 = round(value1, 2)
-            value2 = round(value2, 2)
+            # value1 = round(value1, 2)
+            # value2 = round(value2, 2)
 
             # print(f"\n✅ Решение:")
             # print(f"   {var1} = {value1}")
@@ -697,7 +701,7 @@ class ThreeHingedFrame(SolvableFrame, BaseFrame):
         print(short_equation2)
         for var, value in solution.items():
             print(f'{var} = {value}')
-            report += f'{var} = {value}\n'
+            report += f'{var} = {round_up(value)}\n'
 
 
         for var, value in solution.items():

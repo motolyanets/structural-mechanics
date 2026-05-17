@@ -23,6 +23,7 @@ class Rod:
             diagram_Mok: List | None = None,
             diagram_Mk: List | None = None,
             diagram_Q: List | None = None,
+            diagram_N: List | None = None,
             stiffness: float = 1,
     ):
         self.sections = None
@@ -40,6 +41,7 @@ class Rod:
         self.diagram_Mok = diagram_Mok
         self.diagram_Mk = diagram_Mk
         self.diagram_Q = diagram_Q
+        self.diagram_N = diagram_N
         self.stiffness = stiffness
         self.nodes = [self.start_node, self.end_node]
 
@@ -225,15 +227,26 @@ class Rod:
                 diagram.append(section_moment * sign)
             finding_moments.append(section_equation)
 
+
+
+
         if diagram_name == '1':
+            # if self.start_node.name in ['4', 'K']:
+            #     diagram = [0, 0]
+            # elif self.start_node.name == '2' and self.end_node.name == '4':
+            #     diagram[-1] = 0
             self.diagram_M1 = diagram
         elif diagram_name == '2':
             self.diagram_M2 = diagram
         elif diagram_name == '3':
+            # if self.start_node.name == '8' and self.end_node.name == 'C':
+            #     diagram = [0, 0]
             self.diagram_M3 = diagram
         elif diagram_name == 'p':
             self.diagram_Mp = diagram
         elif diagram_name == 'k':
+            # if self.start_node.name == '8' and self.end_node.name == 'C':
+            #     diagram = [0, 0]
             self.diagram_Mk = diagram
         else:
             raise Exception(f'Такое название нагрузок ({diagram_name}) не определено')
@@ -263,23 +276,31 @@ class Rod:
         d2_start = diagram_2[0]
         d2_center = round_up((diagram_2[0] + diagram_2[-1]) / 2, 3)
         d2_end = diagram_2[-1]
+
+        d1_start_t = round_up(d1_start)
+        d1_center_t = round_up(d1_center)
+        d1_end_t = round_up(d1_end)
+        d2_start_t = round_up(d2_start)
+        d2_center_t = round_up(d2_center)
+        d2_end_t = round_up(d2_end)
+
         if len(diagram_1) == len(diagram_2) == 2:
             result = (length / (6 * stiffness)) * (d1_start * d2_start + 4 * d1_center * d2_center + d1_end * d2_end)
             if result:
                 text = (
-                    f'({length} / (6·{stiffness}·EI)) · ({d1_start}·{d2_start} + 4·{round_up(d1_center)}·{round_up(d2_center)} + '
-                    f'{d1_end}·{d2_end})')
+                    f'({length} / (6·{stiffness}·EI)) · ({d1_start_t}·{d2_start_t} + 4·{d1_center_t}·{d2_center_t} + '
+                    f'{d1_end_t}·{d2_end_t})')
                 multiplied_diagram.append(text)
-                multiplied_diagram.append(round_up(result))
+                multiplied_diagram.append(result)
         else:
             result = (length / (6 * stiffness)) * (
-                        d1_start * d2_start + 4 * d1_center * d2_center + d1_end * d2_end - 4 * d1_center * q * length ** 2 / 8)
+                        d1_start * d2_start + 4 * d1_center * d2_center + d1_end * d2_end + 4 * d1_center * q * length ** 2 / 8)
             if result:
                 text = (
-                    f'({length} / (6·{stiffness}·EI)) * ({d1_start}·{d2_start} + 4·{round_up(d1_center)}·{round_up(d2_center)} + '
-                    f'{d1_end}·{d2_end} - 4·{d1_center}·{q}·{length}² / 8)')
+                    f'({length} / (6·{stiffness}·EI)) * ({d1_start_t}·{d2_start_t} + 4·{d1_center_t}·{d2_center_t} + '
+                    f'{d1_end_t}·{d2_end_t} + 4·{d1_center_t}·{q}·{length}² / 8)')
                 multiplied_diagram.append(text)
-                multiplied_diagram.append(round_up(result))
+                multiplied_diagram.append(result)
 
         return multiplied_diagram
 

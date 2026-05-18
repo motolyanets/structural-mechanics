@@ -46,7 +46,8 @@ def main():
     # cipher = input("\nВведите 4-значный шифр: ").strip()
     # cipher = "3024".strip()
     # cipher = "0483".strip()
-    cipher = "6279".strip()
+    # cipher = "6279".strip()
+    cipher = "5938".strip()
 
     try:
         plugin = task_info["class"](task_info["excel_path"])

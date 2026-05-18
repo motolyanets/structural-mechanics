@@ -23,6 +23,7 @@ class BRGTUForceMethod(TaskPlugin):
     def get_available_schemes(self) -> list:
         return [
             {"scheme_id": 10, "name": "Схема 10"},
+            {"scheme_id": 19, "name": "Схема 19"},
             {"scheme_id": 22, "name": "Схема 22"},
             {"scheme_id": 24, "name": "Схема 24"},
             # {"scheme_id": 27, "name": "Схема 27"},
@@ -72,39 +73,43 @@ class BRGTUForceMethod(TaskPlugin):
 
         if circuit_number == 10:
             from schemes.brgtu.force_method.frame_10 import create_frame_10, create_primary_system_10
-            nodes, rods, supports, loads = create_frame_10(params)
+            fr_nodes, fr_rods, fr_supports, fr_loads = create_frame_10(params)
             ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_10(params)
+        elif circuit_number == 19:
+            from schemes.brgtu.force_method.frame_19 import create_frame_19, create_primary_system_19
+            fr_nodes, fr_rods, fr_supports, fr_loads = create_frame_19(params)
+            ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_19(params)
         elif circuit_number == 22:
             from schemes.brgtu.force_method.frame_22 import create_frame_22, create_primary_system_22
-            nodes, rods, supports, loads = create_frame_22(params)
+            fr_nodes, fr_rods, fr_supports, fr_loads = create_frame_22(params)
             ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_22(params)
         elif circuit_number == 24:
             from schemes.brgtu.force_method.frame_24 import create_frame_24, create_primary_system_24
-            nodes, rods, supports, loads = create_frame_24(params)
+            fr_nodes, fr_rods, fr_supports, fr_loads = create_frame_24(params)
             ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_24(params)
         elif circuit_number == 27:
             from schemes.brgtu.force_method.frame_27_1 import create_frame_27, create_primary_system_27
-            nodes, rods, supports, loads = create_frame_27(params)
+            fr_nodes, fr_rods, fr_supports, fr_loads = create_frame_27(params)
             ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_27(params)
         elif circuit_number == 29:
             from schemes.brgtu.force_method.frame_29_1 import create_frame_29, create_primary_system_29
-            nodes, rods, supports, loads = create_frame_29(params)
+            fr_nodes, fr_rods, fr_supports, fr_loads = create_frame_29(params)
             ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_29(params)
         else:
             raise ValueError(f"Схема {circuit_number} не реализована")
 
         from schemes.brgtu.composite_frame.base_composit_frame import CompositeFrame
-        frame = CompositeFrame(nodes, rods, supports, loads)
+        frame = CompositeFrame(fr_nodes, fr_rods, fr_supports, fr_loads)
 
         for entity in layout:
             if entity.dxf.layer == "1.Главная рама" and entity.dxftype() == 'VIEWPORT':
                 if entity:
-                    entity.dxf.view_center_point = (base_point[0], base_point[1], 0.0)
+                    entity.dxf.view_center_point = (frame.geometrical_center()[0], frame.geometrical_center()[1], 0.0)
         frame, msp, base_point = draw_frame(frame=frame, base_point=base_point, msp=msp)
 
 
         sf = {}
-        calculation_frame = SolvableFrame(nodes=ps_nodes, rods=ps_rods, supports=ps_supports, loads=loads)
+        calculation_frame = SolvableFrame(nodes=ps_nodes, rods=ps_rods, supports=ps_supports, loads=fr_loads)
         for load in ps_loads:
             fr = SolvableFrame(nodes=ps_nodes, rods=ps_rods, supports=ps_supports, loads=ps_loads[load])
             sf[f'sf_M{load}'] = fr.classify_part()
@@ -320,10 +325,7 @@ class BRGTUForceMethod(TaskPlugin):
                 Q2 = Q - q * rod.length() / 2
                 report = (f'Q{i} = ({rod.diagram_Mok[0]} - {rod.diagram_Mok[-1]}) / {rod.length()} + {q} · {rod.length()} / 2 = {round_up(Q1)} кН\n'
                           f'Q{i} = ({rod.diagram_Mok[0]} - {rod.diagram_Mok[-1]}) / {rod.length()} - {q} · {rod.length()} / 2 = {round_up(Q2)} кН')
-                if rod.dy() == 0:
-                    rod.diagram_Q = [round_up(Q1), round_up(Q2)]
-                else:
-                    rod.diagram_Q = [round_up(Q2), round_up(Q1)]
+                rod.diagram_Q = [round_up(Q1), round_up(Q2)]
             calculating_Q_report += report + '\n'
             i += 1
             print(f'{rod} ------ {rod.diagram_Q}')
@@ -339,10 +341,29 @@ class BRGTUForceMethod(TaskPlugin):
             elif entity.dxf.layer == 'Расчет эпюры Q':
                 entity.text = calculating_Q_report
 
+        for f in sf:
+            if f in ['sf_Ms', 'sf_Mok', 'sf_Q']:
+                frame_1 = sf[f]
+                frame_1, msp, base_point = draw_frame(frame=frame_1, base_point=base_point, msp=msp, diagram_name=f[3:],
+                                                      drawing_sections=False)
 
+                for entity in layout:
+                    if entity.dxf.layer == f and entity.dxftype() == 'VIEWPORT':
+                        if entity:
+                            entity.dxf.view_center_point = (frame_1.base_point[0] + frame_1.geometrical_center()[0],
+                                                            frame_1.base_point[1] + frame_1.geometrical_center()[1],
+                                                            0.0)
+
+        zoom.extents(msp)
+        doc.saveas(f'report.dxf')
+
+        input('Проверьте файл report.dxf, подготовьтесь вводить значения эпюры N и опорные реакции, далее нажмите ENTER')
+        doc = ezdxf.readfile('report.dxf')
+        msp = doc.modelspace()
+        layout = doc.layouts.get("Шаблон")
         print(f'\n')
 
-        nn = [-2.21, -1.51, 0.09, 0.09, -4.99, -4.99, -5.41, 0, -12.72]
+        nn = [1.87, -4.58, -6.18, -6.18, 0, -10.43, -5.41, -6.09]
         print('-------"Эпюра N"-------')
         i = 0
         for rod in rods:
@@ -363,10 +384,22 @@ class BRGTUForceMethod(TaskPlugin):
                 if entity:
                     entity.dxf.view_center_point = (base_point[0], base_point[1], 0.0)
 
+        for f in sf:
+            if f in ['sf_N']:
+                frame_1 = sf[f]
+                frame_1, msp, base_point = draw_frame(frame=frame_1, base_point=base_point, msp=msp, diagram_name=f[3:],
+                                                      drawing_sections=False)
+
+                for entity in layout:
+                    if entity.dxf.layer == f and entity.dxftype() == 'VIEWPORT':
+                        if entity:
+                            entity.dxf.view_center_point = (frame_1.base_point[0] + frame_1.geometrical_center()[0],
+                                                            frame_1.base_point[1] + frame_1.geometrical_center()[1],
+                                                            0.0)
 
 
 
-        r = [4.9, 2.21, 14.76, 7.42, 12.72]
+        r = [-1.87, 4.58, -1.19, 10.43, 1.19, 10.43, 1.87, 4.58]
         i = 0
         for reaction in frame.reactions():
             # print(reaction)
@@ -440,15 +473,20 @@ class BRGTUForceMethod(TaskPlugin):
             if entity.dxf.layer == 'Перемещение точки К':
                 entity.text = delta_k_text
 
-        for f in sf:
-            if f not in ['sf_M1', 'sf_M2', 'sf_M3', 'sf_Mp', 'sf_Mk']:
-                frame_1 = sf[f]
-                frame_1, msp, base_point = draw_frame(frame=frame_1, base_point=base_point, msp=msp, diagram_name=f[3:])
+        # frame = CompositeFrame(fr_nodes, fr_rods, fr_supports, fr_loads)
+        # frame.finded_reactions =
 
-                for entity in layout:
-                    if entity.dxf.layer == f and entity.dxftype() == 'VIEWPORT':
-                        if entity:
-                            entity.dxf.view_center_point = (frame_1.base_point[0], frame_1.base_point[1], 0.0)
+
+        frame, msp, base_point = draw_frame(frame=frame, base_point=base_point, msp=msp,
+                                              drawing_sections=False)
+
+        for entity in layout:
+            if entity.dxf.layer == 'Статическая проверка (чертеж)' and entity.dxftype() == 'VIEWPORT':
+                if entity:
+                    entity.dxf.view_center_point = (frame.base_point[0] + frame.geometrical_center()[0],
+                                                    frame.base_point[1] + frame.geometrical_center()[1],
+                                                    0.0)
 
         zoom.extents(msp)
-        doc.saveas(f'report.dxf')
+        doc.save()
+

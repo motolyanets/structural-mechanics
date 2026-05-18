@@ -55,9 +55,9 @@ class Force(Load):
         lever_arm = self.get_lever_arm(point=point)
         moment = lever_arm * self.value
         if lever_arm >= 0:
-            text = f' + {self.name}·{round_up(abs(lever_arm))}'
+            text = f' +{self.name}·{round_up(abs(lever_arm))}'
         else:
-            text = f' - {self.name}·{round_up(abs(lever_arm))}'
+            text = f' -{self.name}·{round_up(abs(lever_arm))}'
         return text, moment
 
     def get_projection_on_axis(self, axis_name: str) -> tuple:
@@ -81,7 +81,7 @@ class Force(Load):
                              "layer": "Loads",
                              "rotation": self.rotation,
                          })
-        text = f'{self.name} = {self.value}'
+        text = f'{self.name} = {round_up(self.value)}'
 
         # Рассчитываем вектор направления
         angle_rad = math.radians(self.rotation)
@@ -211,9 +211,9 @@ class DistributedForce(Load):
         lever_arm = self.get_lever_arm(point=point)
         moment = round_up(lever_arm * self.Q())
         if lever_arm >= 0:
-            text = f' + {self.name}·{self.length}·{round_up(abs(lever_arm))}'
+            text = f' +{self.name}·{self.length}·{round_up(abs(lever_arm))}'
         else:
-            text = f' - {self.name}·{self.length}·{round_up(abs(lever_arm))}'
+            text = f' -{self.name}·{self.length}·{round_up(abs(lever_arm))}'
         return text, moment
 
     def split_load_for_calculation_section(self):

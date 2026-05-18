@@ -8,6 +8,7 @@ from core.mechanics.frame import Frame
 from core.mechanics.load import Force, Momentum, DistributedForce
 from core.mechanics.node import Node
 from core.mechanics.rod import Rod
+from services.services import round_up
 
 h_r = 0.1
 
@@ -84,8 +85,6 @@ def draw_rod(rod: Rod, base_point: List[float], msp, hinge_radius=h_r):
         direction_point = line.dxf.start
         drow_hinge(hinge_point, direction_point, msp)
 
-    draw_section(rod=rod, base_point=base_point, msp=msp)
-
 
 def draw_section(rod: Rod, base_point: List[float], msp):
     if rod.sections:
@@ -105,14 +104,16 @@ def draw_section(rod: Rod, base_point: List[float], msp):
     return msp
 
 
-def draw_frame(frame: Frame, base_point: List[float], msp, diagram_name: str = None):
+def draw_frame(frame: Frame, base_point: List[float], msp, diagram_name: str = None, drawing_sections: bool = True):
     frame.base_point = base_point
 
     for node in frame.nodes:
         draw_node(node, base_point, msp)
 
     for rod in frame.rods:
-        draw_rod(rod, base_point, msp)
+        draw_rod(rod=rod, base_point=base_point, msp=msp)
+        if drawing_sections:
+            draw_section(rod=rod, base_point=base_point, msp=msp)
         if diagram_name:
             max_value = frame.find_max_value_on_diagram(diagram_name=diagram_name)
             scale = 2 / max_value
@@ -142,7 +143,7 @@ def draw_frame(frame: Frame, base_point: List[float], msp, diagram_name: str = N
         msp = reaction.drow(insert_point, msp)
 
 
-    base_point = [base_point[0] + 30, base_point[1]]
+    base_point = [base_point[0] + frame.length() + 10, base_point[1]]
     return frame, msp, base_point
 
 
@@ -194,8 +195,8 @@ def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp,
     is_vertical = abs(rod_vector.x) < 1e-6  # Вертикальный
 
     # Получаем значения моментов
-    M_start = diagram[0]
-    M_end = diagram[-1]
+    M_start = round_up(diagram[0])
+    M_end = round_up(diagram[-1])
 
 
 
@@ -235,7 +236,7 @@ def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp,
 
     # Рисуем эпюру как полилинию
     if len(points) > 1:
-        polyline = msp.add_lwpolyline(points, dxfattribs={'layer': 'diagram M', 'color': 3, 'linetype': 'CONTINUOUS'})
+        polyline = msp.add_lwpolyline(points, dxfattribs={'layer': 'diagram M', 'color': 6, 'linetype': 'CONTINUOUS'})
         polyline.closed = True
 
     perpendicular_angle = find_perpendicular_angle(start_point=start_point, end_point=end_point)
@@ -265,7 +266,7 @@ def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp,
             offset_dir = perpendicular if M_start >= 0 else -perpendicular
 
         text_point = start_point + offset_dir * abs(M_start) * scale
-        msp.add_text(f"{abs(M_start)}", dxfattribs={'layer': 'diagram M', 'height': 0.2, 'color': 3}).set_placement(text_point)
+        msp.add_text(f"{abs(M_start)}", dxfattribs={'layer': 'diagram M', 'height': 0.2, 'color': 6}).set_placement(text_point)
 
     # Подпись в конце стержня
     if abs(M_end) > 0.01:
@@ -279,11 +280,11 @@ def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp,
             offset_dir = perpendicular if M_end >= 0 else -perpendicular
 
         text_point = end_point + offset_dir * abs(M_end) * scale
-        msp.add_text(f"{abs(M_end)}", dxfattribs={'layer': 'diagram M', 'height': 0.2, 'color': 3}).set_placement(text_point)
+        msp.add_text(f"{abs(M_end)}", dxfattribs={'layer': 'diagram M', 'height': 0.2, 'color': 6}).set_placement(text_point)
 
     # Подпись в середине стержня
     if len(diagram) == 3:
-        M_mdl = diagram[1]
+        M_mdl = round_up(diagram[1])
         if abs(M_mdl) > 0.01:
             if is_horizontal:
                 offset_dir = Vec2(0, 1) if M_mdl >= 0 else Vec2(0, -1)
@@ -295,7 +296,7 @@ def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp,
                 offset_dir = perpendicular if M_mdl >= 0 else -perpendicular
 
             text_point = middle_point + offset_dir * abs(M_mdl) * scale
-            msp.add_text(f"{abs(M_mdl)}", dxfattribs={'layer': 'diagram M', 'height': 0.2, 'color': 3}).set_placement(text_point)
+            msp.add_text(f"{abs(M_mdl)}", dxfattribs={'layer': 'diagram M', 'height': 0.2, 'color': 6}).set_placement(text_point)
 
     return msp
 
@@ -373,7 +374,7 @@ def draw_diagram_q(rod: Rod, base_point: List[float], diagram: List[float], msp,
 
     # Рисуем эпюру как полилинию
     if len(points) > 1:
-        polyline = msp.add_lwpolyline(points, dxfattribs={'layer': 'diagram Q', 'color': 3, 'linetype': 'CONTINUOUS'})
+        polyline = msp.add_lwpolyline(points, dxfattribs={'layer': 'diagram Q', 'color': 6, 'linetype': 'CONTINUOUS'})
         polyline.closed = True
 
     perpendicular_angle = find_perpendicular_angle(start_point=start_point, end_point=end_point)
@@ -403,7 +404,7 @@ def draw_diagram_q(rod: Rod, base_point: List[float], diagram: List[float], msp,
             offset_dir = perpendicular if Q_start >= 0 else -perpendicular
 
         text_point = start_point + offset_dir * abs(Q_start) * scale
-        msp.add_text(f"{Q_start}", dxfattribs={'layer': 'diagram Q', 'height': 0.2, 'color': 3}).set_placement(text_point)
+        msp.add_text(f"{Q_start}", dxfattribs={'layer': 'diagram Q', 'height': 0.2, 'color': 6}).set_placement(text_point)
 
     # Подпись в конце стержня
     if abs(Q_end) > 0.01:
@@ -417,6 +418,6 @@ def draw_diagram_q(rod: Rod, base_point: List[float], diagram: List[float], msp,
             offset_dir = perpendicular if Q_end >= 0 else -perpendicular
 
         text_point = end_point + offset_dir * abs(Q_end) * scale
-        msp.add_text(f"{Q_end}", dxfattribs={'layer': 'diagram Q', 'height': 0.2, 'color': 3}).set_placement(text_point)
+        msp.add_text(f"{Q_end}", dxfattribs={'layer': 'diagram Q', 'height': 0.2, 'color': 6}).set_placement(text_point)
 
     return msp

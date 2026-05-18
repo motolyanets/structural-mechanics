@@ -32,6 +32,29 @@ class Frame:
                 reactions.append(Momentum(name=f'M{support.node.name}', node=support.node, rotation=True))
         return reactions
 
+    def geometrical_center(self) -> Tuple[float, float]:
+        x_min = 0
+        x_max = 0
+        y_min = 0
+        y_max = 0
+        for node in self.nodes:
+            x_min = min(node.x, x_min)
+            x_max = max(node.x, x_max)
+            y_min = min(node.y, y_min)
+            y_max = max(node.y, y_max)
+        center_x = (x_min + x_max) / 2
+        center_y = (y_min + y_max) / 2
+        return center_x, center_y
+
+    def length(self) -> float:
+        x_min = 0
+        x_max = 0
+        for node in self.nodes:
+            x_min = min(node.x, x_min)
+            x_max = max(node.x, x_max)
+        length = x_max - x_min
+        return length
+
     def sum_momentum_about_node(self, node: Node):
         all_loads = self.loads + self.finded_reactions
 
@@ -42,7 +65,7 @@ class Frame:
             if isinstance(load, Force):
                 text, moment_of_load = load.get_moment_about(point=point)
                 moment += moment_of_load
-                equation += f'+ {text} '
+                equation += text
             elif isinstance(load, Momentum):
                 if load.rotation:
                     moment += load.value
@@ -53,9 +76,10 @@ class Frame:
             if isinstance(load, DistributedForce):
                 text, moment_of_load = load.get_moment_about(point=point)
                 moment += moment_of_load
-                equation += f'+ {text} '
+                equation += text
 
         moment = round_up(moment, 3)
+        print(equation)
         equation = f'∑M({node.name}): ' + normalize_equation(equation) + ' = 0'
         return moment, equation
 

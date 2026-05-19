@@ -3,6 +3,7 @@ from pathlib import Path
 
 from tasks.brgtu.composite_frame.plugin import BRGTUCompositeFrame
 from tasks.brgtu.force_method.plugin import BRGTUForceMethod
+from tasks.brgtu.movement_method.plugin import BRGTUMovementMethod
 
 
 # from tasks.brgtu.force_method.plugin import BRGTUForceMethod
@@ -23,7 +24,12 @@ def main():
             "name": "Метод сил",
             "class": BRGTUForceMethod,
             "excel_path": Path("data/brgtu/force_method.xlsx")
-        }
+        },
+        "3": {
+            "name": "Метод перемещений",
+            "class": BRGTUMovementMethod,
+            "excel_path": Path("data/brgtu/movement_method.xlsx")
+        },
     }
 
     print("\nДоступные задачи:")
@@ -31,7 +37,7 @@ def main():
         print(f"  {key}. {task['name']}")
 
     # choice = input("\nВыберите задачу: ").strip()
-    choice = "2"
+    choice = "3"
 
     if choice not in tasks:
         print("❌ Неверный выбор")
@@ -44,10 +50,7 @@ def main():
         return
 
     # cipher = input("\nВведите 4-значный шифр: ").strip()
-    # cipher = "3024".strip()
-    # cipher = "0483".strip()
-    # cipher = "6279".strip()
-    cipher = "5938".strip()
+    cipher = "3716".strip()
 
     try:
         plugin = task_info["class"](task_info["excel_path"])

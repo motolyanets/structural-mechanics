@@ -38,7 +38,7 @@ class BRGTUForceMethod(TaskPlugin):
         doc = ezdxf.readfile('Шаблон.dxf')
         msp = doc.modelspace()
         msp.delete_all_entities()
-        layout = doc.layouts.get("Шаблон")
+        layout = doc.layouts.get("Шаблон (метод сил)")
         base_point = [0, 0]
 
         task_condition_text = (f'{cipher}\n'
@@ -360,7 +360,7 @@ class BRGTUForceMethod(TaskPlugin):
         input('Проверьте файл report.dxf, подготовьтесь вводить значения эпюры N и опорные реакции, далее нажмите ENTER')
         doc = ezdxf.readfile('report.dxf')
         msp = doc.modelspace()
-        layout = doc.layouts.get("Шаблон")
+        layout = doc.layouts.get("Шаблон (метод сил)")
         print(f'\n')
 
         nn = [1.87, -4.58, -6.18, -6.18, 0, -10.43, -5.41, -6.09]

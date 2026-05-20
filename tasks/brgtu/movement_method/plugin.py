@@ -21,7 +21,7 @@ class BRGTUMovementMethod(TaskPlugin):
         return [
             # {"scheme_id": 10, "name": "Схема 10"},
             # {"scheme_id": 19, "name": "Схема 19"},
-            # {"scheme_id": 22, "name": "Схема 22"},
+            {"scheme_id": 22, "name": "Схема 22"},
             # {"scheme_id": 24, "name": "Схема 24"},
             # {"scheme_id": 27, "name": "Схема 27"},
             # {"scheme_id": 29, "name": "Схема 29"},
@@ -73,6 +73,10 @@ class BRGTUMovementMethod(TaskPlugin):
         if circuit_number == 17:
             from schemes.brgtu.movement_method.frame_17 import create_frame_17, create_primary_system_17
             fr_nodes, fr_rods, fr_supports, fr_loads = create_frame_17(params)
+            # ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_17(params)
+        elif circuit_number == 22:
+            from schemes.brgtu.movement_method.frame_22 import create_frame_22, create_primary_system_22
+            fr_nodes, fr_rods, fr_supports, fr_loads = create_frame_22(params)
             # ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_17(params)
         else:
             raise ValueError(f"Схема {circuit_number} не реализована")

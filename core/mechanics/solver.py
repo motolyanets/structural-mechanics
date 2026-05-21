@@ -753,6 +753,8 @@ class FrameForMovementMethod(Frame):
         self.name = name
 
         self.load_distribution_on_rods()
+        for rod in self.rods:
+            rod.calculate_diagram_m()
 
 
     def load_distribution_on_rods(self):

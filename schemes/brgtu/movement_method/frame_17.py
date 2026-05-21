@@ -90,16 +90,16 @@ def create_frame_17(params: dict):
 
     supports = [support1, support2]
 
-    # return nodes, rods, supports, loads, calkulate_diagram_rods_order
     return nodes, rods, supports, loads
 
 
-def create_primary_system_17(params: dict):
+def create_fm_primary_system_17(params: dict):
     l1 = params["l1"]
     l2 = params["l2"]
     h1 = params["h1"]
     h2 = params["h2"]
     load_index = params["load_index"]
+    m = params["m"]
     P = params["P"]
     q = params["q"]
     i2 = params["i2"]

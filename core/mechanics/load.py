@@ -20,6 +20,8 @@ class Force(Load):
         self.node = node
         self.value = value
         self.rotation = int(rotation)
+        self.x = node.x
+        self.y = node.y
 
     def get_lever_arm(self, point: Tuple[float, float]) -> float:
         """
@@ -105,6 +107,9 @@ class Momentum(Load):
         self.node = node
         self.value = value
         self.rotation = rotation
+        self.x = node.x
+        self.y = node.y
+
 
     def drow(self, insert_point: Tuple[float, float], msp):
         if self.rotation:

@@ -292,7 +292,3 @@ class Frame:
 
 
         self.is_all_rods_with_sections()
-
-
-
-

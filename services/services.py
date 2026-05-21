@@ -1,3 +1,4 @@
+import math
 import re
 
 
@@ -150,7 +151,6 @@ def relative_error_percent(number1: float, number2: float, tolerance_percent: fl
 
     return E, e_text
 
-
 def is_point_on_rod(start_point: tuple[float, float], end_point: tuple[float, float], load_point: tuple[float, float], epsilon=1e-9):
     """
     Проверяет, лежит ли точка на отрезке (а не на всей прямой)
@@ -182,3 +182,10 @@ def is_distr_force_on_rod(rod_start: tuple[float, float], rod_end: tuple[float, 
     # Проверяем, что обе точки второго отрезка лежат на первом
     return (is_point_on_rod(load_start, load_end, rod_start, epsilon) and
             is_point_on_rod(load_start, load_end, rod_end, epsilon))
+
+def distance_between_two_points(point_1: tuple[float, float], point_2: tuple[float, float]) -> float:
+    dx = point_2[0] - point_1[0]
+    dy = point_2[1] - point_1[1]
+    distance = math.sqrt(dx ** 2 + dy ** 2)
+    return distance
+

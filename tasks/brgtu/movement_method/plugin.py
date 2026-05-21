@@ -93,6 +93,7 @@ class BRGTUMovementMethod(TaskPlugin):
         diagrams = ['1', '2', '3', 'p']
         for diagram in diagrams:
             print(diagram)
+            mm_nodes, mm_rods, mm_supports, mm_loads = create_mm_primary_system_22(params)
             frame = FrameForMovementMethod(name=diagram, nodes=mm_nodes, rods=mm_rods, supports=mm_supports, loads=mm_loads[diagram])
 
 

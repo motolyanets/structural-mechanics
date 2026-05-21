@@ -756,7 +756,6 @@ class FrameForMovementMethod(Frame):
         for rod in self.rods:
             rod.calculate_diagram_m()
 
-
     def load_distribution_on_rods(self):
         for rod in self.rods:
             loads_on_rod = []
@@ -805,6 +804,6 @@ class FrameForMovementMethod(Frame):
                                 new_load = Displacement(name=load.name, node=new_node, value=load.value, rotation=load.rotation)
                         if new_load:
                             loads_on_rod.append(new_load)
-            print(f'{rod}.....{loads_on_rod}')
+            rod.loads = loads_on_rod
 
 

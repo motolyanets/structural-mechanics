@@ -6,9 +6,10 @@ import sympy as sp
 from core.mechanics.frame import Frame
 from core.mechanics.node import Node
 from core.mechanics.rod import Rod
-from core.mechanics.load import Force, Momentum, DistributedForce
+from core.mechanics.load import Force, Momentum, DistributedForce, Twist, Displacement
+from core.mechanics.rod_movementmethod import RodForMovementMethod
 from core.mechanics.support import Support
-from services.services import round_up, making_report_of_multiply
+from services.services import round_up, making_report_of_multiply, is_point_on_rod, is_distr_force_on_rod
 
 
 class SolvableFrame(Frame):
@@ -743,3 +744,65 @@ class ThreeHingedFrame(SolvableFrame, BaseFrame):
 
 
         return report
+
+
+class FrameForMovementMethod(Frame):
+    def __init__(self, name: str, nodes: List[Node], rods: List[RodForMovementMethod], supports: List[Support] | None, loads: list | None,
+                 finded_reactions=None):
+        super().__init__(nodes, rods, supports, loads, finded_reactions)
+        self.name = name
+
+        self.load_distribution_on_rods()
+
+
+    def load_distribution_on_rods(self):
+        for rod in self.rods:
+            loads_on_rod = []
+            for load in self.loads:
+                if self.name == 'p':
+                    if isinstance(load, (Force, Momentum)):
+                        if is_point_on_rod(start_point=(rod.start_node.x, rod.start_node.y),
+                                           end_point=(rod.end_node.x, rod.end_node.y),
+                                           load_point=(load.x, load.y)):
+                            if (load.x, load.y) != (rod.start_node.x, rod.start_node.y) and (load.x, load.y) != (
+                                    rod.end_node.x, rod.end_node.y):
+                                loads_on_rod.append(load)
+                    elif isinstance(load, DistributedForce):
+                        if is_distr_force_on_rod(rod_start=(rod.start_node.x, rod.start_node.y),
+                                                 rod_end=(rod.end_node.x, rod.end_node.y),
+                                                 load_start=(load.start_coordinates[0], load.start_coordinates[1]),
+                                                 load_end=(load.end_coordinates[0], load.end_coordinates[1])
+                                                 ):
+                            new_load = DistributedForce(name=load.name,
+                                                        start_coordinates=(rod.start_node.x, rod.start_node.y),
+                                                        end_coordinates=(rod.end_node.x, rod.end_node.y), value=load.value,
+                                                        rotation=load.rotation)
+                            loads_on_rod.append(new_load)
+                else:
+                    if isinstance(load, Twist):
+                        if load.node.name == rod.start_node.name or load.node.name == rod.end_node.name:
+                            loads_on_rod.append(load)
+                    elif isinstance(load, Displacement):
+                        new_node = None
+                        new_load = None
+                        if load.rotation in [0, 180]:
+                            y = load.y
+                            if rod.start_node.y == y and rod.start_node.x == rod.end_node.x:
+                                new_node = rod.start_node
+                            elif rod.end_node.y == y and rod.start_node.x == rod.end_node.x:
+                                new_node = rod.end_node
+                            if new_node:
+                                new_load = Displacement(name=load.name, node=new_node, value=load.value, rotation=load.rotation)
+                        elif load.rotation in [90, 270]:
+                            x = load.x
+                            if rod.start_node.x == x and rod.start_node.y == rod.end_node.y:
+                                new_node = rod.start_node
+                            elif rod.end_node.x == x and rod.start_node.y == rod.end_node.y:
+                                new_node = rod.end_node
+                            if new_node:
+                                new_load = Displacement(name=load.name, node=new_node, value=load.value, rotation=load.rotation)
+                        if new_load:
+                            loads_on_rod.append(new_load)
+            print(f'{rod}.....{loads_on_rod}')
+
+

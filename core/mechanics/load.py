@@ -133,7 +133,7 @@ class Momentum(Load):
 class DistributedForce(Load):
     """Создаем класс для распределенной нагрузки"""
 
-    def __init__(self, name: str, rod: Rod | None, value: float, rotation: int,
+    def __init__(self, name: str, value: float, rotation: int, rod: Rod | None = None,
                  start_coordinates: Tuple[float, float] | None = None, end_coordinates: Tuple[float, float] | None = None):
         self.name = name
         self.rod = rod
@@ -245,4 +245,33 @@ class DistributedForce(Load):
     def __repr__(self) -> str:
         return f"DistributedForce({self.name}={self.value} ---- {self.rotation}, rod - ({self.start_coordinates}:{self.end_coordinates}))"
 
+
+class Twist(Load):
+    """Создаем класс для поворота"""
+
+    def __init__(self, name: str, node: Node, rotation: bool = True, value: float = 1):
+        self.name = name
+        self.node = node
+        self.value = value
+        self.rotation = rotation
+        self.x = node.x
+        self.y = node.y
+
+    def __repr__(self) -> str:
+        return f"Twist({self.name}={self.value} ---- {self.rotation}, node - {self.node.name})"
+
+
+class Displacement(Load):
+    """Создаем класс для сдвига"""
+
+    def __init__(self, name: str, node: Node, rotation: int, value: float = 1):
+        self.name = name
+        self.node = node
+        self.value = value
+        self.rotation = int(rotation)
+        self.x = node.x
+        self.y = node.y
+
+    def __repr__(self) -> str:
+        return f"Displacement({self.name}={self.value} ---- {self.rotation}, node - {self.node.name})"
 

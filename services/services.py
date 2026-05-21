@@ -149,3 +149,36 @@ def relative_error_percent(number1: float, number2: float, tolerance_percent: fl
         print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}\n")
 
     return E, e_text
+
+
+def is_point_on_rod(start_point: tuple[float, float], end_point: tuple[float, float], load_point: tuple[float, float], epsilon=1e-9):
+    """
+    Проверяет, лежит ли точка на отрезке (а не на всей прямой)
+    """
+    # Сначала проверяем коллинеарность
+    cross_product = ((end_point[0] - start_point[0]) * (load_point[1] - start_point[1]) -
+                     (end_point[1] - start_point[1]) * (load_point[0] - start_point[0]))
+    if abs(cross_product) > epsilon:
+        return False
+
+    # Проверяем, находится ли точка в bounding box отрезка
+    min_x = min(start_point[0], end_point[0]) - epsilon
+    max_x = max(start_point[0], end_point[0]) + epsilon
+    min_y = min(start_point[1], end_point[1]) - epsilon
+    max_y = max(start_point[1], end_point[1]) + epsilon
+
+    return min_x <= load_point[0] <= max_x and min_y <= load_point[1] <= max_y
+
+def is_distr_force_on_rod(rod_start: tuple[float, float], rod_end: tuple[float, float], load_start: tuple[float, float],
+                          load_end: tuple[float, float], epsilon=1e-9):
+    """
+    Проверяет, является ли стержень подотрезком распределенной нагрузки. Функция работает только корректно только в том
+    случае, если нагрузка распределена по ВСЕЙ длине стержня.
+
+    Returns:
+        bool: True если стержень является подотрезком распределенной нагрузки
+    """
+
+    # Проверяем, что обе точки второго отрезка лежат на первом
+    return (is_point_on_rod(load_start, load_end, rod_start, epsilon) and
+            is_point_on_rod(load_start, load_end, rod_end, epsilon))

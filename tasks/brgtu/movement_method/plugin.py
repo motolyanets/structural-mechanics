@@ -4,7 +4,7 @@ import ezdxf
 from ezdxf import zoom
 
 from core.mechanics.frame import Frame
-from core.mechanics.solver import SolvableFrame
+from core.mechanics.solver import SolvableFrame, FrameForMovementMethod
 from services.authocad import draw_frame
 from tasks.base import TaskPlugin
 from tasks.brgtu.movement_method.loader import MovementMethodLoader
@@ -76,9 +76,9 @@ class BRGTUMovementMethod(TaskPlugin):
             fr_nodes, fr_rods, fr_supports, fr_loads = create_frame_17(params)
             # ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_17(params)
         elif circuit_number == 22:
-            from schemes.brgtu.movement_method.frame_22 import create_frame_22, create_primary_system_22
+            from schemes.brgtu.movement_method.frame_22 import create_frame_22, create_mm_primary_system_22
             fr_nodes, fr_rods, fr_supports, fr_loads = create_frame_22(params)
-            # ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_17(params)
+            mm_nodes, mm_rods, mm_supports, mm_loads = create_mm_primary_system_22(params)
         else:
             raise ValueError(f"Схема {circuit_number} не реализована")
 
@@ -90,15 +90,33 @@ class BRGTUMovementMethod(TaskPlugin):
                     entity.dxf.view_center_point = (frame.geometrical_center()[0], frame.geometrical_center()[1], 0.0)
         frame, msp, base_point = draw_frame(frame=frame, base_point=base_point, msp=msp)
 
-        frame = SolvableFrame(fr_nodes, fr_rods, fr_supports, fr_loads)
+        diagrams = ['1', '2', '3', 'p']
+        for diagram in diagrams:
+            print(diagram)
+            frame = FrameForMovementMethod(name=diagram, nodes=mm_nodes, rods=mm_rods, supports=mm_supports, loads=mm_loads[diagram])
 
-        ms = [[-0.476, 0.925], [0, 0], [-2.536, -0.845], [-0.845, 0.845], [0.845, 2.536], [-0.546, 0], [-0.919, 0], [0, 0.714], [0, -0.211 / 2], [-0.211 / 2, -0.211]]
-        i = 0
-        for rod in frame.rods:
-            rod.diagram_Ms = ms[i]
 
-        delta_ss_text, delta_ss = frame.multiply_M_diagrams_by_Simpson('Ms', 'Ms')
-        print(f'δss = {delta_ss_text}\n')
+
+
+
+
+
+
+
+
+
+
+
+
+        # frame = SolvableFrame(fr_nodes, fr_rods, fr_supports, fr_loads)
+        #
+        # ms = [[-0.476, 0.925], [0, 0], [-2.536, -0.845], [-0.845, 0.845], [0.845, 2.536], [-0.546, 0], [-0.919, 0], [0, 0.714], [0, -0.211 / 2], [-0.211 / 2, -0.211]]
+        # i = 0
+        # for rod in frame.rods:
+        #     rod.diagram_Ms = ms[i]
+        #
+        # delta_ss_text, delta_ss = frame.multiply_M_diagrams_by_Simpson('Ms', 'Ms')
+        # print(f'δss = {delta_ss_text}\n')
 
 
 

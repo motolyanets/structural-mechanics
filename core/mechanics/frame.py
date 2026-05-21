@@ -3,12 +3,13 @@ from typing import List, Tuple
 from core.mechanics.load import Force, Momentum, DistributedForce
 from core.mechanics.node import Node
 from core.mechanics.rod import Rod
+from core.mechanics.rod_movementmethod import RodForMovementMethod
 from core.mechanics.support import Support
 from services.services import round_up, normalize_equation
 
 
 class Frame:
-    def __init__(self, nodes: List[Node], rods: List[Rod], supports: List[Support],
+    def __init__(self, nodes: List[Node], rods: List[Rod] | List[RodForMovementMethod], supports: List[Support],
                  loads: list, finded_reactions=None, base_point=None, calkulate_diagram_rods_order: List[List[Rod]]=None):
         self.nodes = nodes
         self.rods = rods

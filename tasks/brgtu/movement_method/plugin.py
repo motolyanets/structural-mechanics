@@ -4,7 +4,7 @@ import ezdxf
 from ezdxf import zoom
 
 from core.mechanics.frame import Frame
-from core.mechanics.solver import SolvableFrame, FrameForMovementMethod
+from core.mechanics.solver import FrameForMovementMethod
 from services.authocad import draw_frame
 from tasks.base import TaskPlugin
 from tasks.brgtu.movement_method.loader import MovementMethodLoader
@@ -79,6 +79,7 @@ class BRGTUMovementMethod(TaskPlugin):
             from schemes.brgtu.movement_method.frame_22 import create_frame_22, create_mm_primary_system_22
             fr_nodes, fr_rods, fr_supports, fr_loads = create_frame_22(params)
             mm_nodes, mm_rods, mm_supports, mm_loads = create_mm_primary_system_22(params)
+            new_mm_frame = create_mm_primary_system_22
         else:
             raise ValueError(f"Схема {circuit_number} не реализована")
 
@@ -91,15 +92,38 @@ class BRGTUMovementMethod(TaskPlugin):
         frame, msp, base_point = draw_frame(frame=frame, base_point=base_point, msp=msp)
 
         diagrams = ['1', '2', '3', 'p']
+        mm_frames = []
+
         for diagram in diagrams:
             print(diagram)
-            mm_nodes, mm_rods, mm_supports, mm_loads = create_mm_primary_system_22(params)
+            mm_nodes, mm_rods, mm_supports, mm_loads = new_mm_frame(params)
             frame = FrameForMovementMethod(name=diagram, nodes=mm_nodes, rods=mm_rods, supports=mm_supports, loads=mm_loads[diagram])
+            mm_frames.append(frame)
+
+            calculating_diagram_report = ''
+            for rod in frame.rods:
+                rod_diagram_report = rod.calculate_diagram_m_movement()
+                if rod_diagram_report:
+                    calculating_diagram_report += rod_diagram_report
+            print(calculating_diagram_report)
 
 
+        load_z1 = mm_loads['1']
+        load_z2 = mm_loads['2']
+        load_z3 = mm_loads['3']
 
+        print(load_z1)
+        print(load_z2)
+        print(load_z3)
 
-
+        for frame in mm_frames:
+            if frame.name == '1':
+                m1, eq1 = frame.sum_of_moment_in_rods_at_node(node_name=load_z1[0].node.name)
+                m2, eq2 = frame.sum_of_moment_in_rods_at_node(node_name=load_z2[0].node.name)
+                m3, eq3 = frame.sum_of_moment_in_rods_at_node(node_name=load_z3[0].node.name)
+                print(eq1)
+                print(eq2)
+                print(eq3)
 
 
 

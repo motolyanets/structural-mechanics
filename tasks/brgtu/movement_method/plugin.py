@@ -4,8 +4,10 @@ import ezdxf
 from ezdxf import zoom
 
 from core.mechanics.frame import Frame
+from core.mechanics.load import Twist, Displacement
 from core.mechanics.solver import FrameForMovementMethod
 from services.authocad import draw_frame
+from services.services import round_up
 from tasks.base import TaskPlugin
 from tasks.brgtu.movement_method.loader import MovementMethodLoader
 
@@ -116,14 +118,37 @@ class BRGTUMovementMethod(TaskPlugin):
         print(load_z2)
         print(load_z3)
 
+        def calculation_r(frame: FrameForMovementMethod, loads: dict):
+            for load_name in loads:
+                load_list = loads[load_name]
+                if len(load_list) == 1 and isinstance(load_list[0], (Twist, Displacement)):
+                    load = load_list[0]
+
+                    if isinstance(load, Twist):
+                        m, eq = frame.sum_of_moment_in_rods_at_node(node_name=load.node.name)
+                        report = f'{'' if load.rotation else '- '}' + f'r{load_name}{frame.name} ' + eq + '= 0\n'
+                        if load.rotation:
+                            r = -m
+                        else:
+                            r = m
+                        report += f'r{load_name}{frame.name} = {round_up(r, 3)}'
+                        print(report)
+                    elif isinstance(load, Displacement):
+                        f, eq = frame.sum_of_forces_along_displacement(displacement=load)
+                        report = f'{'' if load.rotation in [0, 90] else '- '}' + f'r{load_name}{frame.name} ' + eq + '= 0\n'
+                        if load.rotation in [0, 90]:
+                            r = -f
+                        else:
+                            r = f
+                        report += f'r{load_name}{frame.name} = {round_up(r, 3)}'
+                        print(report)
+
+
+
+
         for frame in mm_frames:
-            if frame.name == '1':
-                m1, eq1 = frame.sum_of_moment_in_rods_at_node(node_name=load_z1[0].node.name)
-                m2, eq2 = frame.sum_of_moment_in_rods_at_node(node_name=load_z2[0].node.name)
-                m3, eq3 = frame.sum_of_moment_in_rods_at_node(node_name=load_z3[0].node.name)
-                print(eq1)
-                print(eq2)
-                print(eq3)
+            calculation_r(frame, mm_loads)
+            print()
 
 
 

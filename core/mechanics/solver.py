@@ -810,7 +810,7 @@ class FrameForMovementMethod(Frame):
             if node.name == node_name:
                 node_for_calculation = node
         sum_of_moments_at_node = 0
-        equipment = f'M{node_name} = '
+        equipment = ''
         if node_for_calculation:
             for rod in self.rods:
                 if node_for_calculation in [rod.start_node, rod.end_node]:
@@ -829,7 +829,46 @@ class FrameForMovementMethod(Frame):
                             else:
                                 sum_of_moments_at_node -= rod.diagram_M[-1]
                                 equipment += f'{'+ ' if rod.diagram_M[-1] <= 0 else '- '}' + str(abs(round_up(rod.diagram_M[-1], 3))) + ' '
-            equipment += "= " + str(round_up(sum_of_moments_at_node, 3))
+            # equipment += "= " + str(round_up(sum_of_moments_at_node, 3))
         else:
             raise Exception(f'В данной раме нет узла под названием {node_name}')
         return sum_of_moments_at_node, equipment
+
+    def sum_of_forces_along_displacement(self, displacement: Displacement):
+        sum_of_forces_at_node = 0
+        equipment = ''
+
+        displacement_node = None
+        for node in self.nodes:
+            if node.name == displacement.node.name:
+                displacement_node = node
+
+        if not displacement_node:
+            raise Exception(f'В раме {self.name} нет узла {displacement.node.name}')
+
+        rods_with_impact_of_displacement = []
+        x = displacement_node.x
+        y = displacement_node.y
+        for rod in self.rods:
+            if displacement.rotation in [90, 270] and rod.dy() == 0 and rod.dx() != 0:
+                if rod.start_node.x == x or rod.end_node.x == x:
+                    rods_with_impact_of_displacement.append(rod)
+            elif displacement.rotation in [0, 180] and rod.dx() == 0 and rod.dy() != 0:
+                if rod.start_node.y == y or rod.end_node.y == y:
+                    rods_with_impact_of_displacement.append(rod)
+
+        for rod in rods_with_impact_of_displacement:
+            if rod.diagram_Q:
+                if rod.start_node == displacement_node:
+                    projection = -rod.diagram_Q[0]
+                else:
+                    projection = rod.diagram_Q[-1]
+                sum_of_forces_at_node += projection
+                equipment += f'{'+ ' if projection >= 0 else '- '}' + str(abs(round_up(projection, 3))) + ' '
+        return sum_of_forces_at_node, equipment
+
+    def __repr__(self) -> str:
+        return f"FrameForMovementMethod({self.name})"
+
+
+

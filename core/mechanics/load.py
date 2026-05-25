@@ -272,6 +272,42 @@ class Displacement(Load):
         self.x = node.x
         self.y = node.y
 
+    def find_relatives_nodes(self, frame):
+        rods = frame.rods
+        relative_nodes = [self.node]
+
+        if self.rotation in [90, 270]:
+            while True:
+                changed = False
+                for rod in rods:
+                    if rod.dx() == 0:
+                        if rod.start_node in relative_nodes:
+                            if rod.end_node not in relative_nodes:
+                                relative_nodes.append(rod.end_node)
+                                changed = True
+                        elif rod.end_node in relative_nodes:
+                            if rod.start_node not in relative_nodes:
+                                relative_nodes.append(rod.start_node)
+                                changed = True
+                if not changed:
+                    break
+        elif self.rotation in [0, 180]:
+            while True:
+                changed = False
+                for rod in rods:
+                    if rod.dy() == 0:
+                        if rod.start_node in relative_nodes:
+                            if rod.end_node not in relative_nodes:
+                                relative_nodes.append(rod.end_node)
+                                changed = True
+                        elif rod.end_node in relative_nodes:
+                            if rod.start_node not in relative_nodes:
+                                relative_nodes.append(rod.start_node)
+                                changed = True
+                if not changed:
+                    break
+        return relative_nodes
+
     def __repr__(self) -> str:
         return f"Displacement({self.name}={self.value} ---- {self.rotation}, node - {self.node.name})"
 

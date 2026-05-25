@@ -859,7 +859,7 @@ class FrameForMovementMethod(Frame):
 
         for rod in rods_with_impact_of_displacement:
             if rod.diagram_Q:
-                if rod.start_node == displacement_node:
+                if rod.start_node.x == displacement_node.x or rod.start_node.y == displacement_node.y:
                     projection = -rod.diagram_Q[0]
                 else:
                     projection = rod.diagram_Q[-1]

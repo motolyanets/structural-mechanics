@@ -4,8 +4,8 @@ import ezdxf
 from ezdxf import zoom
 
 from core.mechanics.frame import Frame
-from core.mechanics.load import Twist, Displacement
-from core.mechanics.solver import FrameForMovementMethod
+from core.mechanics.load import Twist, Displacement, Force
+from core.mechanics.solver import FrameForMovementMethod, SolvableFrame
 from services.authocad import draw_frame
 from services.services import round_up
 from tasks.base import TaskPlugin
@@ -78,10 +78,11 @@ class BRGTUMovementMethod(TaskPlugin):
             fr_nodes, fr_rods, fr_supports, fr_loads = create_frame_17(params)
             # ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_17(params)
         elif circuit_number == 22:
-            from schemes.brgtu.movement_method.frame_22 import create_frame_22, create_mm_primary_system_22
+            from schemes.brgtu.movement_method.frame_22 import create_frame_22, create_mm_primary_system_22, create_fm_primary_system_22
             fr_nodes, fr_rods, fr_supports, fr_loads = create_frame_22(params)
             mm_nodes, mm_rods, mm_supports, mm_loads = create_mm_primary_system_22(params)
             new_mm_frame = create_mm_primary_system_22
+            new_fm_frame = create_fm_primary_system_22
         else:
             raise ValueError(f"Схема {circuit_number} не реализована")
 
@@ -119,6 +120,8 @@ class BRGTUMovementMethod(TaskPlugin):
         print(load_z3)
 
         def calculation_r(frame: FrameForMovementMethod, loads: dict):
+            coefficients = dict()
+            reports = dict()
             for load_name in loads:
                 load_list = loads[load_name]
                 if len(load_list) == 1 and isinstance(load_list[0], (Twist, Displacement)):
@@ -132,23 +135,56 @@ class BRGTUMovementMethod(TaskPlugin):
                         else:
                             r = m
                         report += f'r{load_name}{frame.name} = {round_up(r, 3)}'
-                        print(report)
+                        coefficients[f'r{load_name}{frame.name}'] = r
+                        reports[f'r{load_name}{frame.name}'] = report
                     elif isinstance(load, Displacement):
                         f, eq = frame.sum_of_forces_along_displacement(displacement=load)
+
+                        relatives_nodes = load.find_relatives_nodes(frame)
+                        for force in frame.loads:
+                            if isinstance(force, Force):
+                                if force.node in relatives_nodes:
+                                    if force.rotation and load.rotation in [0, 180] or force.rotation and load.rotation in [90, 270]:
+                                        if force.rotation in [0, 90]:
+                                            f += force.value
+                                            eq += f'+ {force.value} '
+                                        elif force.rotation in [180, 270]:
+                                            f -= force.value
+                                            eq += f'- {force.value} '
+
+
                         report = f'{'' if load.rotation in [0, 90] else '- '}' + f'r{load_name}{frame.name} ' + eq + '= 0\n'
                         if load.rotation in [0, 90]:
                             r = -f
                         else:
                             r = f
                         report += f'r{load_name}{frame.name} = {round_up(r, 3)}'
-                        print(report)
+                        coefficients[f'r{load_name}{frame.name}'] = r
+                        reports[f'r{load_name}{frame.name}'] = report
+            return coefficients, reports
 
 
-
+        finded_coefficients = dict()
 
         for frame in mm_frames:
-            calculation_r(frame, mm_loads)
-            print()
+            coefficients, reports = calculation_r(frame, mm_loads)
+            print(reports)
+
+            for c in coefficients:
+                coefficient = f'{c[0]}{c[2]}{c[1]}'
+                if coefficient not in finded_coefficients:
+                    finded_coefficients[c] = coefficients[c]
+                else:
+                    if finded_coefficients[coefficient] != coefficients[c]:
+                        raise Exception(f'{coefficient} = {finded_coefficients[coefficient]} ....{c} = {coefficients[c]}')
+
+        print(finded_coefficients)
+
+        for i in ['s']:
+            fm_nodes, fm_rods, fm_supports, fm_loads = new_fm_frame(params)
+
+            fm_frame = SolvableFrame(nodes=fm_nodes, rods=fm_rods, supports=fm_supports, loads=fm_loads).classify_part()
+            fm_frame.solve_frame()
 
 
 

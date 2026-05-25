@@ -146,3 +146,62 @@ def create_mm_primary_system_22(params: dict):
 
     return nodes, rods, supports, loads
 
+
+def create_fm_primary_system_22(params: dict):
+    l1 = params["l1"]
+    l2 = params["l2"]
+    h1 = params["h1"]
+    h2 = params["h2"]
+    load_index = params["load_index"]
+    i2 = params["i2"]
+    i3 = params["i3"]
+
+    node1 = Node(name='A', x=0, y=0)
+    node2 = Node(name='2', x=0, y=h1)
+    node3 = Node(name='3', x=0, y=h1 + h2 * 0.3)
+    node4 = Node(name='4', x=l1 / 3, y=h1)
+    node5 = Node(name='5', x=l1 / 2, y=h1)
+    node6 = Node(name='6', x=l1 * 2 / 3, y=h1)
+    node7 = Node(name='7', x=l1, y=h1)
+    node8 = Node(name='B', x=l1, y=h1 + h2)
+    node9 = Node(name='C', x=l1 + l2, y=h1)
+    node10 = Node(name='E', x=l1, y=0, is_hinge=True)
+    node11 = Node(name='11', x=l1 + l2 * 0.5, y=0)
+    node12 = Node(name='D', x=l1 + l2, y=0)
+
+    rod1 = Rod(start_node=node1, end_node=node2)
+    rod2 = Rod(start_node=node2, end_node=node3)
+    rod4 = Rod(start_node=node7, end_node=node8)
+    rod5 = Rod(start_node=node7, end_node=node9, stiffness=i3)
+    rod6 = Rod(start_node=node10, end_node=node7)
+    rod7 = Rod(start_node=node10, end_node=node11, stiffness=i2)
+    rod8 = Rod(start_node=node11, end_node=node12, stiffness=i2)
+
+    support1 = Support(node=node8, number_of_reactions=1, rotation=180)
+    support2 = Support(node=node12, number_of_reactions=3, rotation=180)
+
+    load_x1 = Momentum(name='x1', node=node1, value=1, rotation=False)
+    load_x2 = Force(name='x2', node=node1, value=1, rotation=0)
+    load_x3 = Force(name='x3', node=node1, value=1, rotation=90)
+    load_x4 = Force(name='x4', node=node9, value=1, rotation=90)
+    load_x5 = Force(name='x5', node=node9, value=1, rotation=180)
+    loads = [load_x1, load_x2, load_x3, load_x4, load_x5]
+
+    if load_index == 1:
+        rod3_1 = Rod(start_node=node2, end_node=node4, stiffness=i3)
+        rod3_2 = Rod(start_node=node4, end_node=node6, stiffness=i3)
+        rod3_3 = Rod(start_node=node6, end_node=node7, stiffness=i3)
+
+        nodes = [node1, node2, node3, node4, node6, node7, node8, node9, node10, node11, node12]
+        rods = [rod1, rod2, rod3_1, rod3_2, rod3_3, rod4, rod5, rod6, rod7, rod8]
+
+    else:
+        rod3_1 = Rod(start_node=node2, end_node=node5, stiffness=i3)
+        rod3_2 = Rod(start_node=node5, end_node=node7, stiffness=i3)
+
+        nodes = [node1, node2, node3, node5, node7, node8, node9, node10, node11, node12]
+        rods = [rod1, rod2, rod3_1, rod3_2, rod4, rod5, rod6, rod7, rod8]
+
+    supports = [support1, support2]
+
+    return nodes, rods, supports, loads

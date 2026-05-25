@@ -72,13 +72,13 @@ class RodForMovementMethod:
                     self.diagram_Q = [Q, Q]
                 elif len(self.loads) == 1 and isinstance(self.loads[0], Displacement):
                     load = self.loads[0]
-                    if load.rotation in [0, 90] and load.node == self.start_node:
+                    if load.rotation in [90, 180] and load.node == self.start_node:
                         sign = 1
-                    elif load.rotation in [0, 90] and load.node == self.end_node:
+                    elif load.rotation in [90, 180] and load.node == self.end_node:
                         sign = -1
-                    elif load.rotation in [180, 270] and load.node == self.end_node:
+                    elif load.rotation in [0, 270] and load.node == self.end_node:
                         sign = 1
-                    elif load.rotation in [180, 270] and load.node == self.start_node:
+                    elif load.rotation in [0, 270] and load.node == self.start_node:
                         sign = -1
                     m_start = sign * 3 * linear_stiffness / length
                     m_end = 0
@@ -183,7 +183,7 @@ class RodForMovementMethod:
                     m_1 = sign * ((load.value * a / length) - (b / length) * abs(m_start))
                     m_2 = -sign * ((load.value * b / length) + (b / length) * abs(m_start))
                     m_end = 0
-                    Q = -sign * load.value * (length ** 2 - b ** 2) / (2 * length ** 3)
+                    Q = -sign * 3 * load.value * (length ** 2 - b ** 2) / (2 * length ** 3)
                     self.diagram_Q = [Q, Q]
                     self.diagram_M = [m_start, m_1, m_2, m_end]
                     text = f'M{self.name} = m · (l² - 3 · b²) / (2 · l²) = {abs(round_up(m_start, 3))}\n'
@@ -211,13 +211,13 @@ class RodForMovementMethod:
                     report += text
                 elif len(self.loads) == 1 and isinstance(self.loads[0], Displacement):
                     load = self.loads[0]
-                    if load.rotation in [0, 90] and load.node == self.start_node:
+                    if load.rotation in [90, 180] and load.node == self.start_node:
                         sign = -1
-                    elif load.rotation in [0, 90] and load.node == self.end_node:
+                    elif load.rotation in [90, 180] and load.node == self.end_node:
                         sign = 1
-                    elif load.rotation in [180, 270] and load.node == self.end_node:
+                    elif load.rotation in [0, 270] and load.node == self.end_node:
                         sign = -1
-                    elif load.rotation in [180, 270] and load.node == self.start_node:
+                    elif load.rotation in [0, 270] and load.node == self.start_node:
                         sign = 1
                     m_start = 0
                     m_end = sign * 3 * linear_stiffness / length
@@ -327,7 +327,7 @@ class RodForMovementMethod:
                     m_end = -sign * load.value * (length ** 2 - 3 * b ** 2) / (2 * length ** 2)
                     m_1 = -sign * ((load.value * b / length) + ((b / length) * abs(m_end)))
                     m_2 = sign * ((load.value * a / length) - ((b / length) * abs(m_end)))
-                    Q = -sign * load.value * (length ** 2 - b ** 2) / (2 * length ** 3)
+                    Q = -sign * 3 * load.value * (length ** 2 - b ** 2) / (2 * length ** 3)
                     self.diagram_Q = [Q, Q]
                     self.diagram_M = [m_start, m_1, m_2, m_end]
                     text = f'M{self.name} = m · (l² - 3 · b²) / (2 · l²) = {abs(round_up(m_end, 3))}\n'
@@ -375,7 +375,7 @@ class RodForMovementMethod:
 
                     m_start = sign * 6 * linear_stiffness / length
                     m_end = -sign * 6 * linear_stiffness / length
-                    Q = sign * 12 * linear_stiffness / length ** 2
+                    Q = 12 * linear_stiffness / length ** 2
                     self.diagram_Q = [Q, -Q]
                     self.diagram_M = [m_start, m_end]
                     text = f'M{self.name} = 6 · i / l = {abs(round_up(m_start, 3))}\n'
@@ -456,7 +456,7 @@ class RodForMovementMethod:
                     m_1 = -sign * force_1.value * a ** 2 / length
                     m_2 = m_1
                     m_end = m_start
-                    Q = -sign * force_1.value
+                    Q = sign * force_1.value
                     self.diagram_Q = [Q, -Q]
                     self.diagram_M = [m_start, m_1, m_2, m_end]
                     text = f'M{self.name} = P · a · (1 - (a / l)) = {abs(round_up(m_start, 3))}\n'

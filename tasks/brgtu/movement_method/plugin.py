@@ -2,12 +2,13 @@ from typing import Dict, Any
 
 import ezdxf
 from ezdxf import zoom
+from ezdxf.entities import tolerance
 
 from core.mechanics.frame import Frame
 from core.mechanics.load import Twist, Displacement, Force
 from core.mechanics.solver import FrameForMovementMethod, SolvableFrame
 from services.authocad import draw_frame
-from services.services import round_up
+from services.services import round_up, is_subsegment_2d
 from tasks.base import TaskPlugin
 from tasks.brgtu.movement_method.loader import MovementMethodLoader
 
@@ -163,6 +164,31 @@ class BRGTUMovementMethod(TaskPlugin):
                         reports[f'r{load_name}{frame.name}'] = report
             return coefficients, reports
 
+        def replace_m_diagram_from_mmframe_to_fmframe(mm_frame: FrameForMovementMethod, fm_frame: SolvableFrame):
+            for mm_rod in mm_frame.rods:
+                fm_rods_related_to_mm_rod = []
+                for fm_rod in fm_frame.rods:
+                    small_segment = ((fm_rod.start_node.x, fm_rod.start_node.y), (fm_rod.end_node.x, fm_rod.end_node.y))
+                    big_segment = ((mm_rod.start_node.x, mm_rod.start_node.y), (mm_rod.end_node.x, mm_rod.end_node.y))
+                    if is_subsegment_2d(small_segment=small_segment, big_segment=big_segment):
+                        fm_rods_related_to_mm_rod.append(fm_rod)
+                print(mm_rod)
+                print(len(mm_rod.diagram_M), len(fm_rods_related_to_mm_rod))
+                if len(mm_rod.diagram_M) == len(fm_rods_related_to_mm_rod):
+                    for i, fm_rod in enumerate(fm_rods_related_to_mm_rod):
+                        fm_rod.diagram_M = mm_rod.diagram_M[i]
+                else:
+                    if len(mm_rod.diagram_M) <= len(fm_rods_related_to_mm_rod):
+                        if fm_rods_related_to_mm_rod[0].dx() == 0:
+                            sorted_rods = sorted(fm_rods_related_to_mm_rod, key=lambda rod: rod.start_node.y)
+                        elif fm_rods_related_to_mm_rod[0].dy() == 0:
+                            sorted_rods = sorted(fm_rods_related_to_mm_rod, key=lambda rod: rod.start_node.x)
+                        else:
+                            raise Exception('Application is not support rods with dx!=0 and dy!=0')
+
+                        # if len(mm_rod.diagram_M) == 1:
+        #                 Нужно переместить эпюру из стержня метода перемещений в стержеть метода сил
+
 
         finded_coefficients = dict()
 
@@ -180,11 +206,16 @@ class BRGTUMovementMethod(TaskPlugin):
 
         print(finded_coefficients)
 
-        for i in ['s']:
+        for i in ['1', '2', '3', 'p']:
             fm_nodes, fm_rods, fm_supports, fm_loads = new_fm_frame(params)
+            print(i)
 
-            fm_frame = SolvableFrame(nodes=fm_nodes, rods=fm_rods, supports=fm_supports, loads=fm_loads).classify_part()
-            fm_frame.solve_frame()
+            fm_frame = SolvableFrame(nodes=fm_nodes, rods=fm_rods, supports=None, loads=fm_loads)
+            for mm_frame in mm_frames:
+                if mm_frame.name == i:
+                    replace_m_diagram_from_mmframe_to_fmframe(mm_frame=mm_frame, fm_frame=fm_frame)
+
+
 
 
 

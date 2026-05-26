@@ -189,3 +189,79 @@ def distance_between_two_points(point_1: tuple[float, float], point_2: tuple[flo
     distance = math.sqrt(dx ** 2 + dy ** 2)
     return distance
 
+
+def is_subsegment_2d(small_segment, big_segment, tolerance=1e-9):
+    """
+    Проверяет, является ли отрезок segment1 подотрезком отрезка segment2 в 2D.
+
+    Параметры:
+    segment1, segment2 -- кортежи/списки вида ((x1, y1), (x2, y2))
+    tolerance -- допустимая погрешность для сравнения чисел с плавающей точкой
+
+    Возвращает:
+    True, если segment1 лежит на segment2 и полностью внутри него, иначе False
+    """
+    p1, p2 = small_segment
+    q1, q2 = big_segment
+
+    # Проверяем, что все точки segment1 лежат на прямой segment2
+    if not are_collinear(p1, p2, q1, q2, tolerance):
+        return False
+
+    # Проверяем, что p1 и p2 находятся между q1 и q2
+    if not is_point_between(p1, q1, q2, tolerance):
+        return False
+
+    if not is_point_between(p2, q1, q2, tolerance):
+        return False
+
+    return True
+
+
+def are_collinear(p1, p2, q1, q2, tolerance=1e-9):
+    """
+    Проверяет, лежат ли точки p1 и p2 на одной прямой с отрезком q1-q2.
+    """
+    # Векторное произведение (q2 - q1) и (p1 - q1) должно быть равно 0
+    cross1 = cross_product(subtract(q2, q1), subtract(p1, q1))
+    cross2 = cross_product(subtract(q2, q1), subtract(p2, q1))
+
+    return abs(cross1) < tolerance and abs(cross2) < tolerance
+
+
+def is_point_between(point, a, b, tolerance=1e-9):
+    """
+    Проверяет, лежит ли точка на отрезке между a и b (включая концы).
+    """
+    # Проверяем, что точка находится в bounding box
+    min_x = min(a[0], b[0]) - tolerance
+    max_x = max(a[0], b[0]) + tolerance
+    min_y = min(a[1], b[1]) - tolerance
+    max_y = max(a[1], b[1]) + tolerance
+
+    if not (min_x <= point[0] <= max_x and min_y <= point[1] <= max_y):
+        return False
+
+    # Проверяем, что точка лежит на прямой
+    cross = cross_product(subtract(b, a), subtract(point, a))
+    if abs(cross) > tolerance:
+        return False
+
+    # Проверяем, что точка между a и b (скалярное произведение >= 0)
+    dot = dot_product(subtract(point, a), subtract(b, point))
+    return dot >= -tolerance  # tolerance для учета погрешности
+
+
+def cross_product(v1, v2):
+    """Векторное произведение для 2D векторов."""
+    return v1[0] * v2[1] - v1[1] * v2[0]
+
+
+def dot_product(v1, v2):
+    """Скалярное произведение."""
+    return v1[0] * v2[0] + v1[1] * v2[1]
+
+
+def subtract(v1, v2):
+    """Разность векторов."""
+    return (v1[0] - v2[0], v1[1] - v2[1])

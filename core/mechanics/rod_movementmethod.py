@@ -68,7 +68,7 @@ class RodForMovementMethod:
                         raise Exception(f'Поворот не может быть приложен к шарниру ({self}.....{load})')
                     text = f'M{self.name} = 3 · i  = {abs(round_up(m_start, 3))}\n'
                     report += text
-                    self.diagram_M = [m_start, m_end]
+                    self.diagram_M = [[m_start, m_end]]
                     self.diagram_Q = [Q, Q]
                 elif len(self.loads) == 1 and isinstance(self.loads[0], Displacement):
                     load = self.loads[0]
@@ -83,7 +83,7 @@ class RodForMovementMethod:
                     m_start = sign * 3 * linear_stiffness / length
                     m_end = 0
                     Q = sign * 3 * linear_stiffness / length ** 2
-                    self.diagram_M = [m_start, m_end]
+                    self.diagram_M = [[m_start, m_end]]
                     self.diagram_Q = [Q, Q]
                     text = f'M{self.name} = 3 · i / l = {abs(round_up(m_start, 3))}\n'
                     report += text
@@ -98,7 +98,7 @@ class RodForMovementMethod:
                     m_end = 0
                     Q_start = sign * 5 * load.value * length / 8
                     Q_end = -sign * 3 * load.value * length / 8
-                    self.diagram_M = [m_start, m_midl, m_end]
+                    self.diagram_M = [[m_start, m_midl, m_end]]
                     self.diagram_Q = [Q_start, Q_end]
                     text = f'M{self.name} = q · l² / 8 = {abs(round_up(m_start,3))}\n'
                     text += f'M{self.name} = q · l² / 16 = {abs(round_up(m_midl, 3))}\n'
@@ -122,7 +122,7 @@ class RodForMovementMethod:
                     Q_start = sign * load.value * b * (3 * length ** 2 - b ** 2) / (2 * length ** 3)
                     Q_end = -sign * load.value * a * (3 * length - a) / (2 * length ** 3)
                     self.diagram_Q = [Q_start, Q_end]
-                    self.diagram_M = [m_start, m_p, m_end]
+                    self.diagram_M = [[m_start, m_p], [m_p, m_end]]
                     text = f'M{self.name} = P · b · (l² - b²) / (2 · l²) = {abs(round_up(m_start, 3))}\n'
                     text += f'M{self.name} = P · b / 2 · ((2 · a / l) - (b / l³) · (l² - b²)) = {abs(round_up(m_p, 3))}\n'
                     report += text
@@ -160,7 +160,7 @@ class RodForMovementMethod:
                     Q_start = sign * force_1.value * (1 + 1.5 * (a / length) * (1 - a / length))
                     Q_end = -sign * force_1.value * (1 - 1.5 * (a / length) * (1 - a / length))
                     self.diagram_Q = [Q_start, Q_end]
-                    self.diagram_M = [m_start, m_1, m_2, m_end]
+                    self.diagram_M = [[m_start, m_1], [m_1, m_2], [m_2, m_end]]
                     text = f'M{self.name} = 1.5 · P · a · (1 - a / l) = {abs(round_up(m_start, 3))}\n'
                     text += f'M{self.name} = P · a · (1.5 · a / l · (2 - a / l) - 0.5) = {abs(round_up(m_1, 3))}\n'
                     text += f'M{self.name} = P · a · (1 - 1.5 · (a / l) · (1 - a / l)) = {abs(round_up(m_2, 3))}\n'
@@ -185,7 +185,7 @@ class RodForMovementMethod:
                     m_end = 0
                     Q = -sign * 3 * load.value * (length ** 2 - b ** 2) / (2 * length ** 3)
                     self.diagram_Q = [Q, Q]
-                    self.diagram_M = [m_start, m_1, m_2, m_end]
+                    self.diagram_M = [[m_start, m_1], [m_2, m_end]]
                     text = f'M{self.name} = m · (l² - 3 · b²) / (2 · l²) = {abs(round_up(m_start, 3))}\n'
                     text += f'M{self.name} = (m · a / l) - (b / l) · m_start = {abs(round_up(m_1, 3))}\n'
                     text += f'M{self.name} = (m · b / l) + (b / l) · m_start = {abs(round_up(m_2, 3))}\n'
@@ -205,7 +205,7 @@ class RodForMovementMethod:
 
                     else:
                         raise Exception(f'Поворот не может быть приложен к шарниру ({self}.....{load})')
-                    self.diagram_M = [m_start, m_end]
+                    self.diagram_M = [[m_start, m_end]]
                     self.diagram_Q = [Q, Q]
                     text = f'M{self.name} = 3 · i = {abs(round_up(m_end, 3))}\n'
                     report += text
@@ -222,7 +222,7 @@ class RodForMovementMethod:
                     m_start = 0
                     m_end = sign * 3 * linear_stiffness / length
                     Q = -sign * 3 * linear_stiffness / length ** 2
-                    self.diagram_M = [m_start, m_end]
+                    self.diagram_M = [[m_start, m_end]]
                     self.diagram_Q = [Q, Q]
                     text = f'M{self.name} = 3 · i / l = {abs(round_up(m_end, 3))}\n'
                     report += text
@@ -237,7 +237,7 @@ class RodForMovementMethod:
                     m_end = sign * load.value * length ** 2 / 8
                     Q_start = -sign * 3 * load.value * length / 8
                     Q_end = sign * 5 * load.value * length / 8
-                    self.diagram_M = [m_start, m_midl, m_end]
+                    self.diagram_M = [[m_start, m_midl, m_end]]
                     self.diagram_Q = [Q_start, Q_end]
                     text = f'M{self.name} = q · l² / 8 = {abs(round_up(m_end,3))}\n'
                     text += f'M{self.name} = q · l² / 16 = {abs(round_up(m_midl, 3))}\n'
@@ -262,7 +262,7 @@ class RodForMovementMethod:
                     Q_start = sign * load.value * a * (3 * length - a) / (2 * length ** 3)
                     Q_end = -sign * load.value * b * (3 * length ** 2 - b ** 2) / (2 * length ** 3)
                     self.diagram_Q = [Q_start, Q_end]
-                    self.diagram_M = [m_start, m_p, m_end]
+                    self.diagram_M = [[m_start, m_p], [m_p, m_end]]
                     text = f'M{self.name} = P · b · (l² - b²) / (2 · l²) = {abs(round_up(m_end, 3))}\n'
                     text += f'M{self.name} = P · b / 2 · ((2 · a / l) - (b / l³) · (l² - b²)) = {abs(round_up(m_p, 3))}\n'
                     report += text
@@ -304,7 +304,7 @@ class RodForMovementMethod:
                     Q_start = sign * force_1.value * (1 - 1.5 * (a / length) * (1 - a / length))
                     Q_end = -sign * force_1.value * (1 + 1.5 * (a / length) * (1 - a / length))
                     self.diagram_Q = [Q_start, Q_end]
-                    self.diagram_M = [m_start, m_1, m_2, m_end]
+                    self.diagram_M = [m[_start, m_1], [m_1, m_2], [m_2, m_end]]
                     text = f'M{self.name} = 1.5 · P · a · (1 - a / l) = {abs(round_up(m_end, 3))}\n'
                     text += f'M{self.name} = P · a · (1.5 · a / l · (2 - a / l) - 0.5) = {abs(round_up(m_2, 3))}\n'
                     text += f'M{self.name} = P · a · (1 - 1.5 · (a / l) · (1 - a / l)) = {abs(round_up(m_1, 3))}\n'
@@ -329,7 +329,7 @@ class RodForMovementMethod:
                     m_2 = sign * ((load.value * a / length) - ((b / length) * abs(m_end)))
                     Q = -sign * 3 * load.value * (length ** 2 - b ** 2) / (2 * length ** 3)
                     self.diagram_Q = [Q, Q]
-                    self.diagram_M = [m_start, m_1, m_2, m_end]
+                    self.diagram_M = [[m_start, m_1], [m_2, m_end]]
                     text = f'M{self.name} = m · (l² - 3 · b²) / (2 · l²) = {abs(round_up(m_end, 3))}\n'
                     text += f'M{self.name} = (m · a / l) - (b / l) · m_start = {abs(round_up(m_2, 3))}\n'
                     text += f'M{self.name} = (m · b / l) + (b / l) · m_start = {abs(round_up(m_1, 3))}\n'
@@ -357,7 +357,7 @@ class RodForMovementMethod:
                         Q = sign * 6 * linear_stiffness / length
                     else:
                         raise Exception(f'Поворот может быть приложен только в заделке')
-                    self.diagram_M = [m_start, m_end]
+                    self.diagram_M = [[m_start, m_end]]
                     self.diagram_Q = [Q, Q]
                     text = f'M{self.name} = 2 · i = {abs(round_up(m_start, 3))}\n'
                     text += f'M{self.name} = 4 · i = {abs(round_up(m_end, 3))}\n'
@@ -377,7 +377,7 @@ class RodForMovementMethod:
                     m_end = -sign * 6 * linear_stiffness / length
                     Q = 12 * linear_stiffness / length ** 2
                     self.diagram_Q = [Q, -Q]
-                    self.diagram_M = [m_start, m_end]
+                    self.diagram_M = [[m_start, m_end]]
                     text = f'M{self.name} = 6 · i / l = {abs(round_up(m_start, 3))}\n'
                     text += f'M{self.name} = 6 · i / l = {abs(round_up(m_end, 3))}\n'
                     report += text
@@ -392,7 +392,7 @@ class RodForMovementMethod:
                     m_end = sign * load.value * length ** 2 / 12
                     Q = -sign * load.value * length / 2
                     self.diagram_Q = [Q, -Q]
-                    self.diagram_M = [m_start, m_midl, m_end]
+                    self.diagram_M = [[m_start, m_midl, m_end]]
                     text = f'M{self.name} = q · l² / 12 = {abs(round_up(m_start, 3))}\n'
                     text += f'M{self.name} = q · l² / 24 = {abs(round_up(m_midl, 3))}\n'
                     report += text
@@ -416,7 +416,7 @@ class RodForMovementMethod:
                     Q_start = sign * load.value * (b ** 2) * (1 + 2 * a / length) / length ** 2
                     Q_end = -sign * load.value * (a ** 2) * (1 + 2 * b / length) / length ** 2
                     self.diagram_Q = [Q_start, Q_end]
-                    self.diagram_M = [m_start, m_p, m_end]
+                    self.diagram_M = [[m_start, m_p], [m_p, m_end]]
                     text = f'M{self.name} = P · a · b² / l² = {abs(round_up(m_start, 3))}\n'
                     text += f'M{self.name} = P · a · (b / l) · (1 - (a / l) - (b - a) · b / l² = {abs(round_up(m_p, 3))}\n'
                     text += f'M{self.name} = P · b · a² / l² = {abs(round_up(m_end, 3))}\n'
@@ -458,7 +458,7 @@ class RodForMovementMethod:
                     m_end = m_start
                     Q = sign * force_1.value
                     self.diagram_Q = [Q, -Q]
-                    self.diagram_M = [m_start, m_1, m_2, m_end]
+                    self.diagram_M = [[m_start, m_1], [m_1, m_2], [m_2, m_end]]
                     text = f'M{self.name} = P · a · (1 - (a / l)) = {abs(round_up(m_start, 3))}\n'
                     text += f'M{self.name} = P · a² / l = {abs(round_up(m_1, 3))}\n'
                     report += text
@@ -482,7 +482,7 @@ class RodForMovementMethod:
                     m_end = sign * load.value * a * (3 * b - length) / (length ** 2)
                     Q = -sign * 6 * a * b * load.value / length ** 3
                     self.diagram_Q = [Q, Q]
-                    self.diagram_M = [m_start, m_1, m_2, m_end]
+                    self.diagram_M = [[m_start, m_1], [m_2, m_end]]
                     text = f'M{self.name} = m · b · (3 · a - l) / l² = {abs(round_up(m_start, 3))}\n'
                     text += f'M{self.name} = m · a · (3 · b - l) / l² = {abs(round_up(m_end, 3))}\n'
                     text += f'M{self.name} = m · b · (l² - 3 · a · l + 6 · a²) / l³ = {abs(round_up(m_1, 3))}\n'
@@ -498,9 +498,9 @@ class RodForMovementMethod:
                     else:
                         raise Exception(f'Поворот может быть приложен только в заделке')
                     self.diagram_Q = [0, 0]
-                    self.diagram_M = [m_start, m_end]
+                    self.diagram_M = [[m_start, m_end]]
                 elif len(self.loads) == 1 and isinstance(self.loads[0], Displacement):
-                    self.diagram_M = [0, 0]
+                    self.diagram_M = [[0, 0]]
                     self.diagram_Q = [0, 0]
                 elif len(self.loads) == 1 and isinstance(self.loads[0], DistributedForce):
                     load = self.loads[0]
@@ -514,7 +514,7 @@ class RodForMovementMethod:
                     Q_start = sign * load.value * length
                     Q_end = 0
                     self.diagram_Q = [Q_start, Q_end]
-                    self.diagram_M = [m_start, m_midl, m_end]
+                    self.diagram_M = [[m_start, m_midl, m_end]]
                     text = f'M{self.name} = q · l² / 2 = {abs(round_up(m_start, 3))}\n'
                     text += f'M{self.name} = q · l² / 8 = {abs(round_up(m_midl, 3))}\n'
                     report += text
@@ -538,7 +538,7 @@ class RodForMovementMethod:
                     Q_start = sign * load.value
                     Q_end = 0
                     self.diagram_Q = [Q_start, Q_end]
-                    self.diagram_M = [m_start, m_p, m_end]
+                    self.diagram_M = [[m_start, m_p], [m_p, m_end]]
                     text = f'M{self.name} = P · a = {abs(round_up(m_start, 3))}\n'
                     report += text
                 elif len(self.loads) == 2 and isinstance(self.loads[0], Force) and isinstance(self.loads[1], Force):
@@ -579,7 +579,7 @@ class RodForMovementMethod:
                     Q_start = sign * 2 * force_1.value
                     Q_end = 0
                     self.diagram_Q = [Q_start, Q_end]
-                    self.diagram_M = [m_start, m_1, m_2, m_end]
+                    self.diagram_M = [[m_start, m_1], [m_1, m_2], [m_2, m_end]]
                     text = f'M{self.name} = P · a + P · (l - a) = {abs(round_up(m_start, 3))}\n'
                     text += f'M{self.name} = P · (l - 2 · a) = {abs(round_up(m_1, 3))}\n'
                     report += text
@@ -602,7 +602,7 @@ class RodForMovementMethod:
                     m_2 = 0
                     m_end = 0
                     self.diagram_Q = [0, 0]
-                    self.diagram_M = [m_start, m_1, m_2, m_end]
+                    self.diagram_M = [[m_start, m_1], [m_2, m_end]]
                     text = f'M{self.name} = m = {abs(round_up(m_start, 3))}\n'
                     report += text
 
@@ -615,9 +615,9 @@ class RodForMovementMethod:
                     else:
                         raise Exception(f'Поворот может быть приложен только в заделке')
                     self.diagram_Q = [0, 0]
-                    self.diagram_M = [m_start, m_end]
+                    self.diagram_M = [[m_start, m_end]]
                 elif len(self.loads) == 1 and isinstance(self.loads[0], Displacement):
-                    self.diagram_M = [0, 0]
+                    self.diagram_M = [[0, 0]]
                     self.diagram_Q = [0, 0]
                 elif len(self.loads) == 1 and isinstance(self.loads[0], DistributedForce):
                     load = self.loads[0]
@@ -631,7 +631,7 @@ class RodForMovementMethod:
                     Q_start = 0
                     Q_end = -sign * load.value * length
                     self.diagram_Q = [Q_start, Q_end]
-                    self.diagram_M = [m_start, m_midl, m_end]
+                    self.diagram_M = [[m_start, m_midl, m_end]]
                     text = f'M{self.name} = q · l² / 2 = {abs(round_up(m_end, 3))}\n'
                     text += f'M{self.name} = q · l² / 8 = {abs(round_up(m_start, 3))}\n'
                     report += text
@@ -655,7 +655,7 @@ class RodForMovementMethod:
                     Q_start = 0
                     Q_end = -sign * load.value
                     self.diagram_Q = [Q_start, Q_end]
-                    self.diagram_M = [m_start, m_p, m_end]
+                    self.diagram_M = [[m_start, m_p], [m_p, m_end]]
                     text = f'M{self.name} = P · a = {abs(round_up(m_end, 3))}\n'
                     report += text
                 elif len(self.loads) == 2 and isinstance(self.loads[0], Force) and isinstance(self.loads[1], Force):
@@ -696,7 +696,7 @@ class RodForMovementMethod:
                     Q_start = 0
                     Q_end = -sign * 2 * force_1.value
                     self.diagram_Q = [Q_start, Q_end]
-                    self.diagram_M = [m_start, m_1, m_2, m_end]
+                    self.diagram_M = [[m_start, m_1], [m_1, m_2], [m_2, m_end]]
                     text = f'M{self.name} = P · a + P · (l - a) = {abs(round_up(m_end, 3))}\n'
                     text += f'M{self.name} = P · (l - 2 · a) = {abs(round_up(m_2, 3))}\n'
                     report += text
@@ -719,14 +719,14 @@ class RodForMovementMethod:
                     m_2 = -sign * load.value
                     m_end = -sign * load.value
                     self.diagram_Q = [0, 0]
-                    self.diagram_M = [m_start, m_1, m_2, m_end]
+                    self.diagram_M = [[m_start, m_1], [m_2, m_end]]
                     text = f'M{self.name} = m = {abs(round_up(m_start, 3))}\n'
                     report += text
         #     Дописать случаи для скользящей опоры
 
 
         else:
-            self.diagram_M = [0, 0]
+            self.diagram_M = [[0, 0]]
         if self.diagram_M:
             print(f'{self}....{self.diagram_M}')
             return report

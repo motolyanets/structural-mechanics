@@ -817,19 +817,18 @@ class FrameForMovementMethod(Frame):
                     if rod.diagram_M:
                         if rod.dy() == 0:
                             if node_for_calculation == rod.start_node:
-                                sum_of_moments_at_node += rod.diagram_M[0]
-                                equipment += f'{'+ ' if rod.diagram_M[0] >= 0 else '- '}' + str(abs(round_up(rod.diagram_M[0], 3))) + ' '
+                                sum_of_moments_at_node += rod.diagram_M[0][0]
+                                equipment += f'{'+ ' if rod.diagram_M[0][0] >= 0 else '- '}' + str(abs(round_up(rod.diagram_M[0][0], 3))) + ' '
                             else:
-                                sum_of_moments_at_node -= rod.diagram_M[-1]
-                                equipment += f'{'+ ' if rod.diagram_M[-1] <= 0 else '- '}' + str(abs(round_up(rod.diagram_M[-1], 3))) + ' '
+                                sum_of_moments_at_node -= rod.diagram_M[-1][-1]
+                                equipment += f'{'+ ' if rod.diagram_M[-1][-1] <= 0 else '- '}' + str(abs(round_up(rod.diagram_M[-1][-1], 3))) + ' '
                         elif rod.dx() == 0:
                             if node_for_calculation == rod.start_node:
-                                sum_of_moments_at_node += rod.diagram_M[0]
-                                equipment += f'{'+ ' if rod.diagram_M[0] >= 0 else '- '}' + str(abs(round_up(rod.diagram_M[0], 3))) + ' '
+                                sum_of_moments_at_node += rod.diagram_M[0][0]
+                                equipment += f'{'+ ' if rod.diagram_M[0][0] >= 0 else '- '}' + str(abs(round_up(rod.diagram_M[0][0], 3))) + ' '
                             else:
-                                sum_of_moments_at_node -= rod.diagram_M[-1]
-                                equipment += f'{'+ ' if rod.diagram_M[-1] <= 0 else '- '}' + str(abs(round_up(rod.diagram_M[-1], 3))) + ' '
-            # equipment += "= " + str(round_up(sum_of_moments_at_node, 3))
+                                sum_of_moments_at_node -= rod.diagram_M[-1][-1]
+                                equipment += f'{'+ ' if rod.diagram_M[-1][-1] <= 0 else '- '}' + str(abs(round_up(rod.diagram_M[-1][-1], 3))) + ' '
         else:
             raise Exception(f'В данной раме нет узла под названием {node_name}')
         return sum_of_moments_at_node, equipment

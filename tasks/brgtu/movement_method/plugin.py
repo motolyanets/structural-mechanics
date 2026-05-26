@@ -172,8 +172,6 @@ class BRGTUMovementMethod(TaskPlugin):
                     big_segment = ((mm_rod.start_node.x, mm_rod.start_node.y), (mm_rod.end_node.x, mm_rod.end_node.y))
                     if is_subsegment_2d(small_segment=small_segment, big_segment=big_segment):
                         fm_rods_related_to_mm_rod.append(fm_rod)
-                print(mm_rod)
-                print(len(mm_rod.diagram_M), len(fm_rods_related_to_mm_rod))
                 if len(mm_rod.diagram_M) == len(fm_rods_related_to_mm_rod):
                     for i, fm_rod in enumerate(fm_rods_related_to_mm_rod):
                         fm_rod.diagram_M = mm_rod.diagram_M[i]
@@ -186,8 +184,28 @@ class BRGTUMovementMethod(TaskPlugin):
                         else:
                             raise Exception('Application is not support rods with dx!=0 and dy!=0')
 
-                        # if len(mm_rod.diagram_M) == 1:
-        #                 Нужно переместить эпюру из стержня метода перемещений в стержеть метода сил
+                        if len(mm_rod.diagram_M) == 1:
+                            m_start = mm_rod.diagram_M[0][0]
+                            m_end = mm_rod.diagram_M[0][1]
+                            mm_length = mm_rod.length()
+                            fm_length = 0
+                            for fm_rod in sorted_rods:
+                                fm_length += fm_rod.length()
+                            if mm_length != fm_length:
+                                raise Exception('Длины стержней из рамы МП и рамы МС должны быть равны')
+                            for i, fm_rod in enumerate(sorted_rods):
+                                if i == 0:
+                                    l1 = fm_rod.length()
+                                    m1 = m_start
+                                    m2 = m_start + (m_end - m_start) * l1 / mm_length
+                                elif i == len(sorted_rods) - 1:
+                                    m1 = m2
+                                    m2 = m_end
+                                else:
+                                    m1 = m2
+                                    l1 += fm_rod.length()
+                                    m2 = m_start + (m_end - m_start) * l1 / mm_length
+                                fm_rod.diagram_M = [m1, m2]
 
 
         finded_coefficients = dict()
@@ -214,6 +232,9 @@ class BRGTUMovementMethod(TaskPlugin):
             for mm_frame in mm_frames:
                 if mm_frame.name == i:
                     replace_m_diagram_from_mmframe_to_fmframe(mm_frame=mm_frame, fm_frame=fm_frame)
+
+            for rod in fm_frame.rods:
+                print(f'{rod}.....{rod.diagram_M}')
 
 
 

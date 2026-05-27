@@ -230,27 +230,18 @@ class Rod:
                 diagram.append(section_moment * sign)
             finding_moments.append(section_equation)
 
-
-
-
         if diagram_name == '1':
-            # if self.start_node.name in ['4', 'K']:
-            #     diagram = [0, 0]
-            # elif self.start_node.name == '2' and self.end_node.name == '4':
-            #     diagram[-1] = 0
             self.diagram_M1 = diagram
         elif diagram_name == '2':
             self.diagram_M2 = diagram
         elif diagram_name == '3':
-            # if self.start_node.name == '8' and self.end_node.name == 'C':
-            #     diagram = [0, 0]
             self.diagram_M3 = diagram
         elif diagram_name == 'p':
             self.diagram_Mp = diagram
         elif diagram_name == 'k':
-            # if self.start_node.name == '8' and self.end_node.name == 'C':
-            #     diagram = [0, 0]
             self.diagram_Mk = diagram
+        elif diagram_name == 'm':
+            self.diagram_M = diagram
         else:
             raise Exception(f'Такое название нагрузок ({diagram_name}) не определено')
 

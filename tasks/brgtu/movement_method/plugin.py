@@ -7,7 +7,7 @@ from core.mechanics.frame import Frame
 from core.mechanics.load import Twist, Displacement, Force
 from core.mechanics.solver import FrameForMovementMethod, SolvableFrame, multiply_M_frames_by_Simpson
 from services.authocad import draw_main_frame, draw_mm_diagram
-from services.services import round_up, is_subsegment_2d
+from services.services import round_up, is_subsegment_2d, relative_error_percent
 from tasks.base import TaskPlugin
 from tasks.brgtu.movement_method.loader import MovementMethodLoader
 
@@ -241,8 +241,8 @@ class BRGTUMovementMethod(TaskPlugin):
 
         # Расчитываем эпюру Ms и отрисовываем ее
         fm_nodes, fm_rods, fm_supports, fm_loads = new_fm_frame(params)
-        s_frame = SolvableFrame(name='s', nodes=fm_nodes, rods=fm_rods, supports=m_fr.supports, loads=None)
-        for rod in s_frame.rods:
+        s_mm_frame = SolvableFrame(name='s', nodes=fm_nodes, rods=fm_rods, supports=m_fr.supports, loads=None)
+        for rod in s_mm_frame.rods:
             rod.diagram_M = [0, 0]
             for i in ['1', '2', '3']:
                 for fr in fm_frames:
@@ -253,11 +253,92 @@ class BRGTUMovementMethod(TaskPlugin):
                                 rod.diagram_M[0] += rod1.diagram_M[0]
                                 rod.diagram_M[1] += rod1.diagram_M[1]
             print(f'{rod}....{rod.diagram_M}')
-        s_frame, msp, base_point = draw_main_frame(frame=s_frame, base_point=base_point, diagram_name='M', msp=msp,
+        s_mm_frame, msp, base_point = draw_main_frame(frame=s_mm_frame, base_point=base_point, diagram_name='M', msp=msp,
                                                     accuracy=3)
+        for entity in layout:
+            if entity.dxf.layer == 'мп_эпюра Мs' and entity.dxftype() == 'VIEWPORT':
+                if entity:
+                    entity.dxf.view_center_point = (s_mm_frame.base_point[0], s_mm_frame.base_point[1], 0.0)
 
-        delta_ss_text, delta_ss = multiply_M_frames_by_Simpson(frame1=s_frame, frame2=s_frame)
+
+
+        print('-------Универсальная проверка-------')
+        universal_check = '\n\n'
+        delta_ss_text, delta_ss = multiply_M_frames_by_Simpson(frame1=s_mm_frame, frame2=s_mm_frame)
+        delta_ss_text = delta_ss_text.replace('/EI', '·i')
+        universal_check += f'δ\\H0.5x;ss\\H2.0x; = {delta_ss_text}\n'
         print(f'δss = {delta_ss_text}\n')
+        r11 = finded_coefficients['r11']
+        r12 = finded_coefficients['r21']
+        r13 = finded_coefficients['r31']
+        r22 = finded_coefficients['r22']
+        r23 = finded_coefficients['r32']
+        r33 = finded_coefficients['r33']
+        sum_delta = r11 + r12 * 2 + r13 * 2 + r22 + r23 * 2 + r33
+        uni_check_text = (f'r\\H0.5x;11\\H2.0x; + r\\H0.5x;12\\H2.0x;·2 + r\\H0.5x;13\\H2.0x;·2 + r\\H0.5x;22\\H2.0x; + '
+                          f'r\\H0.5x;23\\H2.0x;·2 + r\\H0.5x;33\\H2.0x; = {round_up(r11, 3)}·i + '
+                          f'2·{round_up(r12, 3)}·i + 2·{round_up(r13, 3)}·i + {round_up(r22, 3)}·i + '
+                          f'2·{round_up(r23, 3)}·i + {round_up(r33, 3)}·i = {round_up(sum_delta, 3)}·i\n')
+        print(f'r11 + r12·2 + r13·2 + r22 + r23·2 + r33 = {r11}·i + 2·{r12}·i + 2·{r13}·i + {r22}·i + 2·{r23}·i + {r33}·i = {sum_delta}·i\n')
+        E_uni_check, e_text_uni_check = relative_error_percent(delta_ss, sum_delta, tolerance_percent=3)
+        universal_check += '\n' + uni_check_text + '\n' + e_text_uni_check + '\n' + 'Проверка выполняется'
+
+        for entity in layout:
+            if entity.dxf.layer == 'Универсальная проверка':
+                entity.text += universal_check
+
+
+
+        print('-------Столбцовая проверка-------')
+        column_check = '\n\n'
+        fm_nodes, fm_rods, fm_supports, fm_loads = new_fm_frame(params)
+        p_fm_frame = SolvableFrame(name='fm_s', nodes=fm_nodes, rods=fm_rods, supports=fm_supports, loads=fm_loads).classify_part()
+        report = p_fm_frame.solve_frame()
+        p_fm_frame.base_point = base_point
+        p_fm_frame.create_sections_for_diagrams()
+        finding_moments_report = ''
+        for rod in p_fm_frame.rods:
+            section_equation = rod.calculate_diagram_m('m')
+            finding_moments_report += section_equation + '\n'
+        finding_moments_report = finding_moments_report.replace('\n\n', '\n')
+        finding_moments_report = finding_moments_report.replace('= =', '=')
+
+        p_fm_frame, msp, base_point = draw_main_frame(frame=p_fm_frame, base_point=base_point, msp=msp, diagram_name='M',
+                                                      accuracy=3)
+
+        for entity in layout:
+            if entity.dxf.layer == 'sf_Mp' and entity.dxftype() == 'VIEWPORT':
+                if entity:
+                    entity.dxf.view_center_point = (p_fm_frame.base_point[0], p_fm_frame.base_point[1], 0.0)
+            elif entity.dxf.layer == 'sf_Mp нахождение опорных реакций':
+                entity.text = report
+            elif entity.dxf.layer == 'sf_Mp расчет эпюры моментов':
+                entity.text = finding_moments_report
+
+        delta_sp_text, delta_sp = multiply_M_frames_by_Simpson(frame1=s_mm_frame, frame2=p_fm_frame)
+        delta_sp_text = delta_sp_text.replace('/EI', '')
+        column_check += f'δ\\H0.5x;sp\\H2.0x; = {delta_sp_text}\n'
+        print(f'δsp = {delta_sp_text}\n')
+        r1p = finded_coefficients['r1p']
+        r2p = finded_coefficients['r2p']
+        r3p = finded_coefficients['r3p']
+
+        sum_delta = round_up(r1p + r2p + r3p, 3)
+        col_check_text = (f'R\\H0.5x;1p\\H2.0x; + R\\H0.5x;2p\\H2.0x; + R\\H0.5x;3p\\H2.0x; = {round_up(r1p, 3)} + '
+                          f'{round_up(r2p, 3)} + {round_up(r3p, 3)} = {sum_delta}\n')
+        print(f'R1p + R2p + R3p = {r1p} + {r2p} + {r3p} = {sum_delta}\n')
+        E_col_check, e_text_col_check = relative_error_percent(delta_sp, sum_delta, tolerance_percent=3)
+        column_check += '\n' + col_check_text + '\n' + e_text_col_check + '\n' + 'Проверка выполняется'
+
+        for entity in layout:
+            if entity.dxf.layer == 'Столбцовая проверка':
+                entity.text += column_check
+
+
+
+
+
+
 
 
 

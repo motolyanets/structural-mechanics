@@ -138,7 +138,7 @@ def relative_error_percent(number1: float, number2: float, tolerance_percent: fl
     number1 = abs(number1)
     number2 = abs(number2)
     E = round_up((max(number1, number2) - min(number1, number2)) / min(number1, number2) * 100, 4)
-    text = f'ε = ({max(number1, number2)} - {min(number1, number2)}) / {min(number1, number2)} · 100% = {E}%'
+    text = f'ε = ({round_up(max(number1, number2), 3)} - {round_up(min(number1, number2), 3)}) / {round_up(min(number1, number2), 3)} · 100% = {E}%'
 
     if E <= tolerance_percent:
         e_text = f'{text} ≤ {tolerance_percent}'

@@ -258,7 +258,7 @@ class Frame:
                     for section in sections_on_rod:
                         dx = section.x - node.x
                         dy = section.y - node.y
-                        if dx <= 0.1 and dy <= 0.1:
+                        if abs(dx) <= 0.1 and abs(dy) <= 0.1:
                             section_on_rod_with_node = section
                             for load in section_on_rod_with_node.loads:
                                 if load not in current_loads:

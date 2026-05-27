@@ -5,7 +5,7 @@ from ezdxf.lldxf.const import HATCH_PATTERN_TYPE, HATCH_TYPE_PREDEFINED, HATCH_T
 from ezdxf.math import Vec2
 
 from core.mechanics.frame import Frame
-from core.mechanics.load import Force, Momentum, DistributedForce
+from core.mechanics.load import Force, Momentum, DistributedForce, Twist, Displacement
 from core.mechanics.node import Node
 from core.mechanics.rod import Rod
 from services.services import round_up
@@ -75,15 +75,17 @@ def draw_rod(rod: Rod, base_point: List[float], msp, hinge_radius=h_r):
             'lineweight': 30
         }
     )
-
-    if rod.is_start_hinge:
-        hinge_point = line.dxf.start
-        direction_point = line.dxf.end
-        drow_hinge(hinge_point, direction_point, msp)
-    if rod.is_end_hinge:
-        hinge_point = line.dxf.end
-        direction_point = line.dxf.start
-        drow_hinge(hinge_point, direction_point, msp)
+    try:
+        if rod.is_start_hinge:
+            hinge_point = line.dxf.start
+            direction_point = line.dxf.end
+            drow_hinge(hinge_point, direction_point, msp)
+        if rod.is_end_hinge:
+            hinge_point = line.dxf.end
+            direction_point = line.dxf.start
+            drow_hinge(hinge_point, direction_point, msp)
+    except:
+        pass
 
 
 def draw_section(rod: Rod, base_point: List[float], msp):
@@ -104,7 +106,7 @@ def draw_section(rod: Rod, base_point: List[float], msp):
     return msp
 
 
-def draw_frame(frame: Frame, base_point: List[float], msp, diagram_name: str = None, drawing_sections: bool = True):
+def draw_main_frame(frame: Frame, base_point: List[float], msp, diagram_name: str = None, drawing_sections: bool = True, accuracy: int = 2):
     frame.base_point = base_point
 
     for node in frame.nodes:
@@ -119,7 +121,7 @@ def draw_frame(frame: Frame, base_point: List[float], msp, diagram_name: str = N
             scale = 2 / max_value
             diagram = rod.__getattribute__(f'diagram_{diagram_name}')
             if diagram_name.startswith('M'):
-                draw_diagram_m(rod=rod, base_point=base_point, diagram=diagram, msp=msp, scale=scale)
+                draw_diagram_m(rod=rod, base_point=base_point, diagram=diagram, msp=msp, scale=scale, accuracy=accuracy)
             elif diagram_name.startswith('Q') or diagram_name.startswith('N'):
                 if diagram:
                     draw_diagram_q(rod=rod, base_point=base_point, diagram=diagram, msp=msp, scale=scale)
@@ -131,7 +133,7 @@ def draw_frame(frame: Frame, base_point: List[float], msp, diagram_name: str = N
 
     if frame.loads:
         for load in frame.loads:
-            if isinstance(load, (Force, Momentum)):
+            if isinstance(load, (Force, Momentum, Twist, Displacement)):
                 insert_point = (load.node.x + base_point[0], load.node.y + base_point[1])
                 msp = load.drow(insert_point, msp)
             elif isinstance(load, DistributedForce):
@@ -142,6 +144,41 @@ def draw_frame(frame: Frame, base_point: List[float], msp, diagram_name: str = N
         insert_point = (reaction.node.x + base_point[0], reaction.node.y + base_point[1])
         msp = reaction.drow(insert_point, msp)
 
+
+    base_point = [base_point[0] + frame.length() + 10, base_point[1]]
+    return frame, msp, base_point
+
+
+def draw_mm_diagram(frame: Frame, base_point: List[float], msp, diagram_name: str = None, drawing_sections: bool = True):
+    frame.base_point = base_point
+
+    for node in frame.nodes:
+        draw_node(node, base_point, msp)
+
+    for rod in frame.rods:
+        draw_rod(rod=rod, base_point=base_point, msp=msp)
+        if diagram_name:
+            max_value = frame.find_max_value_on_diagram(diagram_name=diagram_name)
+            scale = 2 / max_value
+            diagram = rod.__getattribute__(f'diagram_{diagram_name}')
+            if diagram_name.startswith('M'):
+                draw_diagram_m(rod=rod, base_point=base_point, diagram=diagram, msp=msp, scale=scale)
+            elif diagram_name.startswith('Q') or diagram_name.startswith('N'):
+                if diagram:
+                    draw_diagram_q(rod=rod, base_point=base_point, diagram=diagram, msp=msp, scale=scale)
+
+    for support in frame.supports:
+        insert_point = (support.node.x + base_point[0], support.node.y + base_point[1])
+        msp = support.drow(insert_point, msp)
+
+    if frame.loads:
+        for load in frame.loads:
+            if isinstance(load, (Force, Momentum, Twist, Displacement)):
+                insert_point = (load.node.x + base_point[0], load.node.y + base_point[1])
+                msp = load.drow(insert_point, msp)
+            elif isinstance(load, DistributedForce):
+                insert_point = (load.center()[0] + base_point[0], load.center()[1] + base_point[1])
+                msp = load.drow(insert_point, msp)
 
     base_point = [base_point[0] + frame.length() + 10, base_point[1]]
     return frame, msp, base_point
@@ -163,7 +200,7 @@ def find_perpendicular_angle(start_point: Vec2, end_point: Vec2) -> float:
     return perpendicular_angle
 
 
-def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp, scale: float = 1.0):
+def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp, scale: float = 1.0, accuracy: int = 2):
     """
     Отрисовка эпюры моментов.
 
@@ -195,8 +232,8 @@ def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp,
     is_vertical = abs(rod_vector.x) < 1e-6  # Вертикальный
 
     # Получаем значения моментов
-    M_start = round_up(diagram[0])
-    M_end = round_up(diagram[-1])
+    M_start = round_up(diagram[0], accuracy)
+    M_end = round_up(diagram[-1], accuracy)
 
 
 
@@ -284,7 +321,7 @@ def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp,
 
     # Подпись в середине стержня
     if len(diagram) == 3:
-        M_mdl = round_up(diagram[1])
+        M_mdl = round_up(diagram[1], accuracy)
         if abs(M_mdl) > 0.01:
             if is_horizontal:
                 offset_dir = Vec2(0, 1) if M_mdl >= 0 else Vec2(0, -1)
@@ -299,6 +336,7 @@ def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp,
             msp.add_text(f"{abs(M_mdl)}", dxfattribs={'layer': 'diagram M', 'height': 0.2, 'color': 6}).set_placement(text_point)
 
     return msp
+
 
 def draw_diagram_q(rod: Rod, base_point: List[float], diagram: List[float], msp, scale: float = 1.0):
     """

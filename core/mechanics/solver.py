@@ -12,10 +12,79 @@ from core.mechanics.support import Support
 from services.services import round_up, making_report_of_multiply, is_point_on_rod, is_distr_force_on_rod
 
 
+def multiply_rods_diagrams_Simpson(rod1: Rod, rod2: Rod, q: float | None = None):
+    if rod1.name != rod2.name:
+        raise Exception('Перемножать можно только одинаковые стержни')
+
+    diagram_1 = rod1.diagram_M
+    diagram_2 = rod2.diagram_M
+
+    length = rod1.length()
+    stiffness = rod1.stiffness
+
+    multiplied_diagram = []
+
+    d1_start = diagram_1[0]
+    d1_center = round_up((diagram_1[0] + diagram_1[-1]) / 2, 3)
+    d1_end = diagram_1[-1]
+    d2_start = diagram_2[0]
+    d2_center = round_up((diagram_2[0] + diagram_2[-1]) / 2, 3)
+    d2_end = diagram_2[-1]
+
+    d1_start_t = round_up(d1_start)
+    d1_center_t = round_up(d1_center)
+    d1_end_t = round_up(d1_end)
+    d2_start_t = round_up(d2_start)
+    d2_center_t = round_up(d2_center)
+    d2_end_t = round_up(d2_end)
+
+    if len(diagram_1) == len(diagram_2) == 2:
+        result = (length / (6 * stiffness)) * (d1_start * d2_start + 4 * d1_center * d2_center + d1_end * d2_end)
+        if result:
+            text = (
+                f'({length} / (6·{stiffness}·EI)) · ({d1_start_t}·{d2_start_t} + 4·{d1_center_t}·{d2_center_t} + '
+                f'{d1_end_t}·{d2_end_t})')
+            multiplied_diagram.append(text)
+            multiplied_diagram.append(result)
+    else:
+        result = (length / (6 * stiffness)) * (
+                d1_start * d2_start + 4 * d1_center * d2_center + d1_end * d2_end + 4 * d1_center * q * length ** 2 / 8)
+        if result:
+            text = (
+                f'({length} / (6·{stiffness}·EI)) * ({d1_start_t}·{d2_start_t} + 4·{d1_center_t}·{d2_center_t} + '
+                f'{d1_end_t}·{d2_end_t} + 4·{d1_center_t}·{q}·{length}² / 8)')
+            multiplied_diagram.append(text)
+            multiplied_diagram.append(result)
+
+    return multiplied_diagram
+
+def multiply_M_frames_by_Simpson(frame1: Frame, frame2: Frame):
+    rods_with_distributed_load = dict()
+    if frame2.loads:
+        for load in frame2.loads:
+            if isinstance(load, DistributedForce):
+                if load.rotation in [0, 270]:
+                    q = -load.value
+                elif load.rotation in [90, 180]:
+                    q = load.value
+                rods_with_distributed_load[f'{load.rod.name}'] = q
+    multiply_beam_diagrams = []
+
+    for rod1 in frame1.rods:
+        for rod2 in frame2.rods:
+            if rod1.name == rod2.name:
+                q = None
+                if rod2.name in rods_with_distributed_load:
+                    q = rods_with_distributed_load[rod2.name]
+                multiply_beam_diagrams.append(multiply_rods_diagrams_Simpson(rod1=rod1, rod2=rod2, q=q))
+    delta_text, delta = making_report_of_multiply(multiply_beam_diagrams)
+    return delta_text, delta
+
+
 class SolvableFrame(Frame):
     def __init__(self, nodes: List[Node], rods: List[Rod], supports: List[Support] | None, loads: list | None,
-                 finded_reactions=None):
-        super().__init__(nodes, rods, supports, loads, finded_reactions)
+                 finded_reactions=None, name: str | None = None):
+        super().__init__(nodes=nodes, rods=rods, supports=supports, loads=loads, finded_reactions=finded_reactions, name=name)
 
     def find_node_with_single_unknown(self):
         reactions = self.reactions()
@@ -254,9 +323,6 @@ class SolvableFrame(Frame):
             )
         else:
             raise Exception(f"Вид рамы не определен: reactions={amount_of_reactions}, hinges={amount_of_hinges}")
-
-    # def making_cuts_for_diagrams(self, splitted_frames_for_diagram_order: List[List[str]]):
-    #     rods = self.rods
 
     def multiply_M_diagrams_by_Simpson(self, diagram_1_name: str, diagram_2_name: str):
         rods_with_distributed_load = dict()

@@ -257,6 +257,22 @@ class Twist(Load):
         self.x = node.x
         self.y = node.y
 
+    def drow(self, insert_point: Tuple[float, float], msp):
+        if self.rotation:
+            block_name = 'Поворот (по часовой)'
+        else:
+            block_name = 'Поворот (против часовой)'
+
+        msp.add_blockref(block_name, insert=insert_point,
+                         dxfattribs={
+                             "layer": "Loads",
+                         })
+        text = f'{self.name} = {self.value}'
+        placement = (insert_point[0] + 0.2, insert_point[1] - 0.2)
+        msp.add_text(text=text, height=0.2, dxfattribs={"layer": "Loads",}).set_placement(placement)
+        return msp
+
+
     def __repr__(self) -> str:
         return f"Twist({self.name}={self.value} ---- {self.rotation}, node - {self.node.name})"
 
@@ -307,6 +323,25 @@ class Displacement(Load):
                 if not changed:
                     break
         return relative_nodes
+
+    def drow(self, insert_point: Tuple[float, float], msp):
+        msp.add_blockref('Сдвиг', insert=insert_point,
+                         dxfattribs={
+                             "layer": "Loads",
+                             "rotation": self.rotation,
+                         })
+        text = f'{self.name} = {round_up(self.value)}'
+
+        # Рассчитываем вектор направления
+        angle_rad = math.radians(self.rotation)
+        direction = Vec2(math.cos(angle_rad), math.sin(angle_rad))
+
+        # Вычисляем точку на конце стрелки
+        tip_point = Vec2(insert_point) + direction * 0.6
+
+        msp.add_text(text=text, height=0.2, dxfattribs={"layer": "Loads",}).set_placement(tip_point)
+        return msp
+
 
     def __repr__(self) -> str:
         return f"Displacement({self.name}={self.value} ---- {self.rotation}, node - {self.node.name})"

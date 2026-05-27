@@ -2,12 +2,11 @@ from typing import Dict, Any
 
 import ezdxf
 from ezdxf import zoom
-from ezdxf.entities import tolerance
 
 from core.mechanics.frame import Frame
 from core.mechanics.load import Twist, Displacement, Force
-from core.mechanics.solver import FrameForMovementMethod, SolvableFrame
-from services.authocad import draw_frame
+from core.mechanics.solver import FrameForMovementMethod, SolvableFrame, multiply_M_frames_by_Simpson
+from services.authocad import draw_main_frame, draw_mm_diagram
 from services.services import round_up, is_subsegment_2d
 from tasks.base import TaskPlugin
 from tasks.brgtu.movement_method.loader import MovementMethodLoader
@@ -73,52 +72,6 @@ class BRGTUMovementMethod(TaskPlugin):
         print(f"  I3 = {params['i3']}")
         print(f"  load_index = {params['load_index']}")
         print(f"{'=' * 60}")
-
-        if circuit_number == 17:
-            from schemes.brgtu.movement_method.frame_17 import create_frame_17, create_primary_system_17
-            fr_nodes, fr_rods, fr_supports, fr_loads = create_frame_17(params)
-            # ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_17(params)
-        elif circuit_number == 22:
-            from schemes.brgtu.movement_method.frame_22 import create_frame_22, create_mm_primary_system_22, create_fm_primary_system_22
-            fr_nodes, fr_rods, fr_supports, fr_loads = create_frame_22(params)
-            mm_nodes, mm_rods, mm_supports, mm_loads = create_mm_primary_system_22(params)
-            new_mm_frame = create_mm_primary_system_22
-            new_fm_frame = create_fm_primary_system_22
-        else:
-            raise ValueError(f"Схема {circuit_number} не реализована")
-
-        frame = Frame(fr_nodes, fr_rods, fr_supports, fr_loads)
-
-        for entity in layout:
-            if entity.dxf.layer == "1.Главная рама" and entity.dxftype() == 'VIEWPORT':
-                if entity:
-                    entity.dxf.view_center_point = (frame.geometrical_center()[0], frame.geometrical_center()[1], 0.0)
-        frame, msp, base_point = draw_frame(frame=frame, base_point=base_point, msp=msp)
-
-        diagrams = ['1', '2', '3', 'p']
-        mm_frames = []
-
-        for diagram in diagrams:
-            print(diagram)
-            mm_nodes, mm_rods, mm_supports, mm_loads = new_mm_frame(params)
-            frame = FrameForMovementMethod(name=diagram, nodes=mm_nodes, rods=mm_rods, supports=mm_supports, loads=mm_loads[diagram])
-            mm_frames.append(frame)
-
-            calculating_diagram_report = ''
-            for rod in frame.rods:
-                rod_diagram_report = rod.calculate_diagram_m_movement()
-                if rod_diagram_report:
-                    calculating_diagram_report += rod_diagram_report
-            print(calculating_diagram_report)
-
-
-        load_z1 = mm_loads['1']
-        load_z2 = mm_loads['2']
-        load_z3 = mm_loads['3']
-
-        print(load_z1)
-        print(load_z2)
-        print(load_z3)
 
         def calculation_r(frame: FrameForMovementMethod, loads: dict):
             coefficients = dict()
@@ -207,13 +160,54 @@ class BRGTUMovementMethod(TaskPlugin):
                                     m2 = m_start + (m_end - m_start) * l1 / mm_length
                                 fm_rod.diagram_M = [m1, m2]
 
+        if circuit_number == 17:
+            from schemes.brgtu.movement_method.frame_17 import create_frame_17, create_primary_system_17
+            fr_nodes, fr_rods, fr_supports, fr_loads = create_frame_17(params)
+            # ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_17(params)
+        elif circuit_number == 22:
+            from schemes.brgtu.movement_method.frame_22 import create_frame_22, create_mm_primary_system_22, create_fm_primary_system_22
+            fr_nodes, fr_rods, fr_supports, fr_loads = create_frame_22(params)
+            mm_nodes, mm_rods, mm_supports, mm_loads = create_mm_primary_system_22(params)
+            new_mm_frame = create_mm_primary_system_22
+            new_fm_frame = create_fm_primary_system_22
+        else:
+            raise ValueError(f"Схема {circuit_number} не реализована")
 
+        # Создаем главную раму и рисуем ее
+        main_frame = Frame(fr_nodes, fr_rods, fr_supports, fr_loads)
+
+        for entity in layout:
+            if entity.dxf.layer == "1.Главная рама" and entity.dxftype() == 'VIEWPORT':
+                if entity:
+                    entity.dxf.view_center_point = (main_frame.geometrical_center()[0], main_frame.geometrical_center()[1], 0.0)
+        frame, msp, base_point = draw_main_frame(frame=main_frame, base_point=base_point, msp=msp)
+
+        # Создаем единичные рамы МП, расчитываем их
+        diagrams = ['1', '2', '3', 'p']
+        mm_frames = []
+        calculating_diagram_reports = dict()
+
+        for diagram in diagrams:
+            print(diagram)
+            mm_nodes, mm_rods, mm_supports, mm_loads = new_mm_frame(params)
+            frame = FrameForMovementMethod(name=diagram, nodes=mm_nodes, rods=mm_rods, supports=mm_supports, loads=mm_loads[diagram])
+            mm_frames.append(frame)
+
+            calculating_diagram_report = ''
+            for rod in frame.rods:
+                rod_diagram_report = rod.calculate_diagram_m_movement()
+                if rod_diagram_report:
+                    calculating_diagram_report += rod_diagram_report
+            calculating_diagram_reports[diagram] = calculating_diagram_report
+            print(calculating_diagram_report)
+
+        # Находим коэффициенты
         finded_coefficients = dict()
-
         for frame in mm_frames:
             coefficients, reports = calculation_r(frame, mm_loads)
             print(reports)
 
+            # Проверяем r12=r21 и т.д.
             for c in coefficients:
                 coefficient = f'{c[0]}{c[2]}{c[1]}'
                 if coefficient not in finded_coefficients:
@@ -224,11 +218,17 @@ class BRGTUMovementMethod(TaskPlugin):
 
         print(finded_coefficients)
 
+        # Преобразовываем рамы МП в МС, отрисовываем их в автокаде
+        fm_frames = []
         for i in ['1', '2', '3', 'p']:
             fm_nodes, fm_rods, fm_supports, fm_loads = new_fm_frame(params)
             print(i)
 
-            fm_frame = SolvableFrame(nodes=fm_nodes, rods=fm_rods, supports=None, loads=fm_loads)
+            for mm_frame in mm_frames:
+                if mm_frame.name == i:
+                    m_fr = mm_frame
+
+            fm_frame = SolvableFrame(name=i, nodes=fm_nodes, rods=fm_rods, supports=m_fr.supports, loads=m_fr.loads)
             for mm_frame in mm_frames:
                 if mm_frame.name == i:
                     replace_m_diagram_from_mmframe_to_fmframe(mm_frame=mm_frame, fm_frame=fm_frame)
@@ -236,25 +236,28 @@ class BRGTUMovementMethod(TaskPlugin):
             for rod in fm_frame.rods:
                 print(f'{rod}.....{rod.diagram_M}')
 
+            fm_frame, msp, base_point = draw_main_frame(frame=fm_frame, base_point=base_point, diagram_name='M', msp=msp, accuracy=3)
+            fm_frames.append(fm_frame)
 
+        # Расчитываем эпюру Ms и отрисовываем ее
+        fm_nodes, fm_rods, fm_supports, fm_loads = new_fm_frame(params)
+        s_frame = SolvableFrame(name='s', nodes=fm_nodes, rods=fm_rods, supports=m_fr.supports, loads=None)
+        for rod in s_frame.rods:
+            rod.diagram_M = [0, 0]
+            for i in ['1', '2', '3']:
+                for fr in fm_frames:
+                    if fr.name == i:
+                        for rod1 in fr.rods:
+                            if rod1.name == rod.name:
+                                print(rod1.diagram_M)
+                                rod.diagram_M[0] += rod1.diagram_M[0]
+                                rod.diagram_M[1] += rod1.diagram_M[1]
+            print(f'{rod}....{rod.diagram_M}')
+        s_frame, msp, base_point = draw_main_frame(frame=s_frame, base_point=base_point, diagram_name='M', msp=msp,
+                                                    accuracy=3)
 
-
-
-
-
-
-
-
-
-        # frame = SolvableFrame(fr_nodes, fr_rods, fr_supports, fr_loads)
-        #
-        # ms = [[-0.476, 0.925], [0, 0], [-2.536, -0.845], [-0.845, 0.845], [0.845, 2.536], [-0.546, 0], [-0.919, 0], [0, 0.714], [0, -0.211 / 2], [-0.211 / 2, -0.211]]
-        # i = 0
-        # for rod in frame.rods:
-        #     rod.diagram_Ms = ms[i]
-        #
-        # delta_ss_text, delta_ss = frame.multiply_M_diagrams_by_Simpson('Ms', 'Ms')
-        # print(f'δss = {delta_ss_text}\n')
+        delta_ss_text, delta_ss = multiply_M_frames_by_Simpson(frame1=s_frame, frame2=s_frame)
+        print(f'δss = {delta_ss_text}\n')
 
 
 

@@ -135,7 +135,7 @@ def create_mm_primary_system_22(params: dict):
     loads = {}
     load_z1 = Twist(name='z1', node=node2)
     load_z2 = Twist(name='z2', node=node7)
-    load_z3 = Displacement(name='x3', node=node10, value=1, rotation=90)
+    load_z3 = Displacement(name='z3', node=node10, value=1, rotation=90)
 
     loads['1'] = [load_z1]
     loads['2'] = [load_z2]

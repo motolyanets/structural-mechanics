@@ -10,7 +10,9 @@ from services.services import round_up, normalize_equation
 
 class Frame:
     def __init__(self, nodes: List[Node], rods: List[Rod] | List[RodForMovementMethod], supports: List[Support],
-                 loads: list, finded_reactions=None, base_point=None, calkulate_diagram_rods_order: List[List[Rod]]=None):
+                 loads: list, finded_reactions=None, base_point=None, calkulate_diagram_rods_order: List[List[Rod]]=None,
+                 name: str | None = None):
+        self.name = name
         self.nodes = nodes
         self.rods = rods
         self.supports = supports

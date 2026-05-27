@@ -22,6 +22,7 @@ class Rod:
             diagram_Mp: List | None = None,
             diagram_Mok: List | None = None,
             diagram_Mk: List | None = None,
+            diagram_M: List | None = None,
             diagram_Q: List | None = None,
             diagram_N: List | None = None,
             stiffness: float = 1,
@@ -40,10 +41,12 @@ class Rod:
         self.diagram_Mp = diagram_Mp
         self.diagram_Mok = diagram_Mok
         self.diagram_Mk = diagram_Mk
+        self.diagram_M = diagram_M
         self.diagram_Q = diagram_Q
         self.diagram_N = diagram_N
         self.stiffness = stiffness
         self.nodes = [self.start_node, self.end_node]
+        self.name = f'{start_node.name}{end_node.name}'
 
     def dx(self) -> float:
         dx = self.end_node.x - self.start_node.x

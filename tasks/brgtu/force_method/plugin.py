@@ -6,7 +6,7 @@ import numpy
 from ezdxf import zoom
 
 from core.mechanics.solver import SolvableFrame
-from services.authocad import draw_frame
+from services.authocad import draw_main_frame
 from services.services import round_up, relative_error_percent
 from tasks.base import TaskPlugin
 from tasks.brgtu.force_method.loader import ForceMethodLoader
@@ -105,7 +105,7 @@ class BRGTUForceMethod(TaskPlugin):
             if entity.dxf.layer == "1.Главная рама" and entity.dxftype() == 'VIEWPORT':
                 if entity:
                     entity.dxf.view_center_point = (frame.geometrical_center()[0], frame.geometrical_center()[1], 0.0)
-        frame, msp, base_point = draw_frame(frame=frame, base_point=base_point, msp=msp)
+        frame, msp, base_point = draw_main_frame(frame=frame, base_point=base_point, msp=msp)
 
 
         sf = {}
@@ -127,7 +127,7 @@ class BRGTUForceMethod(TaskPlugin):
             finding_moments_report = finding_moments_report.replace('\n\n', '\n')
             finding_moments_report = finding_moments_report.replace('= =', '=')
 
-            frame_1, msp, base_point = draw_frame(frame=frame_1, base_point=base_point, msp=msp, diagram_name=f[3:])
+            frame_1, msp, base_point = draw_main_frame(frame=frame_1, base_point=base_point, msp=msp, diagram_name=f[3:])
 
 
             for entity in layout:
@@ -344,7 +344,7 @@ class BRGTUForceMethod(TaskPlugin):
         for f in sf:
             if f in ['sf_Ms', 'sf_Mok', 'sf_Q']:
                 frame_1 = sf[f]
-                frame_1, msp, base_point = draw_frame(frame=frame_1, base_point=base_point, msp=msp, diagram_name=f[3:],
+                frame_1, msp, base_point = draw_main_frame(frame=frame_1, base_point=base_point, msp=msp, diagram_name=f[3:],
                                                       drawing_sections=False)
 
                 for entity in layout:
@@ -387,7 +387,7 @@ class BRGTUForceMethod(TaskPlugin):
         for f in sf:
             if f in ['sf_N']:
                 frame_1 = sf[f]
-                frame_1, msp, base_point = draw_frame(frame=frame_1, base_point=base_point, msp=msp, diagram_name=f[3:],
+                frame_1, msp, base_point = draw_main_frame(frame=frame_1, base_point=base_point, msp=msp, diagram_name=f[3:],
                                                       drawing_sections=False)
 
                 for entity in layout:
@@ -477,7 +477,7 @@ class BRGTUForceMethod(TaskPlugin):
         # frame.finded_reactions =
 
 
-        frame, msp, base_point = draw_frame(frame=frame, base_point=base_point, msp=msp,
+        frame, msp, base_point = draw_main_frame(frame=frame, base_point=base_point, msp=msp,
                                               drawing_sections=False)
 
         for entity in layout:

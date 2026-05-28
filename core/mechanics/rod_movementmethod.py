@@ -1,5 +1,5 @@
 import math
-from typing import List
+from typing import List, Tuple
 
 from core.mechanics.load import Twist, Displacement, DistributedForce, Force, Momentum
 from core.mechanics.node import Node
@@ -41,6 +41,11 @@ class RodForMovementMethod:
     def dy(self) -> float:
         dy = self.end_node.y - self.start_node.y
         return math.fabs(dy)
+
+    def middle(self) -> Tuple[float, float]:
+        x = (self.start_node.x + self.end_node.x) / 2
+        y = (self.start_node.y + self.end_node.y) / 2
+        return x, y
 
     def length(self) -> float:
         dx = self.dx()
@@ -728,7 +733,6 @@ class RodForMovementMethod:
         else:
             self.diagram_M = [[0, 0]]
         if self.diagram_M:
-            print(f'{self}....{self.diagram_M}')
             return report
 
     def __repr__(self) -> str:

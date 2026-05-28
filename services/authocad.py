@@ -8,6 +8,7 @@ from core.mechanics.frame import Frame
 from core.mechanics.load import Force, Momentum, DistributedForce, Twist, Displacement
 from core.mechanics.node import Node
 from core.mechanics.rod import Rod
+from core.mechanics.solver import FrameForMovementMethod
 from services.services import round_up
 
 h_r = 0.1
@@ -45,13 +46,21 @@ def drow_hinge(hinge_point, direction_point, msp, hinge_radius=h_r):
         )
 
 
-def draw_node(node: Node, base_point: List[float], msp, hinge_radius=h_r):
+def draw_node(node: Node, base_point: List[float], msp, task_method: str, hinge_radius=h_r):
+    if task_method not in ['fm', 'mm']:
+        raise Exception('Неизвестный метод задачи')
     node_point = (node.x + base_point[0], node.y + base_point[1])
-    try:
-        int(node.name)
-    except:
-        placement = (node_point[0] + 0.2, node_point[1] + 0.2)
-        msp.add_text(text=node.name, height=0.2, dxfattribs={"layer": "Node", }).set_placement(placement)
+
+    if task_method == 'fm':
+        try:
+            int(node.name)
+        except:
+            placement = (node_point[0] + 0.2, node_point[1] + 0.2)
+            msp.add_text(text=node.name, height=0.2, dxfattribs={"layer": "Node", }).set_placement(placement)
+    elif task_method == 'mm':
+        if node.name != '0':
+            placement = (node_point[0] + 0.2, node_point[1] + 0.2)
+            msp.add_text(text=node.name, height=0.2, dxfattribs={"layer": "Node", }).set_placement(placement)
 
     if node.is_hinge:
         circle_radius = hinge_radius
@@ -66,7 +75,7 @@ def draw_node(node: Node, base_point: List[float], msp, hinge_radius=h_r):
         )
 
 
-def draw_rod(rod: Rod, base_point: List[float], msp, hinge_radius=h_r):
+def draw_rod(rod: Rod, base_point: List[float], msp, hinge_radius=h_r, drowing_stiffnes: bool | str = False):
     line = msp.add_line(
         start=(rod.start_node.x + base_point[0], rod.start_node.y + base_point[1]),
         end=(rod.end_node.x + base_point[0], rod.end_node.y + base_point[1]),
@@ -75,6 +84,11 @@ def draw_rod(rod: Rod, base_point: List[float], msp, hinge_radius=h_r):
             'lineweight': 30
         }
     )
+    if drowing_stiffnes:
+        rod_center = rod.middle()
+        placement = (rod_center[0] + base_point[0] + 0.2, rod_center[1] + base_point[1] + 0.2)
+        msp.add_text(text=f'{drowing_stiffnes}', height=0.2, dxfattribs={"layer": "Rod", }).set_placement(placement)
+
     try:
         if rod.is_start_hinge:
             hinge_point = line.dxf.start
@@ -106,14 +120,26 @@ def draw_section(rod: Rod, base_point: List[float], msp):
     return msp
 
 
-def draw_main_frame(frame: Frame, base_point: List[float], msp, diagram_name: str = None, drawing_sections: bool = True, accuracy: int = 2):
+def draw_main_frame(frame: Frame, base_point: List[float], msp, diagram_name: str = None, drawing_sections: bool = True,
+                    accuracy: int = 2, drawing_nodes: bool = True, drowing_stiffnes: bool = False):
     frame.base_point = base_point
 
-    for node in frame.nodes:
-        draw_node(node, base_point, msp)
+    if drawing_nodes:
+        for node in frame.nodes:
+            if isinstance(frame, FrameForMovementMethod):
+                task_method = 'mm'
+            else:
+                task_method = 'fm'
+            draw_node(node, base_point, msp, task_method=task_method)
 
     for rod in frame.rods:
-        draw_rod(rod=rod, base_point=base_point, msp=msp)
+        if drowing_stiffnes:
+            if isinstance(frame, FrameForMovementMethod):
+                drowing_stiffnes_text = f'{round_up(rod.linear_stiffness,3)}·i'
+            else:
+                drowing_stiffnes_text = f'{rod.stiffness}·EI'
+
+        draw_rod(rod=rod, base_point=base_point, msp=msp, drowing_stiffnes=drowing_stiffnes if not drowing_stiffnes else drowing_stiffnes_text)
         if drawing_sections:
             draw_section(rod=rod, base_point=base_point, msp=msp)
         if diagram_name:

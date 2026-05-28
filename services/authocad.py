@@ -150,7 +150,7 @@ def draw_main_frame(frame: Frame, base_point: List[float], msp, diagram_name: st
                 draw_diagram_m(rod=rod, base_point=base_point, diagram=diagram, msp=msp, scale=scale, accuracy=accuracy)
             elif diagram_name.startswith('Q') or diagram_name.startswith('N'):
                 if diagram:
-                    draw_diagram_q(rod=rod, base_point=base_point, diagram=diagram, msp=msp, scale=scale)
+                    draw_diagram_q(rod=rod, base_point=base_point, diagram=diagram, msp=msp, scale=scale, accuracy=accuracy)
 
 
     for support in frame.supports:
@@ -364,7 +364,7 @@ def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp,
     return msp
 
 
-def draw_diagram_q(rod: Rod, base_point: List[float], diagram: List[float], msp, scale: float = 1.0):
+def draw_diagram_q(rod: Rod, base_point: List[float], diagram: List[float], msp, scale: float = 1.0, accuracy: int = 2):
     """
     Отрисовка эпюры моментов.
 
@@ -391,8 +391,8 @@ def draw_diagram_q(rod: Rod, base_point: List[float], diagram: List[float], msp,
     is_vertical = abs(rod_vector.x) < 1e-6  # Вертикальный
 
     # Получаем значения моментов
-    Q_start = diagram[0]
-    Q_end = diagram[-1]
+    Q_start = round_up(diagram[0], accuracy)
+    Q_end = round_up(diagram[-1], accuracy)
 
     # Определяем знаки и нормализуем значения
     # Для горизонтального стержня: + вверх, - вниз

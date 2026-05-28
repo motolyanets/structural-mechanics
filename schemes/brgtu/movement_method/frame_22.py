@@ -183,12 +183,13 @@ def create_fm_primary_system_22(params: dict):
     support1 = Support(node=node9, number_of_reactions=2, rotation=180)
     support2 = Support(node=node12, number_of_reactions=2, rotation=180)
 
-    # load_x1 = Momentum(name='x1', node=node1, value=1, rotation=False)
-    # load_x2 = Force(name='x2', node=node1, value=1, rotation=0)
-    # load_x3 = Force(name='x3', node=node1, value=1, rotation=90)
-    # load_x4 = Force(name='x4', node=node9, value=1, rotation=90)
-    # load_x5 = Force(name='x5', node=node9, value=1, rotation=180)
-    # loads = [load_x1, load_x2, load_x3, load_x4, load_x5]
+    loads = dict()
+    load_x1 = Momentum(name='x1', node=node1, value=1, rotation=False)
+    load_x2 = Force(name='x2', node=node1, value=1, rotation=0)
+    load_x3 = Force(name='x3', node=node1, value=1, rotation=90)
+    load_x4 = Force(name='x4', node=node8, value=1, rotation=180)
+    load_x5 = Momentum(name='x5', node=node12, value=1, rotation=False)
+    loads_s = [load_x1, load_x2, load_x3, load_x4, load_x5]
 
     if load_index == 1:
         rod3_1 = Rod(start_node=node2, end_node=node4, stiffness=i3)
@@ -202,7 +203,7 @@ def create_fm_primary_system_22(params: dict):
         load_q2 = DistributedForce(name='q', rod=rod2, value=q, rotation=0)
         load_m1 = Momentum(name='m', node=node11, value=m, rotation=True)
 
-        loads = [load_P1, load_P2, load_P3, load_q1, load_q2, load_m1]
+        loads_p = [load_P1, load_P2, load_P3, load_q1, load_q2, load_m1]
         nodes = [node1, node2, node3, node4, node6, node7, node8, node9, node10, node11, node12]
         rods = [rod1, rod2, rod3_1, rod3_2, rod3_3, rod4, rod5, rod6, rod7, rod8]
 
@@ -214,9 +215,13 @@ def create_fm_primary_system_22(params: dict):
         load_P2 = Force(name='P', node=node11, value=P, rotation=90)
         load_q1 = DistributedForce(name='q', rod=rod5, value=q, rotation=270)
         load_m1 = Momentum(name='m', node=node5, value=m, rotation=False)
-        loads = [load_P1, load_P2, load_q1, load_m1]
+        loads_p = [load_P1, load_P2, load_q1, load_m1]
         nodes = [node1, node2, node3, node5, node7, node8, node9, node10, node11, node12]
         rods = [rod1, rod2, rod3_1, rod3_2, rod4, rod5, rod6, rod7, rod8]
+
+
+    loads['s'] = loads_s
+    loads['p'] = loads_p
 
     supports = [support1, support2]
 

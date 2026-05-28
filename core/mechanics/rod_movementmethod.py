@@ -332,7 +332,7 @@ class RodForMovementMethod:
                     m_end = -sign * load.value * (length ** 2 - 3 * b ** 2) / (2 * length ** 2)
                     m_1 = -sign * ((load.value * b / length) + ((b / length) * abs(m_end)))
                     m_2 = sign * ((load.value * a / length) - ((b / length) * abs(m_end)))
-                    Q = -sign * 3 * load.value * (length ** 2 - b ** 2) / (2 * length ** 3)
+                    Q = sign * 3 * load.value * (length ** 2 - b ** 2) / (2 * length ** 3)
                     self.diagram_Q = [Q, Q]
                     self.diagram_M = [[m_start, m_1], [m_2, m_end]]
                     text = f'M{self.name} = m · (l² - 3 · b²) / (2 · l²) = {abs(round_up(m_end, 3))}\n'

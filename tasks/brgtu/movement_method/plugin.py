@@ -319,7 +319,7 @@ class BRGTUMovementMethod(TaskPlugin):
         print('\n-------Столбцовая проверка-------')
         column_check = '\n\n'
         fm_nodes, fm_rods, fm_supports, fm_loads = new_fm_frame(params)
-        p_fm_frame = SolvableFrame(name='fm_s', nodes=fm_nodes, rods=fm_rods, supports=fm_supports, loads=fm_loads).classify_part()
+        p_fm_frame = SolvableFrame(name='fm_p', nodes=fm_nodes, rods=fm_rods, supports=fm_supports, loads=fm_loads['p']).classify_part()
         report = p_fm_frame.solve_frame()
         p_fm_frame.base_point = base_point
         p_fm_frame.create_sections_for_diagrams()
@@ -387,6 +387,8 @@ class BRGTUMovementMethod(TaskPlugin):
         z2 = round_up(solution[1], 3)
         z3 = round_up(solution[2], 3)
 
+        coef_z = {'z1': z1, 'z2': z2, 'z3': z3, 'zp': 1}
+
         system_of_equations_2 = f"z1 = {z1}\nz2 = {z2}\nz3 = {z3}\n"
         print(system_of_equations_2)
 
@@ -397,14 +399,150 @@ class BRGTUMovementMethod(TaskPlugin):
                 entity.text = system_of_equations_2
 
 
+        print('-------"Эпюра Мок"-------')
+        fm_nodes, fm_rods, fm_supports, fm_loads = new_fm_frame(params)
+        ok_mm_frame = SolvableFrame(name='ok', nodes=fm_nodes, rods=fm_rods, supports=m_fr.supports, loads=fm_loads['p'])
+        for rod in ok_mm_frame.rods:
+            rod.diagram_M = [0, 0]
+            for i in diagrams:
+                for fr in fm_frames:
+                    if fr.name == i:
+                        for rod1 in fr.rods:
+                            if rod1.name == rod.name:
+                                if len(rod1.diagram_M) == 2:
+                                    rod.diagram_M[0] += rod1.diagram_M[0] * coef_z[f'z{i}']
+                                    rod.diagram_M[1] += rod1.diagram_M[1] * coef_z[f'z{i}']
+                                elif len(rod1.diagram_M) == 3 and len(rod.diagram_M) == 2:
+                                    rod.diagram_M = [rod.diagram_M[0], (rod.diagram_M[0] + rod.diagram_M[1]) / 2, rod.diagram_M[1]]
+                                    rod.diagram_M[0] += rod1.diagram_M[0] * coef_z[f'z{i}']
+                                    rod.diagram_M[1] += rod1.diagram_M[1] * coef_z[f'z{i}']
+                                    rod.diagram_M[2] += rod1.diagram_M[2] * coef_z[f'z{i}']
+                                elif len(rod1.diagram_M) == 2 and len(rod.diagram_M) == 3:
+                                    d_M = [rod1.diagram_M[0], (rod1.diagram_M[0] + rod1.diagram_M[1]) / 2, rod1.diagram_M[1]]
+                                    rod.diagram_M[0] += d_M[0] * coef_z[f'z{i}']
+                                    rod.diagram_M[1] += d_M[1] * coef_z[f'z{i}']
+                                    rod.diagram_M[2] += d_M[2] * coef_z[f'z{i}']
+                                elif len(rod1.diagram_M) == 3 and len(rod.diagram_M) == 3:
+                                    rod.diagram_M[0] += rod1.diagram_M[0] * coef_z[f'z{i}']
+                                    rod.diagram_M[1] += rod1.diagram_M[1] * coef_z[f'z{i}']
+                                    rod.diagram_M[2] += rod1.diagram_M[2] * coef_z[f'z{i}']
+
+        ok_mm_frame, msp, base_point = draw_main_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='M', msp=msp,
+                                                    accuracy=3)
+
+        for entity in layout:
+            if entity.dxf.layer == 'мп_эпюра Мok' and entity.dxftype() == 'VIEWPORT':
+                if entity:
+                    entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
+                                                    ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1],
+                                                    0.0)
 
 
+        print('-------Деформационная проверка-------')
+        deformation_check = '\n\n'
+        fm_nodes, fm_rods, fm_supports, fm_loads = new_fm_frame(params)
+        s_fm_frame = SolvableFrame(name='fm_s', nodes=fm_nodes, rods=fm_rods, supports=fm_supports, loads=fm_loads['s']).classify_part()
+        report = s_fm_frame.solve_frame()
+        s_fm_frame.base_point = base_point
+        s_fm_frame.create_sections_for_diagrams()
+        finding_moments_report = ''
+        for rod in s_fm_frame.rods:
+            section_equation = rod.calculate_diagram_m('m')
+            finding_moments_report += section_equation + '\n'
+        finding_moments_report = finding_moments_report.replace('\n\n', '\n')
+        finding_moments_report = finding_moments_report.replace('= =', '=')
+
+        s_fm_frame, msp, base_point = draw_main_frame(frame=s_fm_frame, base_point=base_point, msp=msp, diagram_name='M',
+                                                      accuracy=3)
+
+        for entity in layout:
+            if entity.dxf.layer == 'sf_Ms' and entity.dxftype() == 'VIEWPORT':
+                if entity:
+                    entity.dxf.view_center_point = (s_fm_frame.base_point[0] + s_fm_frame.geometrical_center()[0],
+                                                    s_fm_frame.base_point[1] + s_fm_frame.geometrical_center()[1],
+                                                    0.0)
+            elif entity.dxf.layer == 'sf_Ms нахождение опорных реакций':
+                entity.text = report
+            elif entity.dxf.layer == 'sf_Ms расчет эпюры моментов':
+                entity.text = finding_moments_report
 
 
+        delta_sok_text, delta_sok = multiply_M_frames_by_Simpson(frame1=s_fm_frame, frame2=ok_mm_frame)
+        delta_sok_text = delta_sok_text.replace('/EI', '')
+        print(f'δsok = {delta_sok_text}\n')
+        print(f'δsok = {delta_sok} ≈ 0')
+        if delta_sok <= 0.1:
+            print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}\n")
+        else:
+            print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}\n")
+
+        deformation_check += (f'δ\\H0.5x;sok\\H2.0x; = {delta_sok_text}\n' + '\n' + f'δ\\H0.5x;sok\\H2.0x; = {delta_sok} ≈ 0\n' +
+                              'Проверка выполняется')
+
+        for entity in layout:
+            if entity.dxf.layer == 'Деформационная проверка':
+                entity.text += deformation_check
 
 
+        print('-------"Эпюра Q"-------')
+        calculating_Q_report = ''
+        i = 1
+        for rod in ok_mm_frame.rods:
+            Q = (rod.diagram_M[0] - rod.diagram_M[-1]) / rod.length()
+            if len(rod.diagram_M) == 2:
+                report = f'Q{i} = ({rod.diagram_M[0]} - {rod.diagram_M[-1]}) / {rod.length()} = {round_up(Q)} кН'
+                rod.diagram_Q = [Q, Q]
+            elif len(rod.diagram_M) == 3:
+                q = params['q']
+                Q1 = Q + q * rod.length() / 2
+                Q2 = Q - q * rod.length() / 2
+                report = (f'Q{i} = ({rod.diagram_M[0]} - {rod.diagram_M[-1]}) / {rod.length()} + {q} · {rod.length()} / 2 = {round_up(Q1)} кН\n'
+                          f'Q{i} = ({rod.diagram_M[0]} - {rod.diagram_M[-1]}) / {rod.length()} - {q} · {rod.length()} / 2 = {round_up(Q2)} кН')
+                rod.diagram_Q = [Q1, Q2]
+            calculating_Q_report += report + '\n'
+            i += 1
+            print(f'{rod} ------ {rod.diagram_Q}')
+        ok_mm_frame.base_point = base_point
+        ok_mm_frame, msp, base_point = draw_main_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='Q', msp=msp,
+                                                    accuracy=2)
 
-
+        for entity in layout:
+            if entity.dxf.layer == 'sf_Q' and entity.dxftype() == 'VIEWPORT':
+                if entity:
+                    entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
+                                                    ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1],
+                                                    0.0)
+            elif entity.dxf.layer == 'Расчет эпюры Q':
+                entity.text = calculating_Q_report
 
         zoom.extents(msp)
         doc.saveas(f'report.dxf')
+
+        input('Проверьте файл report.dxf, подготовьтесь вводить значения эпюры N и опорные реакции, далее нажмите ENTER')
+        doc = ezdxf.readfile('report.dxf')
+        msp = doc.modelspace()
+        layout = doc.layouts.get("Шаблон (метод перемещений)")
+        print(f'\n')
+
+        nn = [-4.09, 0, -7.21, -7.21, -7.21, 0, -6.74, -14.18, -1.13, -1.13]
+        print('-------"Эпюра N"-------')
+        i = 0
+        for rod in ok_mm_frame.rods:
+            # print(rod)
+            # N1 = float(input('Введите N1:'))
+            N1 = nn[i]
+            rod.diagram_N = [N1, N1]
+            i += 1
+
+        ok_mm_frame.base_point = base_point
+        ok_mm_frame, msp, base_point = draw_main_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='N', msp=msp,
+                                                    accuracy=2)
+
+        for entity in layout:
+            if entity.dxf.layer == 'sf_N' and entity.dxftype() == 'VIEWPORT':
+                if entity:
+                    entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
+                                                    ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1],
+                                                    0.0)
+
+

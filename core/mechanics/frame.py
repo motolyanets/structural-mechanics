@@ -227,8 +227,9 @@ class Frame:
                         using_loads.append(load_on_current_rod)
 
                     current_rod = self.next_rod(previous_rod=current_rod, node=next_node)
-                    if current_rod.start_node in nodes_with_3_or_more_rodes or current_rod.end_node in nodes_with_3_or_more_rodes:
+                    if not current_rod or current_rod.start_node in nodes_with_3_or_more_rodes or current_rod.end_node in nodes_with_3_or_more_rodes:
                         break
+
 
 
 

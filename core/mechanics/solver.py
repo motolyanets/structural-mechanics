@@ -92,9 +92,13 @@ class SolvableFrame(Frame):
             point = (node.x, node.y)
             unknown_count = []
             for reaction in reactions:
-                lever_arm = reaction.get_lever_arm(point=point)
-                if lever_arm and not reaction.value:
-                    unknown_count.append(reaction)
+                if isinstance(reaction, Force):
+                    lever_arm = reaction.get_lever_arm(point=point)
+                    if lever_arm and not reaction.value:
+                        unknown_count.append(reaction)
+                elif isinstance(reaction, Momentum):
+                    if not reaction.value:
+                        unknown_count.append(reaction)
             if len(unknown_count) == 1:
                 return node, unknown_count[0]
         raise Exception('В раме нет такого узла, в котором будет только одна неизвестная')
@@ -121,8 +125,14 @@ class SolvableFrame(Frame):
                 equation = equation + text
 
         reaction = self.find_node_with_single_unknown()[1]
-        reaction_lever_arm = reaction.get_lever_arm(point=point)
-        reaction_value = -moment / reaction_lever_arm
+        if isinstance(reaction, Force):
+            reaction_lever_arm = reaction.get_lever_arm(point=point)
+            reaction_value = -moment / reaction_lever_arm
+        elif isinstance(reaction, Momentum):
+            if reaction.rotation:
+                reaction_value = -moment
+            else:
+                reaction_value = moment
         return [reaction.name, reaction_value, equation]
 
     def find_reaction_from_force_projection(self, axis: str):
@@ -365,6 +375,7 @@ class SimpleFrame(SolvableFrame, BaseFrame):
     def solve_frame(self):
         print(50 * '-')
         print('Решаем простую раму')
+        report = 'Опорные реакции:\n'
         reactions = self.reactions()
         node1 = self.find_node_with_single_unknown()[0]
         r = self.solve_single_unknown_at_node(node=node1)
@@ -374,13 +385,18 @@ class SimpleFrame(SolvableFrame, BaseFrame):
                 self.finded_reactions.append(reaction)
                 print(r[2])
 
-        self.find_reaction_from_force_projection('x')
-        self.find_reaction_from_force_projection('y')
+
+
+        r1 = self.find_reaction_from_force_projection('x')
+        r2 = self.find_reaction_from_force_projection('y')
+
+        report += r[2] + r1 + r2
+
 
         for reaction in self.finded_reactions:
             print(f'{reaction.name}={reaction.value} ------ {reaction.rotation}')
         print(50 * '-')
-        return self
+        return report
 
 
 class Tightening(SolvableFrame, BaseFrame):

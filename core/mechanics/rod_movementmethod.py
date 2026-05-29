@@ -36,11 +36,11 @@ class RodForMovementMethod:
 
     def dx(self) -> float:
         dx = self.end_node.x - self.start_node.x
-        return math.fabs(dx)
+        return round_up(math.fabs(dx), 5)
 
     def dy(self) -> float:
         dy = self.end_node.y - self.start_node.y
-        return math.fabs(dy)
+        return round_up(math.fabs(dy), 5)
 
     def middle(self) -> Tuple[float, float]:
         x = (self.start_node.x + self.end_node.x) / 2
@@ -68,7 +68,7 @@ class RodForMovementMethod:
                     if load.node == self.start_node:
                         m_start = -3 * linear_stiffness * sign
                         m_end = 0
-                        Q = -sign * 3 * linear_stiffness / length
+                        Q = sign * 3 * linear_stiffness / length
                     else:
                         raise Exception(f'Поворот не может быть приложен к шарниру ({self}.....{load})')
                     text = f'M{self.name} = 3 · i  = {abs(round_up(m_start, 3))}\n'

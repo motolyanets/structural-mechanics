@@ -162,19 +162,20 @@ class BRGTUMovementMethod(TaskPlugin):
                                 fm_rod.diagram_M = [m1, m2]
 
         if circuit_number == 17:
-            from schemes.brgtu.movement_method.frame_17 import create_frame_17, create_primary_system_17
-            fr_nodes, fr_rods, fr_supports, fr_loads = create_frame_17(params)
-            # ps_nodes, ps_rods, ps_supports, ps_loads = create_primary_system_17(params)
+            from schemes.brgtu.movement_method.frame_17 import create_frame_17, create_mm_primary_system_17, create_fm_primary_system_17
+            create_main_frame = create_frame_17
+            new_mm_frame = create_mm_primary_system_17
+            new_fm_frame = create_fm_primary_system_17
         elif circuit_number == 22:
             from schemes.brgtu.movement_method.frame_22 import create_frame_22, create_mm_primary_system_22, create_fm_primary_system_22
-            fr_nodes, fr_rods, fr_supports, fr_loads = create_frame_22(params)
-            mm_nodes, mm_rods, mm_supports, mm_loads = create_mm_primary_system_22(params)
+            create_main_frame = create_frame_22
             new_mm_frame = create_mm_primary_system_22
             new_fm_frame = create_fm_primary_system_22
         else:
             raise ValueError(f"Схема {circuit_number} не реализована")
 
         # Создаем главную раму и рисуем ее
+        fr_nodes, fr_rods, fr_supports, fr_loads = create_main_frame(params)
         main_frame = Frame(fr_nodes, fr_rods, fr_supports, fr_loads)
 
         for entity in layout:
@@ -185,9 +186,15 @@ class BRGTUMovementMethod(TaskPlugin):
 
         # Отрисовываем основную систему МП
         ps_mm_nodes, ps_mm_rods, ps_mm_supports, ps_mm_loads = new_mm_frame(params)
+
+        ed_diagrams = []
+        for load in ps_mm_loads:
+            if load != 'p':
+                ed_diagrams.append(load)
+
         ps_mm_ed_loads = []
         for i in ps_mm_loads:
-            if i in ['1', '2', '3']:
+            if i in ed_diagrams:
                 ps_mm_ed_loads.append(ps_mm_loads[i][0])
         ps_mm_frame = FrameForMovementMethod(name='ps_mm', nodes=ps_mm_nodes, rods=ps_mm_rods, supports=ps_mm_supports, loads=ps_mm_ed_loads)
         linear_stiffness_report = 'Зададим погонные жесткости:\n'
@@ -207,11 +214,12 @@ class BRGTUMovementMethod(TaskPlugin):
 
 
         # Создаем единичные рамы МП, расчитываем их
-        diagrams = ['1', '2', '3', 'p']
+        ed_diagrams_with_p = ed_diagrams.copy()
+        ed_diagrams_with_p.append('p')
         mm_frames = []
         calculating_diagram_reports = dict()
 
-        for diagram in diagrams:
+        for diagram in ed_diagrams_with_p:
             print(f'Расчет эпюры М{diagram} метода перемещений')
             mm_nodes, mm_rods, mm_supports, mm_loads = new_mm_frame(params)
             frame = FrameForMovementMethod(name=diagram, nodes=mm_nodes, rods=mm_rods, supports=mm_supports, loads=mm_loads[diagram])
@@ -243,7 +251,7 @@ class BRGTUMovementMethod(TaskPlugin):
 
         # Преобразовываем рамы МП в МС, отрисовываем их в автокаде
         fm_frames = []
-        for i in ['1', '2', '3', 'p']:
+        for i in ed_diagrams_with_p:
             fm_nodes, fm_rods, fm_supports, fm_loads = new_fm_frame(params)
 
             for mm_frame in mm_frames:
@@ -273,13 +281,15 @@ class BRGTUMovementMethod(TaskPlugin):
         s_mm_frame = SolvableFrame(name='s', nodes=fm_nodes, rods=fm_rods, supports=m_fr.supports, loads=None)
         for rod in s_mm_frame.rods:
             rod.diagram_M = [0, 0]
-            for i in ['1', '2', '3']:
+            for i in ed_diagrams:
                 for fr in fm_frames:
                     if fr.name == i:
                         for rod1 in fr.rods:
                             if rod1.name == rod.name:
                                 rod.diagram_M[0] += rod1.diagram_M[0]
                                 rod.diagram_M[1] += rod1.diagram_M[1]
+                                break
+                        break
         s_mm_frame, msp, base_point = draw_main_frame(frame=s_mm_frame, base_point=base_point, diagram_name='M', msp=msp,
                                                     accuracy=3)
         for entity in layout:
@@ -295,20 +305,31 @@ class BRGTUMovementMethod(TaskPlugin):
         delta_ss_text = delta_ss_text.replace('/EI', '·i')
         universal_check += f'δ\\H0.5x;ss\\H2.0x; = {delta_ss_text}\n'
         print(f'δss = {delta_ss_text}\n')
-        r11 = finded_coefficients['r11']
-        r12 = finded_coefficients['r21']
-        r13 = finded_coefficients['r31']
-        r22 = finded_coefficients['r22']
-        r23 = finded_coefficients['r32']
-        r33 = finded_coefficients['r33']
-        sum_delta = r11 + r12 * 2 + r13 * 2 + r22 + r23 * 2 + r33
-        uni_check_text = (f'r\\H0.5x;11\\H2.0x; + r\\H0.5x;12\\H2.0x;·2 + r\\H0.5x;13\\H2.0x;·2 + r\\H0.5x;22\\H2.0x; + '
-                          f'r\\H0.5x;23\\H2.0x;·2 + r\\H0.5x;33\\H2.0x; = {round_up(r11, 3)}·i + '
-                          f'2·{round_up(r12, 3)}·i + 2·{round_up(r13, 3)}·i + {round_up(r22, 3)}·i + '
-                          f'2·{round_up(r23, 3)}·i + {round_up(r33, 3)}·i = {round_up(sum_delta, 3)}·i\n')
-        print(f'r11 + r12·2 + r13·2 + r22 + r23·2 + r33 = {r11}·i + 2·{r12}·i + 2·{r13}·i + {r22}·i + 2·{r23}·i + {r33}·i = {sum_delta}·i\n')
-        E_uni_check, e_text_uni_check = relative_error_percent(delta_ss, sum_delta, tolerance_percent=3)
-        universal_check += '\n' + uni_check_text + '\n' + e_text_uni_check + '\n' + 'Проверка выполняется'
+        if len(ed_diagrams) == 3:
+            r11 = finded_coefficients['r11']
+            r12 = finded_coefficients['r21']
+            r13 = finded_coefficients['r31']
+            r22 = finded_coefficients['r22']
+            r23 = finded_coefficients['r32']
+            r33 = finded_coefficients['r33']
+            sum_delta = r11 + r12 * 2 + r13 * 2 + r22 + r23 * 2 + r33
+            uni_check_text = (f'r\\H0.5x;11\\H2.0x; + r\\H0.5x;12\\H2.0x;·2 + r\\H0.5x;13\\H2.0x;·2 + r\\H0.5x;22\\H2.0x; + '
+                              f'r\\H0.5x;23\\H2.0x;·2 + r\\H0.5x;33\\H2.0x; = {round_up(r11, 3)}·i + '
+                              f'2·{round_up(r12, 3)}·i + 2·{round_up(r13, 3)}·i + {round_up(r22, 3)}·i + '
+                              f'2·{round_up(r23, 3)}·i + {round_up(r33, 3)}·i = {round_up(sum_delta, 3)}·i\n')
+            print(f'r11 + r12·2 + r13·2 + r22 + r23·2 + r33 = {r11}·i + 2·{r12}·i + 2·{r13}·i + {r22}·i + 2·{r23}·i + {r33}·i = {sum_delta}·i\n')
+            E_uni_check, e_text_uni_check = relative_error_percent(delta_ss, sum_delta, tolerance_percent=3)
+            universal_check += '\n' + uni_check_text + '\n' + e_text_uni_check + '\n' + 'Проверка выполняется'
+        elif len(ed_diagrams) == 2:
+            r11 = finded_coefficients['r11']
+            r12 = finded_coefficients['r21']
+            r22 = finded_coefficients['r22']
+            sum_delta = r11 + r12 * 2 + r22
+            uni_check_text = (f'r\\H0.5x;11\\H2.0x; + r\\H0.5x;12\\H2.0x;·2 + r\\H0.5x;22\\H2.0x; = {round_up(r11, 3)}·i + '
+                              f'2·{round_up(r12, 3)}·i + {round_up(r22, 3)}·i = {round_up(sum_delta, 3)}·i\n')
+            print(f'r11 + r12·2 + r22 = {r11}·i + 2·{r12}·i + {r22}·i = {sum_delta}·i\n')
+            E_uni_check, e_text_uni_check = relative_error_percent(delta_ss, sum_delta, tolerance_percent=3)
+            universal_check += '\n' + uni_check_text + '\n' + e_text_uni_check + '\n' + 'Проверка выполняется'
 
         for entity in layout:
             if entity.dxf.layer == 'Универсальная проверка':
@@ -348,16 +369,28 @@ class BRGTUMovementMethod(TaskPlugin):
         delta_sp_text = delta_sp_text.replace('/EI', '')
         column_check += f'δ\\H0.5x;sp\\H2.0x; = {delta_sp_text}\n'
         print(f'δsp = {delta_sp_text}\n')
-        r1p = finded_coefficients['r1p']
-        r2p = finded_coefficients['r2p']
-        r3p = finded_coefficients['r3p']
 
-        sum_delta = round_up(r1p + r2p + r3p, 3)
-        col_check_text = (f'R\\H0.5x;1p\\H2.0x; + R\\H0.5x;2p\\H2.0x; + R\\H0.5x;3p\\H2.0x; = {round_up(r1p, 3)} + '
-                          f'{round_up(r2p, 3)} + {round_up(r3p, 3)} = {sum_delta}\n')
-        print(f'R1p + R2p + R3p = {r1p} + {r2p} + {r3p} = {sum_delta}\n')
-        E_col_check, e_text_col_check = relative_error_percent(delta_sp, sum_delta, tolerance_percent=3)
-        column_check += '\n' + col_check_text + '\n' + e_text_col_check + '\n' + 'Проверка выполняется'
+        if len(ed_diagrams) == 3:
+            r1p = finded_coefficients['r1p']
+            r2p = finded_coefficients['r2p']
+            r3p = finded_coefficients['r3p']
+
+            sum_delta = round_up(r1p + r2p + r3p, 3)
+            col_check_text = (f'R\\H0.5x;1p\\H2.0x; + R\\H0.5x;2p\\H2.0x; + R\\H0.5x;3p\\H2.0x; = {round_up(r1p, 3)} + '
+                              f'{round_up(r2p, 3)} + {round_up(r3p, 3)} = {sum_delta}\n')
+            print(f'R1p + R2p + R3p = {r1p} + {r2p} + {r3p} = {sum_delta}\n')
+            E_col_check, e_text_col_check = relative_error_percent(delta_sp, sum_delta, tolerance_percent=3)
+            column_check += '\n' + col_check_text + '\n' + e_text_col_check + '\n' + 'Проверка выполняется'
+        elif len(ed_diagrams) == 2:
+            r1p = finded_coefficients['r1p']
+            r2p = finded_coefficients['r2p']
+
+            sum_delta = round_up(r1p + r2p, 3)
+            col_check_text = (f'R\\H0.5x;1p\\H2.0x; + R\\H0.5x;2p\\H2.0x; = {round_up(r1p, 3)} + '
+                              f'{round_up(r2p, 3)} = {sum_delta}\n')
+            print(f'R1p + R2p = {r1p} + {r2p} = {sum_delta}\n')
+            E_col_check, e_text_col_check = relative_error_percent(delta_sp, sum_delta, tolerance_percent=3)
+            column_check += '\n' + col_check_text + '\n' + e_text_col_check + '\n' + 'Проверка выполняется'
 
         for entity in layout:
             if entity.dxf.layer == 'Столбцовая проверка':
@@ -365,32 +398,57 @@ class BRGTUMovementMethod(TaskPlugin):
 
 
         print('\n-------Решение системы уравнений-------')
-        eq1 = f'{round_up(r11, 3)}·i·z1 + {round_up(r12, 3)}·i·z2 + {round_up(r13, 3)}·i·z3 + {round_up(r1p, 3)} = 0'
-        eq2 = f'{round_up(r12, 3)}·i·z1 + {round_up(r22, 3)}·i·z2 + {round_up(r23, 3)}·i·z3 + {round_up(r2p, 3)} = 0'
-        eq3 = f'{round_up(r13, 3)}·i·z1 + {round_up(r23, 3)}·i·z2 + {round_up(r33, 3)}·i·z3 + {round_up(r3p, 3)} = 0'
+        if len(ed_diagrams) == 3:
+            eq1 = f'{round_up(r11, 3)}·i·z1 + {round_up(r12, 3)}·i·z2 + {round_up(r13, 3)}·i·z3 + {round_up(r1p, 3)} = 0'
+            eq2 = f'{round_up(r12, 3)}·i·z1 + {round_up(r22, 3)}·i·z2 + {round_up(r23, 3)}·i·z3 + {round_up(r2p, 3)} = 0'
+            eq3 = f'{round_up(r13, 3)}·i·z1 + {round_up(r23, 3)}·i·z2 + {round_up(r33, 3)}·i·z3 + {round_up(r3p, 3)} = 0'
 
-        system_of_equations_1 = eq1 + '\n' + eq2 + '\n' + eq3 + '\n'
+            system_of_equations_1 = eq1 + '\n' + eq2 + '\n' + eq3 + '\n'
 
-        print(system_of_equations_1)
+            print(system_of_equations_1)
 
-        # Матрица коэффициентов
-        A = numpy.array([[r11, r12, r13],
-                         [r12, r22, r23],
-                         [r13, r23, r33]])
+            # Матрица коэффициентов
+            A = numpy.array([[r11, r12, r13],
+                             [r12, r22, r23],
+                             [r13, r23, r33]])
 
-        # Вектор правых частей
-        B = numpy.array([-r1p, -r2p, -r3p])
+            # Вектор правых частей
+            B = numpy.array([-r1p, -r2p, -r3p])
 
-        # Решение
-        solution = numpy.linalg.solve(A, B)
-        z1 = round_up(solution[0], 3)
-        z2 = round_up(solution[1], 3)
-        z3 = round_up(solution[2], 3)
+            # Решение
+            solution = numpy.linalg.solve(A, B)
+            z1 = round_up(solution[0], 3)
+            z2 = round_up(solution[1], 3)
+            z3 = round_up(solution[2], 3)
 
-        coef_z = {'z1': z1, 'z2': z2, 'z3': z3, 'zp': 1}
+            coef_z = {'z1': z1, 'z2': z2, 'z3': z3, 'zp': 1}
 
-        system_of_equations_2 = f"z1 = {z1}\nz2 = {z2}\nz3 = {z3}\n"
-        print(system_of_equations_2)
+            system_of_equations_2 = f"z1 = {z1}\nz2 = {z2}\nz3 = {z3}\n"
+            print(system_of_equations_2)
+        elif len(ed_diagrams) == 2:
+            eq1 = f'{round_up(r11, 3)}·i·z1 + {round_up(r12, 3)}·i·z2 + {round_up(r1p, 3)} = 0'
+            eq2 = f'{round_up(r12, 3)}·i·z1 + {round_up(r22, 3)}·i·z2 + {round_up(r2p, 3)} = 0'
+
+            system_of_equations_1 = eq1 + '\n' + eq2 + '\n'
+
+            print(system_of_equations_1)
+
+            # Матрица коэффициентов
+            A = numpy.array([[r11, r12],
+                             [r12, r22]])
+
+            # Вектор правых частей
+            B = numpy.array([-r1p, -r2p])
+
+            # Решение
+            solution = numpy.linalg.solve(A, B)
+            z1 = round_up(solution[0], 3)
+            z2 = round_up(solution[1], 3)
+
+            coef_z = {'z1': z1, 'z2': z2, 'zp': 1}
+
+            system_of_equations_2 = f"z1 = {z1}\nz2 = {z2}\n"
+            print(system_of_equations_2)
 
         for entity in layout:
             if entity.dxf.layer == 'Система уравнений 1':
@@ -404,12 +462,12 @@ class BRGTUMovementMethod(TaskPlugin):
         ok_mm_frame = SolvableFrame(name='ok', nodes=fm_nodes, rods=fm_rods, supports=m_fr.supports, loads=fm_loads['p'])
         for rod in ok_mm_frame.rods:
             rod.diagram_M = [0, 0]
-            for i in diagrams:
+            for i in ed_diagrams_with_p:
                 for fr in fm_frames:
                     if fr.name == i:
                         for rod1 in fr.rods:
                             if rod1.name == rod.name:
-                                if len(rod1.diagram_M) == 2:
+                                if len(rod1.diagram_M) == 2 and len(rod.diagram_M) == 2:
                                     rod.diagram_M[0] += rod1.diagram_M[0] * coef_z[f'z{i}']
                                     rod.diagram_M[1] += rod1.diagram_M[1] * coef_z[f'z{i}']
                                 elif len(rod1.diagram_M) == 3 and len(rod.diagram_M) == 2:
@@ -426,9 +484,10 @@ class BRGTUMovementMethod(TaskPlugin):
                                     rod.diagram_M[0] += rod1.diagram_M[0] * coef_z[f'z{i}']
                                     rod.diagram_M[1] += rod1.diagram_M[1] * coef_z[f'z{i}']
                                     rod.diagram_M[2] += rod1.diagram_M[2] * coef_z[f'z{i}']
-
+                                break
+            print(f'{rod}.....{rod.diagram_M}')
         ok_mm_frame, msp, base_point = draw_main_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='M', msp=msp,
-                                                    accuracy=3)
+                                                    drowing_loads=False, accuracy=3)
 
         for entity in layout:
             if entity.dxf.layer == 'мп_эпюра Мok' and entity.dxftype() == 'VIEWPORT':
@@ -453,7 +512,7 @@ class BRGTUMovementMethod(TaskPlugin):
         finding_moments_report = finding_moments_report.replace('= =', '=')
 
         s_fm_frame, msp, base_point = draw_main_frame(frame=s_fm_frame, base_point=base_point, msp=msp, diagram_name='M',
-                                                      accuracy=3)
+                                                      accuracy=2)
 
         for entity in layout:
             if entity.dxf.layer == 'sf_Ms' and entity.dxftype() == 'VIEWPORT':
@@ -483,66 +542,139 @@ class BRGTUMovementMethod(TaskPlugin):
             if entity.dxf.layer == 'Деформационная проверка':
                 entity.text += deformation_check
 
-
-        print('-------"Эпюра Q"-------')
-        calculating_Q_report = ''
-        i = 1
-        for rod in ok_mm_frame.rods:
-            Q = (rod.diagram_M[0] - rod.diagram_M[-1]) / rod.length()
-            if len(rod.diagram_M) == 2:
-                report = f'Q{i} = ({rod.diagram_M[0]} - {rod.diagram_M[-1]}) / {rod.length()} = {round_up(Q)} кН'
-                rod.diagram_Q = [Q, Q]
-            elif len(rod.diagram_M) == 3:
-                q = params['q']
-                Q1 = Q + q * rod.length() / 2
-                Q2 = Q - q * rod.length() / 2
-                report = (f'Q{i} = ({rod.diagram_M[0]} - {rod.diagram_M[-1]}) / {rod.length()} + {q} · {rod.length()} / 2 = {round_up(Q1)} кН\n'
-                          f'Q{i} = ({rod.diagram_M[0]} - {rod.diagram_M[-1]}) / {rod.length()} - {q} · {rod.length()} / 2 = {round_up(Q2)} кН')
-                rod.diagram_Q = [Q1, Q2]
-            calculating_Q_report += report + '\n'
-            i += 1
-            print(f'{rod} ------ {rod.diagram_Q}')
-        ok_mm_frame.base_point = base_point
-        ok_mm_frame, msp, base_point = draw_main_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='Q', msp=msp,
-                                                    accuracy=2)
-
-        for entity in layout:
-            if entity.dxf.layer == 'sf_Q' and entity.dxftype() == 'VIEWPORT':
-                if entity:
-                    entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
-                                                    ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1],
-                                                    0.0)
-            elif entity.dxf.layer == 'Расчет эпюры Q':
-                entity.text = calculating_Q_report
-
-        zoom.extents(msp)
-        doc.saveas(f'report.dxf')
-
-        input('Проверьте файл report.dxf, подготовьтесь вводить значения эпюры N и опорные реакции, далее нажмите ENTER')
-        doc = ezdxf.readfile('report.dxf')
-        msp = doc.modelspace()
-        layout = doc.layouts.get("Шаблон (метод перемещений)")
-        print(f'\n')
-
-        nn = [-4.09, 0, -7.21, -7.21, -7.21, 0, -6.74, -14.18, -1.13, -1.13]
-        print('-------"Эпюра N"-------')
-        i = 0
-        for rod in ok_mm_frame.rods:
-            # print(rod)
-            # N1 = float(input('Введите N1:'))
-            N1 = nn[i]
-            rod.diagram_N = [N1, N1]
-            i += 1
-
-        ok_mm_frame.base_point = base_point
-        ok_mm_frame, msp, base_point = draw_main_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='N', msp=msp,
-                                                    accuracy=2)
-
-        for entity in layout:
-            if entity.dxf.layer == 'sf_N' and entity.dxftype() == 'VIEWPORT':
-                if entity:
-                    entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
-                                                    ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1],
-                                                    0.0)
-
-
+        doc.saveas('report.dxf')
+        #
+        # print('-------"Эпюра Q"-------')
+        # calculating_Q_report = ''
+        # i = 1
+        # for rod in ok_mm_frame.rods:
+        #     Q = (rod.diagram_M[0] - rod.diagram_M[-1]) / rod.length()
+        #     if len(rod.diagram_M) == 2:
+        #         report = f'Q{i} = ({round_up(rod.diagram_M[0])} - {round_up(rod.diagram_M[-1])}) / {rod.length()} = {round_up(Q)} кН'
+        #         rod.diagram_Q = [Q, Q]
+        #     elif len(rod.diagram_M) == 3:
+        #         q = params['q']
+        #         Q1 = Q + q * rod.length() / 2
+        #         Q2 = Q - q * rod.length() / 2
+        #         report = (f'Q{i} = ({round_up(rod.diagram_M[0])} - {round_up(rod.diagram_M[-1])}) / {rod.length()} + {q} · {rod.length()} / 2 = {round_up(Q1)} кН\n'
+        #                   f'Q{i} = ({round_up(rod.diagram_M[0])} - {round_up(rod.diagram_M[-1])}) / {rod.length()} - {q} · {rod.length()} / 2 = {round_up(Q2)} кН')
+        #         rod.diagram_Q = [Q1, Q2]
+        #     calculating_Q_report += report + '\n'
+        #     i += 1
+        #     print(f'{rod} ------ {rod.diagram_Q}')
+        # ok_mm_frame.base_point = base_point
+        # ok_mm_frame, msp, base_point = draw_main_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='Q', msp=msp,
+        #                                             drowing_loads=False, accuracy=2)
+        #
+        # for entity in layout:
+        #     if entity.dxf.layer == 'sf_Q' and entity.dxftype() == 'VIEWPORT':
+        #         if entity:
+        #             entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
+        #                                             ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1],
+        #                                             0.0)
+        #     elif entity.dxf.layer == 'Расчет эпюры Q':
+        #         entity.text = calculating_Q_report
+        #
+        # zoom.extents(msp)
+        # doc.saveas(f'report.dxf')
+        #
+        # input('Проверьте файл report.dxf, подготовьтесь вводить значения эпюры N и опорные реакции, далее нажмите ENTER')
+        # doc = ezdxf.readfile('report.dxf')
+        # msp = doc.modelspace()
+        # layout = doc.layouts.get("Шаблон (метод перемещений)")
+        # print(f'\n')
+        #
+        # nn = [-4.09, 0, -7.21, -7.21, -7.21, 0, -6.74, -14.18, -1.13, -1.13]
+        # print('-------"Эпюра N"-------')
+        # i = 0
+        # for rod in ok_mm_frame.rods:
+        #     # print(rod)
+        #     # N1 = float(input('Введите N1:'))
+        #     N1 = nn[i]
+        #     rod.diagram_N = [N1, N1]
+        #     i += 1
+        #
+        # ok_mm_frame.base_point = base_point
+        # ok_mm_frame, msp, base_point = draw_main_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='N', msp=msp,
+        #                                             drowing_loads=False, accuracy=2)
+        #
+        # for entity in layout:
+        #     if entity.dxf.layer == 'sf_N' and entity.dxftype() == 'VIEWPORT':
+        #         if entity:
+        #             entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
+        #                                             ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1],
+        #                                             0.0)
+        #
+        #
+        # r = [-5.66, 4.09, -4.69, -0.66, -6.74, -2.28, -1.13, 6.18, -10.53]
+        # i = 0
+        # for reaction in main_frame.reactions():
+        #     # print(reaction)
+        #     # v = float(input('Введите значение реакции:'))
+        #     # reaction.value = v
+        #     reaction.value = r[i]
+        #     main_frame.finded_reactions.append(reaction)
+        #     i += 1
+        #
+        # for reaction in main_frame.finded_reactions:
+        #     print(reaction)
+        #
+        # print('-------Статическая проверка-------')
+        # main_frame, msp, base_point = draw_main_frame(frame=main_frame, base_point=base_point, msp=msp)
+        #
+        # for entity in layout:
+        #     if entity.dxf.layer == 'мп_рама для статической проверки' and entity.dxftype() == 'VIEWPORT':
+        #         if entity:
+        #             entity.dxf.view_center_point = (main_frame.base_point[0] + main_frame.geometrical_center()[0],
+        #                                             main_frame.base_point[1] + main_frame.geometrical_center()[1],
+        #                                             0.0)
+        #
+        # static_check = '\n\n'
+        # # node_name = str(input("\nВведите имя, относительно которого хотите составить уравнение моментов: "))
+        # node_name = 'E'
+        # for node in main_frame.nodes:
+        #     if node.name == node_name:
+        #         node_for_checking = node
+        # if node_for_checking:
+        #     check_moment, check_equation = main_frame.sum_momentum_about_node(node=node_for_checking)
+        # else:
+        #     raise Exception("Задано неверное имя узла")
+        # static_check_1 = check_equation + '\n' + f'   {round_up(check_moment, 4)} = 0\n' + 'Проверка выполняется\n\n'
+        # print(check_equation)
+        # print(f'   {check_moment} = 0')
+        # if abs(check_moment) <= 0.1:
+        #     print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}")
+        # else:
+        #     print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}")
+        #
+        # sum_of_projections, sum_force_expression_names, sum_force_expression_values = main_frame.sum_force_projections('x')
+        # print(f'∑x: {sum_force_expression_names} = 0')
+        # print(f'    {sum_force_expression_values} = 0')
+        # print(f'    {sum_of_projections} = 0')
+        # if sum_of_projections <= 0.1:
+        #     print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}")
+        # else:
+        #     print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}")
+        #
+        # static_check_2 = (f'∑x: {sum_force_expression_names} = 0\n' + f'    {sum_force_expression_values} = 0\n' +
+        #                   f'    {round_up(sum_of_projections, 4)} = 0\n' + 'Проверка выполняется\n\n')
+        #
+        # sum_of_projections, sum_force_expression_names, sum_force_expression_values = main_frame.sum_force_projections('y')
+        # print(f'∑y: {sum_force_expression_names} = 0')
+        # print(f'    {sum_force_expression_values} = 0')
+        # print(f'    {sum_of_projections} = 0')
+        # if sum_of_projections <= 0.1:
+        #     print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}")
+        # else:
+        #     print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}")
+        #
+        # static_check_3 = (f'∑y: {sum_force_expression_names} = 0\n' + f'    {sum_force_expression_values} = 0\n' +
+        #                   f'    {round_up(sum_of_projections, 4)} = 0\n' + 'Проверка выполняется\n')
+        #
+        # static_check = static_check_1 + static_check_2 + static_check_3
+        # for entity in layout:
+        #     if entity.dxf.layer == 'Статическая проверка':
+        #         entity.text = static_check
+        #
+        # zoom.extents(msp)
+        # doc.save()

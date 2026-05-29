@@ -121,7 +121,7 @@ def draw_section(rod: Rod, base_point: List[float], msp):
 
 
 def draw_main_frame(frame: Frame, base_point: List[float], msp, diagram_name: str = None, drawing_sections: bool = True,
-                    accuracy: int = 2, drawing_nodes: bool = True, drowing_stiffnes: bool = False):
+                    drawing_nodes: bool = True, drowing_stiffnes: bool = False, drowing_loads: bool = True, accuracy: int = 2):
     frame.base_point = base_point
 
     if drawing_nodes:
@@ -157,18 +157,19 @@ def draw_main_frame(frame: Frame, base_point: List[float], msp, diagram_name: st
         insert_point = (support.node.x + base_point[0], support.node.y + base_point[1])
         msp = support.drow(insert_point, msp)
 
-    if frame.loads:
-        for load in frame.loads:
-            if isinstance(load, (Force, Momentum, Twist, Displacement)):
-                insert_point = (load.node.x + base_point[0], load.node.y + base_point[1])
-                msp = load.drow(insert_point, msp)
-            elif isinstance(load, DistributedForce):
-                insert_point = (load.center()[0] + base_point[0], load.center()[1] + base_point[1])
-                msp = load.drow(insert_point, msp)
+    if drowing_loads:
+        if frame.loads:
+            for load in frame.loads:
+                if isinstance(load, (Force, Momentum, Twist, Displacement)):
+                    insert_point = (load.node.x + base_point[0], load.node.y + base_point[1])
+                    msp = load.drow(insert_point, msp)
+                elif isinstance(load, DistributedForce):
+                    insert_point = (load.center()[0] + base_point[0], load.center()[1] + base_point[1])
+                    msp = load.drow(insert_point, msp)
 
-    for reaction in frame.finded_reactions:
-        insert_point = (reaction.node.x + base_point[0], reaction.node.y + base_point[1])
-        msp = reaction.drow(insert_point, msp)
+        for reaction in frame.finded_reactions:
+            insert_point = (reaction.node.x + base_point[0], reaction.node.y + base_point[1])
+            msp = reaction.drow(insert_point, msp)
 
 
     base_point = [base_point[0] + frame.length() + 10, base_point[1]]

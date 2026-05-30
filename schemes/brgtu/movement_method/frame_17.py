@@ -21,8 +21,8 @@ def create_frame_17(params: dict):
     node2 = Node(name='2', x=l1 / 3, y=h1 * 0.5)
     node3 = Node(name='3', x=l1 / 3, y=h1)
     node4 = Node(name='4', x=l1 / 3, y=h1 + h2 * 0.5)
-    node6 = Node(name='5', x=l1 / 3, y=h1 + h2)
-    node5 = Node(name='6', x=0, y=h1 + h2)
+    node5 = Node(name='5', x=l1 / 3, y=h1 + h2)
+    node6 = Node(name='6', x=0, y=h1 + h2)
     node7 = Node(name='7', x=l1 / 3 + l1 * 0.5, y=h1 + h2)
     node8 = Node(name='8', x=l1 / 3 + l1 * 0.5 + l2 * 0.5, y=h1 + h2)
     node9 = Node(name='C', x=l1 / 3 + l1 * 0.5 + l2 * 0.5, y=h1, is_hinge=True)
@@ -35,8 +35,8 @@ def create_frame_17(params: dict):
     node16 = Node(name='T', x=l1 / 3 + l1 + l2, y=0)
 
     rod3 = Rod(start_node=node6, end_node=node5, stiffness=i3)
-    rod5 = Rod(start_node=node9, end_node=node8)
-    rod6 = Rod(start_node=node3, end_node=node9, stiffness=i2)
+    rod5 = Rod(start_node=node3, end_node=node9, stiffness=i2)
+    rod6 = Rod(start_node=node9, end_node=node8)
     rod7 = Rod(start_node=node9, end_node=node14, stiffness=i2)
     rod9 = Rod(start_node=node11, end_node=node12, stiffness=i3)
 
@@ -119,6 +119,7 @@ def create_fm_primary_system_17(params: dict):
 
     rod3 = Rod(start_node=node6, end_node=node5, stiffness=i3)
     rod5 = Rod(start_node=node3, end_node=node9, stiffness=i2)
+    # rod6 = Rod(start_node=node9, end_node=node8, is_start_hinge=True, is_end_hinge=True)
 
     support1 = Support(node=node1, number_of_reactions=3, rotation=90)
 
@@ -126,7 +127,7 @@ def create_fm_primary_system_17(params: dict):
     load_x1 = Force(name='x1', node=node8, value=1, rotation=90)
     load_x2 = Force(name='x2', node=node8, value=1, rotation=180)
     load_x3 = Momentum(name='x3', node=node8, value=1, rotation=False)
-    load_x4 = Force(name='x4', node=node9, value=1, rotation=90)
+    load_x4 = Force(name='x1', node=node9, value=1, rotation=270)
     load_x5 = Force(name='x5', node=node9, value=1, rotation=180)
     loads_s = [load_x1, load_x2, load_x3, load_x4, load_x5]
 
@@ -143,6 +144,7 @@ def create_fm_primary_system_17(params: dict):
         loads_p = [load_P1, load_q1, load_q2, load_m1]
         nodes = [node1, node2, node3, node5, node6, node8, node9]
         rods = [rod1_1, rod1_2, rod2, rod3, rod4, rod5]
+        # rods = [rod1_1, rod1_2, rod2, rod3, rod4, rod5, rod6]
 
     else:
         rod1 = Rod(start_node=node1, end_node=node3)
@@ -158,6 +160,7 @@ def create_fm_primary_system_17(params: dict):
         loads_p = [load_P1, load_P2, load_q1, load_m1]
         nodes = [node1, node3, node4, node5, node6, node7, node8, node9]
         rods = [rod1, rod2_1, rod2_2, rod3, rod4_1, rod4_2, rod5]
+        # rods = [rod1, rod2_1, rod2_2, rod3, rod4_1, rod4_2, rod5, rod6]
 
     loads['s'] = loads_s
     loads['p'] = loads_p
@@ -193,7 +196,7 @@ def create_mm_primary_system_17(params: dict):
     rod3 = RodForMovementMethod(start_node=node6, end_node=node5, start_support_type='Нет', end_support_type='Жесткий', stiffness=i3)
     rod4 = RodForMovementMethod(start_node=node5, end_node=node8, start_support_type='Жесткий', end_support_type='Жесткий', stiffness=i3)
     rod5 = RodForMovementMethod(start_node=node3, end_node=node9, start_support_type='Жесткий', end_support_type='Шарнирный', stiffness=i2)
-    rod6 = RodForMovementMethod(start_node=node9, end_node=node8, start_support_type='Шарнирный', end_support_type='Жесткий', stiffness=i2)
+    rod6 = RodForMovementMethod(start_node=node9, end_node=node8, start_support_type='Шарнирный', end_support_type='Жесткий')
 
     support1 = Support(node=node1, number_of_reactions=3, rotation=90)
     support2 = Support(node=node8, number_of_reactions=3, rotation=180)
@@ -212,6 +215,7 @@ def create_mm_primary_system_17(params: dict):
         loads_p = [load_P1, load_P2, load_q1, load_m1]
 
     nodes = [node1, node2, node3, node5, node7, node8, node9]
+    # rods = [rod1, rod2, rod3, rod4, rod5]
     rods = [rod1, rod2, rod3, rod4, rod5, rod6]
 
     loads = {}

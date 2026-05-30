@@ -89,7 +89,7 @@ class BRGTUMovementMethod(TaskPlugin):
                             r = -m
                         else:
                             r = m
-                        report += f'r{load_name}{frame.name} = {round_up(r, 3)}'
+                        report += f'r{load_name}{frame.name} = {round_up(r, 3)}\n'
                         coefficients[f'r{load_name}{frame.name}'] = r
                         reports[f'r{load_name}{frame.name}'] = report
                     elif isinstance(load, Displacement):
@@ -113,7 +113,7 @@ class BRGTUMovementMethod(TaskPlugin):
                             r = -f
                         else:
                             r = f
-                        report += f'r{load_name}{frame.name} = {round_up(r, 3)}'
+                        report += f'r{load_name}{frame.name} = {round_up(r, 3)}\n'
                         coefficients[f'r{load_name}{frame.name}'] = r
                         reports[f'r{load_name}{frame.name}'] = report
             return coefficients, reports
@@ -128,6 +128,8 @@ class BRGTUMovementMethod(TaskPlugin):
                         fm_rods_related_to_mm_rod.append(fm_rod)
                 if len(mm_rod.diagram_M) == len(fm_rods_related_to_mm_rod):
                     for i, fm_rod in enumerate(fm_rods_related_to_mm_rod):
+                        # if not fm_rod.diagram_M:
+                        #     fm_rod.diagram_M = []
                         fm_rod.diagram_M = mm_rod.diagram_M[i]
                 else:
                     if len(mm_rod.diagram_M) <= len(fm_rods_related_to_mm_rod):
@@ -171,6 +173,11 @@ class BRGTUMovementMethod(TaskPlugin):
             create_main_frame = create_frame_22
             new_mm_frame = create_mm_primary_system_22
             new_fm_frame = create_fm_primary_system_22
+        elif circuit_number == 27:
+            from schemes.brgtu.movement_method.frame_27 import create_frame_27, create_mm_primary_system_27, create_fm_primary_system_27
+            create_main_frame = create_frame_27
+            new_mm_frame = create_mm_primary_system_27
+            new_fm_frame = create_fm_primary_system_27
         else:
             raise ValueError(f"Схема {circuit_number} не реализована")
 
@@ -237,6 +244,15 @@ class BRGTUMovementMethod(TaskPlugin):
         finded_coefficients = dict()
         for frame in mm_frames:
             coefficients, reports = calculation_r(frame, mm_loads)
+            report = ''
+            for r in reports:
+                report += reports[r] + '\n'
+            print(report)
+
+            for entity in layout:
+                if entity.dxf.layer == f'мп_определение коэффициентов_{frame.name}':
+                    entity.text = report
+
 
             # Проверяем r12=r21 и т.д.
             for c in coefficients:
@@ -543,138 +559,142 @@ class BRGTUMovementMethod(TaskPlugin):
                 entity.text += deformation_check
 
         doc.saveas('report.dxf')
-        #
-        # print('-------"Эпюра Q"-------')
-        # calculating_Q_report = ''
-        # i = 1
-        # for rod in ok_mm_frame.rods:
-        #     Q = (rod.diagram_M[0] - rod.diagram_M[-1]) / rod.length()
-        #     if len(rod.diagram_M) == 2:
-        #         report = f'Q{i} = ({round_up(rod.diagram_M[0])} - {round_up(rod.diagram_M[-1])}) / {rod.length()} = {round_up(Q)} кН'
-        #         rod.diagram_Q = [Q, Q]
-        #     elif len(rod.diagram_M) == 3:
-        #         q = params['q']
-        #         Q1 = Q + q * rod.length() / 2
-        #         Q2 = Q - q * rod.length() / 2
-        #         report = (f'Q{i} = ({round_up(rod.diagram_M[0])} - {round_up(rod.diagram_M[-1])}) / {rod.length()} + {q} · {rod.length()} / 2 = {round_up(Q1)} кН\n'
-        #                   f'Q{i} = ({round_up(rod.diagram_M[0])} - {round_up(rod.diagram_M[-1])}) / {rod.length()} - {q} · {rod.length()} / 2 = {round_up(Q2)} кН')
-        #         rod.diagram_Q = [Q1, Q2]
-        #     calculating_Q_report += report + '\n'
-        #     i += 1
-        #     print(f'{rod} ------ {rod.diagram_Q}')
-        # ok_mm_frame.base_point = base_point
-        # ok_mm_frame, msp, base_point = draw_main_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='Q', msp=msp,
-        #                                             drowing_loads=False, accuracy=2)
-        #
-        # for entity in layout:
-        #     if entity.dxf.layer == 'sf_Q' and entity.dxftype() == 'VIEWPORT':
-        #         if entity:
-        #             entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
-        #                                             ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1],
-        #                                             0.0)
-        #     elif entity.dxf.layer == 'Расчет эпюры Q':
-        #         entity.text = calculating_Q_report
-        #
-        # zoom.extents(msp)
-        # doc.saveas(f'report.dxf')
-        #
-        # input('Проверьте файл report.dxf, подготовьтесь вводить значения эпюры N и опорные реакции, далее нажмите ENTER')
-        # doc = ezdxf.readfile('report.dxf')
-        # msp = doc.modelspace()
-        # layout = doc.layouts.get("Шаблон (метод перемещений)")
-        # print(f'\n')
-        #
+
+        print('-------"Эпюра Q"-------')
+        calculating_Q_report = ''
+        i = 1
+        for rod in ok_mm_frame.rods:
+            Q = (rod.diagram_M[0] - rod.diagram_M[-1]) / rod.length()
+            if len(rod.diagram_M) == 2:
+                report = f'Q{i} = ({round_up(rod.diagram_M[0])} - {round_up(rod.diagram_M[-1])}) / {rod.length()} = {round_up(Q)} кН'
+                rod.diagram_Q = [Q, Q]
+            elif len(rod.diagram_M) == 3:
+                q = params['q']
+                Q1 = Q + q * rod.length() / 2
+                Q2 = Q - q * rod.length() / 2
+                report = (f'Q{i} = ({round_up(rod.diagram_M[0])} - {round_up(rod.diagram_M[-1])}) / {rod.length()} + {q} · {rod.length()} / 2 = {round_up(Q1)} кН\n'
+                          f'Q{i} = ({round_up(rod.diagram_M[0])} - {round_up(rod.diagram_M[-1])}) / {rod.length()} - {q} · {rod.length()} / 2 = {round_up(Q2)} кН')
+                rod.diagram_Q = [Q1, Q2]
+            calculating_Q_report += report + '\n'
+            i += 1
+            print(f'{rod} ------ {rod.diagram_Q}')
+        ok_mm_frame.base_point = base_point
+        ok_mm_frame, msp, base_point = draw_main_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='Q', msp=msp,
+                                                    drowing_loads=False, accuracy=2)
+
+        for entity in layout:
+            if entity.dxf.layer == 'sf_Q' and entity.dxftype() == 'VIEWPORT':
+                if entity:
+                    entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
+                                                    ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1],
+                                                    0.0)
+            elif entity.dxf.layer == 'Расчет эпюры Q':
+                entity.text = calculating_Q_report
+
+        zoom.extents(msp)
+        doc.saveas(f'report.dxf')
+
+        input('Проверьте файл report.dxf, подготовьтесь вводить значения эпюры N и опорные реакции, далее нажмите ENTER')
+        doc = ezdxf.readfile('report.dxf')
+        msp = doc.modelspace()
+        layout = doc.layouts.get("Шаблон (метод перемещений)")
+        print(f'\n')
+
+        # чекист
         # nn = [-4.09, 0, -7.21, -7.21, -7.21, 0, -6.74, -14.18, -1.13, -1.13]
-        # print('-------"Эпюра N"-------')
-        # i = 0
-        # for rod in ok_mm_frame.rods:
-        #     # print(rod)
-        #     # N1 = float(input('Введите N1:'))
-        #     N1 = nn[i]
-        #     rod.diagram_N = [N1, N1]
-        #     i += 1
-        #
-        # ok_mm_frame.base_point = base_point
-        # ok_mm_frame, msp, base_point = draw_main_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='N', msp=msp,
-        #                                             drowing_loads=False, accuracy=2)
-        #
-        # for entity in layout:
-        #     if entity.dxf.layer == 'sf_N' and entity.dxftype() == 'VIEWPORT':
-        #         if entity:
-        #             entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
-        #                                             ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1],
-        #                                             0.0)
-        #
-        #
+        # мацукевич
+        nn = [-20.2, -18.66, -18.66, 0, 0.21, 0.21, -14.85]
+        print('-------"Эпюра N"-------')
+        i = 0
+        for rod in ok_mm_frame.rods:
+            # print(rod)
+            # N1 = float(input('Введите N1:'))
+            N1 = nn[i]
+            rod.diagram_N = [N1, N1]
+            i += 1
+
+        ok_mm_frame.base_point = base_point
+        ok_mm_frame, msp, base_point = draw_main_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='N', msp=msp,
+                                                    drowing_loads=False, accuracy=2)
+
+        for entity in layout:
+            if entity.dxf.layer == 'sf_N' and entity.dxftype() == 'VIEWPORT':
+                if entity:
+                    entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
+                                                    ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1],
+                                                    0.0)
+        # чекист
         # r = [-5.66, 4.09, -4.69, -0.66, -6.74, -2.28, -1.13, 6.18, -10.53]
-        # i = 0
-        # for reaction in main_frame.reactions():
-        #     # print(reaction)
-        #     # v = float(input('Введите значение реакции:'))
-        #     # reaction.value = v
-        #     reaction.value = r[i]
-        #     main_frame.finded_reactions.append(reaction)
-        #     i += 1
-        #
-        # for reaction in main_frame.finded_reactions:
-        #     print(reaction)
-        #
-        # print('-------Статическая проверка-------')
-        # main_frame, msp, base_point = draw_main_frame(frame=main_frame, base_point=base_point, msp=msp)
-        #
-        # for entity in layout:
-        #     if entity.dxf.layer == 'мп_рама для статической проверки' and entity.dxftype() == 'VIEWPORT':
-        #         if entity:
-        #             entity.dxf.view_center_point = (main_frame.base_point[0] + main_frame.geometrical_center()[0],
-        #                                             main_frame.base_point[1] + main_frame.geometrical_center()[1],
-        #                                             0.0)
-        #
-        # static_check = '\n\n'
-        # # node_name = str(input("\nВведите имя, относительно которого хотите составить уравнение моментов: "))
-        # node_name = 'E'
-        # for node in main_frame.nodes:
-        #     if node.name == node_name:
-        #         node_for_checking = node
-        # if node_for_checking:
-        #     check_moment, check_equation = main_frame.sum_momentum_about_node(node=node_for_checking)
-        # else:
-        #     raise Exception("Задано неверное имя узла")
-        # static_check_1 = check_equation + '\n' + f'   {round_up(check_moment, 4)} = 0\n' + 'Проверка выполняется\n\n'
-        # print(check_equation)
-        # print(f'   {check_moment} = 0')
-        # if abs(check_moment) <= 0.1:
-        #     print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}")
-        # else:
-        #     print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}")
-        #
-        # sum_of_projections, sum_force_expression_names, sum_force_expression_values = main_frame.sum_force_projections('x')
-        # print(f'∑x: {sum_force_expression_names} = 0')
-        # print(f'    {sum_force_expression_values} = 0')
-        # print(f'    {sum_of_projections} = 0')
-        # if sum_of_projections <= 0.1:
-        #     print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}")
-        # else:
-        #     print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}")
-        #
-        # static_check_2 = (f'∑x: {sum_force_expression_names} = 0\n' + f'    {sum_force_expression_values} = 0\n' +
-        #                   f'    {round_up(sum_of_projections, 4)} = 0\n' + 'Проверка выполняется\n\n')
-        #
-        # sum_of_projections, sum_force_expression_names, sum_force_expression_values = main_frame.sum_force_projections('y')
-        # print(f'∑y: {sum_force_expression_names} = 0')
-        # print(f'    {sum_force_expression_values} = 0')
-        # print(f'    {sum_of_projections} = 0')
-        # if sum_of_projections <= 0.1:
-        #     print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}")
-        # else:
-        #     print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}")
-        #
-        # static_check_3 = (f'∑y: {sum_force_expression_names} = 0\n' + f'    {sum_force_expression_values} = 0\n' +
-        #                   f'    {round_up(sum_of_projections, 4)} = 0\n' + 'Проверка выполняется\n')
-        #
-        # static_check = static_check_1 + static_check_2 + static_check_3
-        # for entity in layout:
-        #     if entity.dxf.layer == 'Статическая проверка':
-        #         entity.text = static_check
-        #
-        # zoom.extents(msp)
-        # doc.save()
+        # мацукевич
+        r = [1.64, 20.2, 2.19, -1.64, 20.2, -2.19]
+        i = 0
+        for reaction in main_frame.reactions():
+            # print(reaction)
+            # v = float(input('Введите значение реакции:'))
+            # reaction.value = v
+            reaction.value = r[i]
+            main_frame.finded_reactions.append(reaction)
+            i += 1
+
+        for reaction in main_frame.finded_reactions:
+            print(reaction)
+
+        print('-------Статическая проверка-------')
+        main_frame, msp, base_point = draw_main_frame(frame=main_frame, base_point=base_point, msp=msp)
+
+        for entity in layout:
+            if entity.dxf.layer == 'мп_рама для статической проверки' and entity.dxftype() == 'VIEWPORT':
+                if entity:
+                    entity.dxf.view_center_point = (main_frame.base_point[0] + main_frame.geometrical_center()[0],
+                                                    main_frame.base_point[1] + main_frame.geometrical_center()[1],
+                                                    0.0)
+
+        static_check = '\n\n'
+        # node_name = str(input("\nВведите имя, относительно которого хотите составить уравнение моментов: "))
+        node_name = 'E'
+        for node in main_frame.nodes:
+            if node.name == node_name:
+                node_for_checking = node
+        if node_for_checking:
+            check_moment, check_equation = main_frame.sum_momentum_about_node(node=node_for_checking)
+        else:
+            raise Exception("Задано неверное имя узла")
+        static_check_1 = check_equation + '\n' + f'   {round_up(check_moment, 4)} = 0\n' + 'Проверка выполняется\n\n'
+        print(check_equation)
+        print(f'   {check_moment} = 0')
+        if abs(check_moment) <= 0.1:
+            print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}")
+        else:
+            print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}")
+
+        sum_of_projections, sum_force_expression_names, sum_force_expression_values = main_frame.sum_force_projections('x')
+        print(f'∑x: {sum_force_expression_names} = 0')
+        print(f'    {sum_force_expression_values} = 0')
+        print(f'    {sum_of_projections} = 0')
+        if sum_of_projections <= 0.1:
+            print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}")
+        else:
+            print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}")
+
+        static_check_2 = (f'∑x: {sum_force_expression_names} = 0\n' + f'    {sum_force_expression_values} = 0\n' +
+                          f'    {round_up(sum_of_projections, 4)} = 0\n' + 'Проверка выполняется\n\n')
+
+        sum_of_projections, sum_force_expression_names, sum_force_expression_values = main_frame.sum_force_projections('y')
+        print(f'∑y: {sum_force_expression_names} = 0')
+        print(f'    {sum_force_expression_values} = 0')
+        print(f'    {sum_of_projections} = 0')
+        if sum_of_projections <= 0.1:
+            print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}")
+        else:
+            print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}")
+
+        static_check_3 = (f'∑y: {sum_force_expression_names} = 0\n' + f'    {sum_force_expression_values} = 0\n' +
+                          f'    {round_up(sum_of_projections, 4)} = 0\n' + 'Проверка выполняется\n')
+
+        static_check = static_check_1 + static_check_2 + static_check_3
+        for entity in layout:
+            if entity.dxf.layer == 'Статическая проверка':
+                entity.text = static_check
+
+        zoom.extents(msp)
+        doc.save()

@@ -68,7 +68,7 @@ class RodForMovementMethod:
                     if load.node == self.start_node:
                         m_start = -3 * linear_stiffness * sign
                         m_end = 0
-                        Q = sign * 3 * linear_stiffness / length
+                        Q = -sign * 3 * linear_stiffness / length
                     else:
                         raise Exception(f'Поворот не может быть приложен к шарниру ({self}.....{load})')
                     text = f'M{self.name} = 3 · i  = {abs(round_up(m_start, 3))}\n'
@@ -105,6 +105,7 @@ class RodForMovementMethod:
                     Q_end = -sign * 3 * load.value * length / 8
                     self.diagram_M = [[m_start, m_midl, m_end]]
                     self.diagram_Q = [Q_start, Q_end]
+                    print(self.diagram_Q)
                     text = f'M{self.name} = q · l² / 8 = {abs(round_up(m_start,3))}\n'
                     text += f'M{self.name} = q · l² / 16 = {abs(round_up(m_midl, 3))}\n'
                     report += text
@@ -482,8 +483,8 @@ class RodForMovementMethod:
                         raise Exception('Расстояние от начала стержня не может быть больше длины стержня')
 
                     m_start = -sign * load.value * b * (3 * a - length) / (length ** 2)
-                    m_1 = sign * ((load.value * b / (length ** 3)) + (length ** 2 - 3 * a * length + 6 * (a ** 2)))
-                    m_2 = -sign * ((load.value * a / (length ** 3)) + (length ** 2 - 3 * b * length + 6 * (b ** 2)))
+                    m_1 = sign * ((load.value * b / (length ** 3)) * (length ** 2 - 3 * a * length + 6 * (a ** 2)))
+                    m_2 = -sign * ((load.value * a / (length ** 3)) * (length ** 2 - 3 * b * length + 6 * (b ** 2)))
                     m_end = sign * load.value * a * (3 * b - length) / (length ** 2)
                     Q = -sign * 6 * a * b * load.value / length ** 3
                     self.diagram_Q = [Q, Q]
@@ -619,11 +620,11 @@ class RodForMovementMethod:
                         m_end = 0
                     else:
                         raise Exception(f'Поворот может быть приложен только в заделке')
-                    self.diagram_Q = [0, 0]
+                    self.diagram_Q = [0.0, 0.0]
                     self.diagram_M = [[m_start, m_end]]
                 elif len(self.loads) == 1 and isinstance(self.loads[0], Displacement):
                     self.diagram_M = [[0, 0]]
-                    self.diagram_Q = [0, 0]
+                    self.diagram_Q = [0.0, 0.0]
                 elif len(self.loads) == 1 and isinstance(self.loads[0], DistributedForce):
                     load = self.loads[0]
                     if load.rotation in [0, 270]:
@@ -656,11 +657,14 @@ class RodForMovementMethod:
 
                     m_start = 0
                     m_p = 0
-                    m_end = sign * load.value * a
+                    m_end = sign * load.value * b
                     Q_start = 0
                     Q_end = -sign * load.value
                     self.diagram_Q = [Q_start, Q_end]
-                    self.diagram_M = [[m_start, m_p], [m_p, m_end]]
+                    if a == 0:
+                        self.diagram_M = [[m_start, m_end]]
+                    else:
+                        self.diagram_M = [[m_start, m_p], [m_p, m_end]]
                     text = f'M{self.name} = P · a = {abs(round_up(m_end, 3))}\n'
                     report += text
                 elif len(self.loads) == 2 and isinstance(self.loads[0], Force) and isinstance(self.loads[1], Force):
@@ -727,7 +731,106 @@ class RodForMovementMethod:
                     self.diagram_M = [[m_start, m_1], [m_2, m_end]]
                     text = f'M{self.name} = m = {abs(round_up(m_start, 3))}\n'
                     report += text
-        #     Дописать случаи для скользящей опоры
+
+            elif self.start_support_type == 'Жесткий' and self.end_support_type == 'Скользящий':
+                if len(self.loads) == 1 and isinstance(self.loads[0], Twist):
+                    load = self.loads[0]
+                    if load.rotation:
+                        sign = 1
+                    else:
+                        sign = -1
+                    if load.node == self.start_node:
+                        m_start = -sign * linear_stiffness
+                        m_end = m_start
+                        Q = 0
+                    else:
+                        raise Exception(f'Поворот не может быть приложен к шарниру ({self}.....{load})')
+                    text = f'M{self.name} =  i  = {abs(round_up(m_start, 3))}\n'
+                    report += text
+                    self.diagram_M = [[m_start, m_end]]
+                    self.diagram_Q = [Q, Q]
+                elif len(self.loads) == 1 and isinstance(self.loads[0], Displacement):
+                    load = self.loads[0]
+                    if load.rotation in [90, 180] and load.node == self.start_node:
+                        sign = 1
+                    elif load.rotation in [90, 180] and load.node == self.end_node:
+                        sign = -1
+                    elif load.rotation in [0, 270] and load.node == self.end_node:
+                        sign = 1
+                    elif load.rotation in [0, 270] and load.node == self.start_node:
+                        sign = -1
+                    m_start = sign * 6 * linear_stiffness / length
+                    m_end = -m_start
+                    Q = sign * 12 * linear_stiffness / length ** 2
+                    self.diagram_M = [[m_start, m_end]]
+                    self.diagram_Q = [Q, Q]
+                    text = f'M{self.name} = 6 · i / l = {abs(round_up(m_start, 3))}\n'
+                    report += text
+                elif len(self.loads) == 1 and isinstance(self.loads[0], DistributedForce):
+                    load = self.loads[0]
+                    if load.rotation in [0, 270]:
+                        sign = 1
+                    elif load.rotation in [90, 180]:
+                        sign = -1
+                    m_start = sign * load.value * length ** 2 / 3
+                    m_midl = -sign * load.value * length ** 2 / 24
+                    m_end = -sign * load.value * length ** 2 / 6
+                    Q_start = sign * load.value * length
+                    Q_end = 0
+                    self.diagram_M = [[m_start, m_midl, m_end]]
+                    self.diagram_Q = [Q_start, Q_end]
+                    text = f'M{self.name} = q · l² / 3 = {abs(round_up(m_start,3))}\n'
+                    text += f'M{self.name} = q · l² / 24 = {abs(round_up(m_midl,3))}\n'
+                    text += f'M{self.name} = q · l² / 6 = {abs(round_up(m_end, 3))}\n'
+                    report += text
+                elif len(self.loads) == 1 and isinstance(self.loads[0], Force):
+                    load = self.loads[0]
+                    if load.rotation in [0, 270]:
+                        sign = 1
+                    elif load.rotation in [90, 180]:
+                        sign = -1
+
+                    a = distance_between_two_points(point_1=(self.start_node.x, self.start_node.y), point_2=(load.node.x, load.node.y))
+                    if a < length:
+                        b = length - a
+                    else:
+                        raise Exception('Расстояние от начала стержня не может быть больше длины стержня')
+
+                    m_start = sign * load.value * a ** 2 * (2 * length / a - 1) / (2 * length)
+                    m_p = (-sign * load.value * a ** 2) / (2 * length)
+                    m_end = m_p
+                    Q_start = sign * load.value
+                    Q_end = 0
+                    self.diagram_Q = [Q_start, Q_end]
+                    self.diagram_M = [[m_start, m_p], [m_p, m_end]]
+                    text = f'M{self.name} = P · a² · (2 · l / a - 1) / (2 · l) = {abs(round_up(m_start, 3))}\n'
+                    text += f'M{self.name} = P · a² / (2 · l) = {abs(round_up(m_p, 3))}\n'
+                    report += text
+                elif len(self.loads) == 1 and isinstance(self.loads[0], Momentum):
+                    load = self.loads[0]
+                    if load.rotation:
+                        sign = 1
+                    else:
+                        sign = -1
+
+                    a = distance_between_two_points(point_1=(self.start_node.x, self.start_node.y),
+                                                    point_2=(load.node.x, load.node.y))
+                    if a < length:
+                        b = length - a
+                    else:
+                        raise Exception('Расстояние от начала стержня не может быть больше длины стержня')
+
+                    m_start = sign * load.value * b / length
+                    m_1 = m_start
+                    m_2 = -sign * load.value * a / length
+                    m_end = m_2
+                    Q = 0
+                    self.diagram_Q = [0.0, 0.0]
+                    self.diagram_M = [[m_start, m_1], [m_2, m_end]]
+                    text = f'M{self.name} = m · b / l = {abs(round_up(m_start, 3))}\n'
+                    text += f'M{self.name} = m · a / l = {abs(round_up(m_2, 3))}\n'
+                    report += text
+
 
 
         else:

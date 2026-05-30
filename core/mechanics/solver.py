@@ -106,7 +106,7 @@ class SolvableFrame(Frame):
     def solve_single_unknown_at_node(self, node: Node):
         point = (node.x, node.y)
         moment = 0
-        equation = ''
+        equation = f'∑M({node.name}): '
         for load in self.loads:
             if isinstance(load, Force):
                 text, moment_of_load = load.get_moment_about(point=point)
@@ -123,16 +123,23 @@ class SolvableFrame(Frame):
                 text, moment_of_load = load.get_moment_about(point=point)
                 moment += moment_of_load
                 equation = equation + text
-
         reaction = self.find_node_with_single_unknown()[1]
         if isinstance(reaction, Force):
             reaction_lever_arm = reaction.get_lever_arm(point=point)
             reaction_value = -moment / reaction_lever_arm
+            equation += f' + {reaction_lever_arm}·{reaction.name} = 0\n'
+            equation += f'{reaction.name} = {reaction_value}\n'
+
         elif isinstance(reaction, Momentum):
             if reaction.rotation:
                 reaction_value = -moment
+                sign = '-'
             else:
                 reaction_value = moment
+                sign = '+'
+            equation += f' {sign} {reaction.name} = 0\n'
+            equation += f'      {reaction.name} = {round_up(reaction_value)}\n'
+
         return [reaction.name, reaction_value, equation]
 
     def find_reaction_from_force_projection(self, axis: str):
@@ -845,9 +852,13 @@ class FrameForMovementMethod(Frame):
                         if is_point_on_rod(start_point=(rod.start_node.x, rod.start_node.y),
                                            end_point=(rod.end_node.x, rod.end_node.y),
                                            load_point=(load.x, load.y)):
-                            if (load.x, load.y) != (rod.start_node.x, rod.start_node.y) and (load.x, load.y) != (
-                                    rod.end_node.x, rod.end_node.y):
+                            if rod.start_support_type != 'Нет' and rod.end_support_type != 'Нет':
+                                if (load.x, load.y) != (rod.start_node.x, rod.start_node.y) and (load.x, load.y) != (
+                                        rod.end_node.x, rod.end_node.y):
+                                    loads_on_rod.append(load)
+                            elif rod.start_support_type == 'Нет' or rod.end_support_type == 'Нет':
                                 loads_on_rod.append(load)
+
                     elif isinstance(load, DistributedForce):
                         if is_distr_force_on_rod(rod_start=(rod.start_node.x, rod.start_node.y),
                                                  rod_end=(rod.end_node.x, rod.end_node.y),
@@ -940,10 +951,16 @@ class FrameForMovementMethod(Frame):
 
         for rod in rods_with_impact_of_displacement:
             if rod.diagram_Q:
-                if rod.start_node.x == displacement_node.x or rod.start_node.y == displacement_node.y:
-                    projection = -rod.diagram_Q[0]
-                else:
-                    projection = rod.diagram_Q[-1]
+                if displacement.rotation in [90, 270]:
+                    if rod.start_node.x == displacement_node.x:
+                        projection = -rod.diagram_Q[0]
+                    else:
+                        projection = rod.diagram_Q[-1]
+                elif displacement.rotation in [0, 180]:
+                    if rod.start_node.y == displacement_node.y:
+                        projection = -rod.diagram_Q[0]
+                    else:
+                        projection = rod.diagram_Q[-1]
                 sum_of_forces_at_node += projection
                 equipment += f'{'+ ' if projection >= 0 else '- '}' + str(abs(round_up(projection, 3))) + ' '
         return sum_of_forces_at_node, equipment

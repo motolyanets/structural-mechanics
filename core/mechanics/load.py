@@ -121,7 +121,7 @@ class Momentum(Load):
                          dxfattribs={
                              "layer": "Loads",
                          })
-        text = f'{self.name} = {self.value}'
+        text = f'{self.name} = {round_up(self.value)}'
         placement = (insert_point[0] + 0.2, insert_point[1] - 0.2)
         msp.add_text(text=text, height=0.2, dxfattribs={"layer": "Loads",}).set_placement(placement)
         return msp

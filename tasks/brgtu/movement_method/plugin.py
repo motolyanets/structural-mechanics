@@ -263,6 +263,8 @@ class BRGTUMovementMethod(TaskPlugin):
                     if finded_coefficients[coefficient] != coefficients[c]:
                         raise Exception(f'{coefficient} = {finded_coefficients[coefficient]} ....{c} = {coefficients[c]}')
 
+        # Нужно сделать логику для построения грузовой эпюры на свободном конце рамы
+        # finded_coefficients['r2p'] = 23.4
         print(finded_coefficients)
 
         # Преобразовываем рамы МП в МС, отрисовываем их в автокаде
@@ -483,6 +485,8 @@ class BRGTUMovementMethod(TaskPlugin):
                     if fr.name == i:
                         for rod1 in fr.rods:
                             if rod1.name == rod.name:
+                                if not rod1.diagram_M:
+                                    break
                                 if len(rod1.diagram_M) == 2 and len(rod.diagram_M) == 2:
                                     rod.diagram_M[0] += rod1.diagram_M[0] * coef_z[f'z{i}']
                                     rod.diagram_M[1] += rod1.diagram_M[1] * coef_z[f'z{i}']
@@ -558,8 +562,6 @@ class BRGTUMovementMethod(TaskPlugin):
             if entity.dxf.layer == 'Деформационная проверка':
                 entity.text += deformation_check
 
-        doc.saveas('report.dxf')
-
         print('-------"Эпюра Q"-------')
         calculating_Q_report = ''
         i = 1
@@ -601,9 +603,11 @@ class BRGTUMovementMethod(TaskPlugin):
         print(f'\n')
 
         # чекист
-        # nn = [-4.09, 0, -7.21, -7.21, -7.21, 0, -6.74, -14.18, -1.13, -1.13]
+        nn = [-4.09, 0, -7.21, -7.21, -7.21, 0, -6.74, -14.18, -1.13, -1.13]
         # мацукевич
-        nn = [-20.2, -18.66, -18.66, 0, 0.21, 0.21, -14.85]
+        # nn = [-20.2, -18.66, -18.66, 0, 0.21, 0.21, -14.85]
+        # демон
+        # nn = [3.37, 0, 0, 13.29, 0, 13, 0, 3.37]
         print('-------"Эпюра N"-------')
         i = 0
         for rod in ok_mm_frame.rods:
@@ -624,9 +628,11 @@ class BRGTUMovementMethod(TaskPlugin):
                                                     ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1],
                                                     0.0)
         # чекист
-        # r = [-5.66, 4.09, -4.69, -0.66, -6.74, -2.28, -1.13, 6.18, -10.53]
+        r = [-5.66, 4.09, -4.69, -0.66, -6.74, -2.28, -1.13, 6.18, -10.53]
         # мацукевич
-        r = [1.64, 20.2, 2.19, -1.64, 20.2, -2.19]
+        # r = [1.64, 20.2, 2.19, -1.64, 20.2, -2.19]
+        # демон
+        # r = [-3.37, 11.84, -25.49, 0.8, 3.37, -0.51, 1.64, -6.13]
         i = 0
         for reaction in main_frame.reactions():
             # print(reaction)

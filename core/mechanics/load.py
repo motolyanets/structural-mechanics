@@ -90,7 +90,7 @@ class Force(Load):
         direction = Vec2(math.cos(angle_rad), math.sin(angle_rad))
 
         # Вычисляем точку на конце стрелки
-        tip_point = Vec2(insert_point) + direction * 0.6
+        tip_point = Vec2(insert_point) + direction * 0.6 + Vec2(0.1, -0.1)
 
         msp.add_text(text=text, height=0.2, dxfattribs={"layer": "Loads",}).set_placement(tip_point)
         return msp
@@ -122,7 +122,7 @@ class Momentum(Load):
                              "layer": "Loads",
                          })
         text = f'{self.name} = {round_up(self.value)}'
-        placement = (insert_point[0] + 0.2, insert_point[1] - 0.2)
+        placement = (insert_point[0] + 0.1, insert_point[1] - 0.1)
         msp.add_text(text=text, height=0.2, dxfattribs={"layer": "Loads",}).set_placement(placement)
         return msp
 
@@ -238,7 +238,7 @@ class DistributedForce(Load):
                          #     !!!!!!!!!!!!!!!!!!!!!!!!!! Тут нужно сделать взависимости от направления
                          })
         text = f'{self.name} = {self.value}'
-        placement = (insert_point[0] + 0.2, insert_point[1] - 0.2)
+        placement = (insert_point[0] + 0.5, insert_point[1])
         msp.add_text(text=text, height=0.2, dxfattribs={"layer": "Loads",}).set_placement(placement)
         return msp
 
@@ -268,7 +268,7 @@ class Twist(Load):
                              "layer": "Loads",
                          })
         text = f'{self.name} = {self.value}'
-        placement = (insert_point[0] + 0.2, insert_point[1] - 0.2)
+        placement = (insert_point[0] + 0.5, insert_point[1] - 0.4)
         msp.add_text(text=text, height=0.2, dxfattribs={"layer": "Loads",}).set_placement(placement)
         return msp
 
@@ -337,7 +337,7 @@ class Displacement(Load):
         direction = Vec2(math.cos(angle_rad), math.sin(angle_rad))
 
         # Вычисляем точку на конце стрелки
-        tip_point = Vec2(insert_point) + direction * 0.6
+        tip_point = Vec2(insert_point) - direction * 1.4 + Vec2(0.1, 0)
 
         msp.add_text(text=text, height=0.2, dxfattribs={"layer": "Loads",}).set_placement(tip_point)
         return msp

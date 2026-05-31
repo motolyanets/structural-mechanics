@@ -187,7 +187,7 @@ def distance_between_two_points(point_1: tuple[float, float], point_2: tuple[flo
     dx = point_2[0] - point_1[0]
     dy = point_2[1] - point_1[1]
     distance = math.sqrt(dx ** 2 + dy ** 2)
-    return distance
+    return round_up(distance, 6)
 
 
 def is_subsegment_2d(small_segment, big_segment, tolerance=1e-9):

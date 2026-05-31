@@ -77,7 +77,7 @@ class Rod:
         distance : float, расстояние от указанного узла вдоль стержня
         возвращает (x, y)
         """
-        drawing_distance = 0.1
+        drawing_distance = 0.2
         if center:
             distance = self.length() / 2
 

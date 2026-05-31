@@ -87,7 +87,7 @@ def draw_rod(rod: Rod, base_point: List[float], msp, hinge_radius=h_r, drowing_s
     if drowing_stiffnes:
         rod_center = rod.middle()
         placement = (rod_center[0] + base_point[0] + 0.2, rod_center[1] + base_point[1] + 0.2)
-        msp.add_text(text=f'{drowing_stiffnes}', height=0.2, dxfattribs={"layer": "Rod", }).set_placement(placement)
+        msp.add_text(text=f'{drowing_stiffnes}', height=0.2, dxfattribs={"layer": "Rod", "color": 2}).set_placement(placement)
 
     try:
         if rod.is_start_hinge:
@@ -116,6 +116,7 @@ def draw_section(rod: Rod, base_point: List[float], msp):
                                  'layer': 'SECTIONS',
                                  'rotation': perpendicular_angle,
                              })
+
             msp.add_text(text=section.name, height=0.1, dxfattribs={'layer': 'SECTIONS', 'color': 1}).set_placement(section_point)
     return msp
 
@@ -242,6 +243,8 @@ def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp,
     start_point = Vec2(rod.start_node.x + base_point[0], rod.start_node.y + base_point[1])
     end_point = Vec2(rod.end_node.x + base_point[0], rod.end_node.y + base_point[1])
     points_on_rod = [start_point, end_point]
+    if not diagram:
+        return msp
     if len(diagram) == 3:
         mdl = rod.middle()
         middle_point = Vec2(mdl[0] + base_point[0], mdl[1] + base_point[1])
@@ -305,7 +308,12 @@ def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp,
 
     perpendicular_angle = find_perpendicular_angle(start_point=start_point, end_point=end_point)
 
-    hatch = msp.add_hatch(color=3)
+    if rod.dx() == 0:
+        hatch = msp.add_hatch(color=3, dxfattribs={'layer': 'Штриховка 1'})
+    elif rod.dy() == 0:
+        hatch = msp.add_hatch(color=3, dxfattribs={'layer': 'Штриховка 2'})
+    else:
+        hatch = msp.add_hatch(color=3, dxfattribs={'layer': 'Штриховка 3'})
 
     hatch.dxf.pattern_name = 'LINE'
     hatch.dxf.pattern_angle = perpendicular_angle
@@ -444,7 +452,12 @@ def draw_diagram_q(rod: Rod, base_point: List[float], diagram: List[float], msp,
 
     perpendicular_angle = find_perpendicular_angle(start_point=start_point, end_point=end_point)
 
-    hatch = msp.add_hatch(color=3)
+    if rod.dx() == 0:
+        hatch = msp.add_hatch(color=3, dxfattribs={'layer': 'Штриховка 1'})
+    elif rod.dy() == 0:
+        hatch = msp.add_hatch(color=3, dxfattribs={'layer': 'Штриховка 2'})
+    else:
+        hatch = msp.add_hatch(color=3, dxfattribs={'layer': 'Штриховка 3'})
 
     hatch.dxf.pattern_name = 'LINE'
     hatch.dxf.pattern_angle = perpendicular_angle

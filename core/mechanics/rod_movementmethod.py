@@ -396,7 +396,7 @@ class RodForMovementMethod:
                     m_start = sign * load.value * length ** 2 / 12
                     m_midl = -sign * load.value * length ** 2 / 24
                     m_end = sign * load.value * length ** 2 / 12
-                    Q = -sign * load.value * length / 2
+                    Q = sign * load.value * length / 2
                     self.diagram_Q = [Q, -Q]
                     self.diagram_M = [[m_start, m_midl, m_end]]
                     text = f'M{self.name} = q · l² / 12 = {abs(round_up(m_start, 3))}\n'
@@ -533,9 +533,10 @@ class RodForMovementMethod:
 
                     a = distance_between_two_points(point_1=(self.start_node.x, self.start_node.y),
                                                     point_2=(load.node.x, load.node.y))
-                    if a < length:
+                    if a <= length:
                         b = length - a
                     else:
+                        print(self)
                         raise Exception('Расстояние от начала стержня не может быть больше длины стержня')
 
                     m_start = sign * load.value * a

@@ -24,10 +24,11 @@ class BRGTUMovementMethod(TaskPlugin):
     def get_available_schemes(self) -> list:
         return [
             # {"scheme_id": 10, "name": "Схема 10"},
-            # {"scheme_id": 19, "name": "Схема 19"},
+            {"scheme_id": 17, "name": "Схема 17"},
+            {"scheme_id": 19, "name": "Схема 19"},
             {"scheme_id": 22, "name": "Схема 22"},
             # {"scheme_id": 24, "name": "Схема 24"},
-            # {"scheme_id": 27, "name": "Схема 27"},
+            {"scheme_id": 27, "name": "Схема 27"},
             # {"scheme_id": 29, "name": "Схема 29"},
         ]
 
@@ -168,6 +169,11 @@ class BRGTUMovementMethod(TaskPlugin):
             create_main_frame = create_frame_17
             new_mm_frame = create_mm_primary_system_17
             new_fm_frame = create_fm_primary_system_17
+        elif circuit_number == 19:
+            from schemes.brgtu.movement_method.frame_19 import create_frame_19, create_mm_primary_system_19, create_fm_primary_system_19
+            create_main_frame = create_frame_19
+            new_mm_frame = create_mm_primary_system_19
+            new_fm_frame = create_fm_primary_system_19
         elif circuit_number == 22:
             from schemes.brgtu.movement_method.frame_22 import create_frame_22, create_mm_primary_system_22, create_fm_primary_system_22
             create_main_frame = create_frame_22
@@ -237,6 +243,9 @@ class BRGTUMovementMethod(TaskPlugin):
                 rod_diagram_report = rod.calculate_diagram_m_movement()
                 if rod_diagram_report:
                     calculating_diagram_report += rod_diagram_report
+                # if diagram == 'p' and rod.name == '12':
+                    # rod.diagram_M = [[-27.5, 55]]
+                    # rod.diagram_Q = [-15.8654, -15.8654]
             calculating_diagram_reports[diagram] = calculating_diagram_report
             print(calculating_diagram_report)
 
@@ -264,7 +273,7 @@ class BRGTUMovementMethod(TaskPlugin):
                         raise Exception(f'{coefficient} = {finded_coefficients[coefficient]} ....{c} = {coefficients[c]}')
 
         # Нужно сделать логику для построения грузовой эпюры на свободном конце рамы
-        # finded_coefficients['r2p'] = 23.4
+        # finded_coefficients['r3p'] = finded_coefficients['r3p'] - 15.865
         print(finded_coefficients)
 
         # Преобразовываем рамы МП в МС, отрисовываем их в автокаде
@@ -366,6 +375,9 @@ class BRGTUMovementMethod(TaskPlugin):
         for rod in p_fm_frame.rods:
             section_equation = rod.calculate_diagram_m('m')
             finding_moments_report += section_equation + '\n'
+            # if rod.name == 'AE':
+            #     rod.diagram_M = [0, 55]
+
         finding_moments_report = finding_moments_report.replace('\n\n', '\n')
         finding_moments_report = finding_moments_report.replace('= =', '=')
 

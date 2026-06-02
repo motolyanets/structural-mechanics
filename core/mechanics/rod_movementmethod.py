@@ -180,21 +180,30 @@ class RodForMovementMethod:
 
                     a = distance_between_two_points(point_1=(self.start_node.x, self.start_node.y),
                                                     point_2=(load.node.x, load.node.y))
-                    if a < length:
+                    if a <= length:
                         b = length - a
                     else:
                         raise Exception('Расстояние от начала стержня не может быть больше длины стержня')
 
-                    m_start = -sign * load.value * (length ** 2 - 3 * b ** 2) / (2 * length ** 2)
-                    m_1 = sign * ((load.value * a / length) - (b / length) * abs(m_start))
-                    m_2 = -sign * ((load.value * b / length) + (b / length) * abs(m_start))
-                    m_end = 0
-                    Q = -sign * 3 * load.value * (length ** 2 - b ** 2) / (2 * length ** 3)
-                    self.diagram_Q = [Q, Q]
-                    self.diagram_M = [[m_start, m_1], [m_2, m_end]]
-                    text = f'M{self.name} = m · (l² - 3 · b²) / (2 · l²) = {abs(round_up(m_start, 3))}\n'
-                    text += f'M{self.name} = (m · a / l) - (b / l) · m_start = {abs(round_up(m_1, 3))}\n'
-                    text += f'M{self.name} = (m · b / l) + (b / l) · m_start = {abs(round_up(m_2, 3))}\n'
+                    if a == length:
+                        m_start = -sign * load.value / 2
+                        m_end = sign * load.value
+                        Q = -sign * (abs(m_start) + abs(m_end)) / length
+                        self.diagram_Q = [Q, Q]
+                        self.diagram_M = [[m_start, m_end]]
+                        text = f'M{self.name} = m / 2 = {abs(round_up(m_start, 3))}\n'
+                        text += f'M{self.name} = m = {abs(round_up(m_end, 3))}\n'
+                    else:
+                        m_start = -sign * load.value * (length ** 2 - 3 * b ** 2) / (2 * length ** 2)
+                        m_1 = sign * ((load.value * a / length) - (b / length) * abs(m_start))
+                        m_2 = -sign * ((load.value * b / length) + (b / length) * abs(m_start))
+                        m_end = 0
+                        Q = -sign * 3 * load.value * (length ** 2 - b ** 2) / (2 * length ** 3)
+                        self.diagram_Q = [Q, Q]
+                        self.diagram_M = [[m_start, m_1], [m_2, m_end]]
+                        text = f'M{self.name} = m · (l² - 3 · b²) / (2 · l²) = {abs(round_up(m_start, 3))}\n'
+                        text += f'M{self.name} = (m · a / l) - (b / l) · m_start = {abs(round_up(m_1, 3))}\n'
+                        text += f'M{self.name} = (m · b / l) + (b / l) · m_start = {abs(round_up(m_2, 3))}\n'
                     report += text
 
             elif self.start_support_type == 'Шарнирный' and self.end_support_type == 'Жесткий':
@@ -324,7 +333,7 @@ class RodForMovementMethod:
 
                     a = distance_between_two_points(point_1=(self.end_node.x, self.end_node.y),
                                                     point_2=(load.node.x, load.node.y))
-                    if a < length:
+                    if a <= length:
                         b = length - a
                     else:
                         raise Exception('Расстояние от начала стержня не может быть больше длины стержня')
@@ -382,7 +391,7 @@ class RodForMovementMethod:
                     m_start = sign * 6 * linear_stiffness / length
                     m_end = -sign * 6 * linear_stiffness / length
                     Q = 12 * linear_stiffness / length ** 2
-                    self.diagram_Q = [Q, -Q]
+                    self.diagram_Q = [Q, Q]
                     self.diagram_M = [[m_start, m_end]]
                     text = f'M{self.name} = 6 · i / l = {abs(round_up(m_start, 3))}\n'
                     text += f'M{self.name} = 6 · i / l = {abs(round_up(m_end, 3))}\n'

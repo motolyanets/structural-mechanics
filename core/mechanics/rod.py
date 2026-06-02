@@ -26,6 +26,7 @@ class Rod:
             diagram_Q: List | None = None,
             diagram_N: List | None = None,
             stiffness: float = 1,
+            momentum_at_hinge: bool = False
     ):
         self.sections = None
         self.start_node = start_node
@@ -45,6 +46,7 @@ class Rod:
         self.diagram_Q = diagram_Q
         self.diagram_N = diagram_N
         self.stiffness = stiffness
+        self.momentum_at_hinge = momentum_at_hinge
         self.nodes = [self.start_node, self.end_node]
         self.name = f'{start_node.name}{end_node.name}'
 
@@ -108,12 +110,13 @@ class Rod:
         is_hinge = False
 
         x, y, x_drawing, y_drawing = self.get_coordinates_of_section(node=node)
-        if node.is_hinge:
-            is_hinge = True
-        if node == self.start_node and self.is_start_hinge:
-            is_hinge = True
-        elif node == self.end_node and self.is_end_hinge:
-            is_hinge = True
+        if not self.momentum_at_hinge:
+            if node.is_hinge:
+                is_hinge = True
+            if node == self.start_node and self.is_start_hinge:
+                is_hinge = True
+            elif node == self.end_node and self.is_end_hinge:
+                is_hinge = True
 
         section = Section(name=str(number_of_section), x=x, y=y, x_drawing=x_drawing, y_drawing=y_drawing, loads=loads,
                           is_hinge=is_hinge)

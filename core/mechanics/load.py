@@ -102,13 +102,19 @@ class Force(Load):
 class Momentum(Load):
     """Создаем класс для момента"""
 
-    def __init__(self, name: str, node: Node, rotation: bool, value: float | None = None):
+    def __init__(self, name: str, node: Node, rotation: bool, value: float | None = None, rod: Rod | None = None):
         self.name = name
         self.node = node
         self.value = value
         self.rotation = rotation
         self.x = node.x
         self.y = node.y
+        self.rod = rod
+        if self.node.is_hinge:
+            if self.rod:
+                self.rod.momentum_at_hinge = True
+            else:
+                raise Exception('Если момент приложен к шарниру, нужно указать на какой стержень он действует')
 
 
     def drow(self, insert_point: Tuple[float, float], msp):
@@ -117,7 +123,22 @@ class Momentum(Load):
         else:
             block_name = 'Момент (против часовой)'
 
-        msp.add_blockref(block_name, insert=insert_point,
+        if not self.rod:
+            insert = insert_point
+        else:
+            t = 0.1 / self.rod.length()
+            if self.node == self.rod.start_node:
+                x1, y1 = self.rod.start_node.x, self.rod.start_node.y
+                x2, y2 = self.rod.end_node.x, self.rod.end_node.y
+            else:
+                x2, y2 = self.rod.start_node.x, self.rod.start_node.y
+                x1, y1 = self.rod.end_node.x, self.rod.end_node.y
+            px = x1 + t * (x2 - x1)
+            py = y1 + t * (y2 - y1)
+            insert = (px, py)
+
+
+        msp.add_blockref(block_name, insert=insert,
                          dxfattribs={
                              "layer": "Loads",
                          })

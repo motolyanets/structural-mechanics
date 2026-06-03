@@ -9,10 +9,10 @@ class Support:
     def __init__(self, node: Node, number_of_reactions: int, rotation: int):
         self.node = node
 
-        if number_of_reactions in [1, 2, 3]:
+        if number_of_reactions in [1, 2, 3, 4]:
             self.number_of_reactions = number_of_reactions
         else:
-            raise Exception("Количество реакций в опоре должно быть 1, 2 или 3")
+            raise Exception("Количество реакций в опоре должно быть 1, 2, 3 или 4(скользящая)")
 
         if number_of_reactions == 1:
             self.block_name = 'Подвижная опора'
@@ -20,6 +20,8 @@ class Support:
             self.block_name = 'Неподвижная опора'
         elif number_of_reactions == 3:
             self.block_name = 'Жесткая заделка'
+        elif number_of_reactions == 4:
+            self.block_name = 'Скользящая опора'
 
         if rotation in [0, 90, 180, 270]:
             self.rotation = int(rotation)

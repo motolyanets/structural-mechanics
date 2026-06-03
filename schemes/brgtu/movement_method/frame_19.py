@@ -164,6 +164,7 @@ def create_mm_primary_system_19(params: dict):
 
     support1 = Support(node=node1, number_of_reactions=3, rotation=90)
     support2 = Support(node=node6, number_of_reactions=2, rotation=90)
+    support3 = Support(node=node7, number_of_reactions=4, rotation=180)
 
     if load_index == 1:
         load_P1 = Force(name='P', node=node7, value=P / 2, rotation=270)
@@ -189,7 +190,7 @@ def create_mm_primary_system_19(params: dict):
     loads['3'] = [load_z3]
     loads['p'] = loads_p
 
-    supports = [support1, support2]
+    supports = [support1, support2, support3]
 
     return nodes, rods, supports, loads
 

@@ -121,8 +121,8 @@ def draw_section(rod: Rod, base_point: List[float], msp):
     return msp
 
 
-def draw_main_frame(frame: Frame, base_point: List[float], msp, diagram_name: str = None, drawing_sections: bool = True,
-                    drawing_nodes: bool = True, drowing_stiffnes: bool = False, drowing_loads: bool = True, accuracy: int = 2):
+def draw_frame(frame: Frame, base_point: List[float], msp, diagram_name: str = None, drawing_sections: bool = True,
+               drawing_nodes: bool = True, drowing_stiffnes: bool = False, drowing_loads: bool = True, accuracy: int = 2):
     frame.base_point = base_point
 
     if drawing_nodes:
@@ -210,6 +210,78 @@ def draw_mm_diagram(frame: Frame, base_point: List[float], msp, diagram_name: st
 
     base_point = [base_point[0] + frame.length() + 10, base_point[1]]
     return frame, msp, base_point
+
+
+def draw_node_with_inner_loads(frame: Frame, node_name:str, msp, is_drawing_m: bool = True, is_drawing_q: bool = True,
+                               is_drawing_n: bool = True, truncate_length: float = 1):
+    base_point = Vec2(frame.base_point[0], frame.base_point[1]) + Vec2(0, -15)
+    node = None
+    for frame_node in frame.nodes:
+        if frame_node.name == node_name:
+            node = frame_node
+            break
+    if not node:
+        raise Exception(f'В раме {frame.name} нет узла {node_name}')
+
+    rods_with_node = []
+    for rod in frame.rods:
+        if node in [rod.start_node, rod.end_node]:
+            rods_with_node.append(rod)
+
+    node_point = Vec2(node.x, node.y)
+    for rod_with_node in rods_with_node:
+        if rod_with_node.start_node == node:
+            other_node = rod_with_node.end_node
+        elif rod_with_node.end_node == node:
+            other_node = rod_with_node.start_node
+        else:
+            raise Exception(f'Узел {node} не связан со стержнем {rod_with_node}')
+
+        other_point = Vec2(other_node.x, other_node.y)
+        direction = other_point - node_point
+        direction_normalized = direction.normalize()
+        end_point = node_point + direction_normalized * truncate_length
+
+        line = msp.add_line(
+            start=node_point + base_point,
+            end=end_point + base_point,
+            dxfattribs={
+                'layer': 'Rod',
+                'lineweight': 30
+            }
+        )
+
+        dx = end_point[0] - node_point[0]
+        dy = end_point[1] - node_point[1]
+        angle_rad = math.atan2(dy, dx)
+        angle_deg = math.degrees(angle_rad)
+
+        if is_drawing_m:
+            if rod_with_node.diagram_M:
+                if node == rod_with_node.start_node:
+                    m = rod_with_node.diagram_M[0]
+                    if m >= 0:
+                        block_name = 'Момент по часовой (для вырезания узла)'
+                    else:
+                        block_name = 'Момент против часовой (для вырезания узла)'
+
+                elif node == rod_with_node.end_node:
+                    m = rod_with_node.diagram_M[-1]
+                    if m >= 0:
+                        block_name = 'Момент против часовой (для вырезания узла)'
+                    else:
+                        block_name = 'Момент по часовой (для вырезания узла)'
+
+
+                msp.add_blockref(block_name, insert=end_point + base_point,
+                                 dxfattribs={
+                                     "layer": "Loads",
+                                     'rotation': angle_deg,
+                                 })
+                text = f'{round_up(abs(m), 3)}'
+                placement = end_point + base_point + direction_normalized * Vec2(0, -1)
+                msp.add_text(text=text, height=0.2, dxfattribs={"layer": "Loads", "color": 1}).set_placement(placement)
+    return msp
 
 
 def find_perpendicular_angle(start_point: Vec2, end_point: Vec2) -> float:

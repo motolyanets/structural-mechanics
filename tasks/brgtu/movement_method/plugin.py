@@ -1,3 +1,4 @@
+import importlib
 from typing import Dict, Any
 
 import ezdxf
@@ -7,7 +8,7 @@ from ezdxf import zoom
 from core.mechanics.frame import Frame
 from core.mechanics.load import Twist, Displacement, Force
 from core.mechanics.solver import FrameForMovementMethod, SolvableFrame, multiply_M_frames_by_Simpson
-from services.authocad import draw_main_frame, draw_mm_diagram
+from services.authocad import draw_frame
 from services.services import round_up, is_subsegment_2d, relative_error_percent
 from tasks.base import TaskPlugin
 from tasks.brgtu.movement_method.loader import MovementMethodLoader
@@ -74,6 +75,21 @@ class BRGTUMovementMethod(TaskPlugin):
         print(f"  I3 = {params['i3']}")
         print(f"  load_index = {params['load_index']}")
         print(f"{'=' * 60}")
+
+        def get_circuit_functions(circuit_number):
+            try:
+                # Импортируем модуль динамически
+                module = importlib.import_module(f'schemes.brgtu.movement_method.frame_{circuit_number}')
+
+                # Получаем функции из модуля
+                create_main_frame = getattr(module, f'create_frame_{circuit_number}')
+                new_mm_frame = getattr(module, f'create_mm_primary_system_{circuit_number}')
+                new_fm_frame = getattr(module, f'create_fm_primary_system_{circuit_number}')
+
+                return create_main_frame, new_mm_frame, new_fm_frame
+
+            except (ImportError, AttributeError) as e:
+                raise ValueError(f"Схема {circuit_number} не реализована") from e
 
         def calculation_r(frame: FrameForMovementMethod, loads: dict):
             coefficients = dict()
@@ -164,28 +180,7 @@ class BRGTUMovementMethod(TaskPlugin):
                                     m2 = m_start + (m_end - m_start) * l1 / mm_length
                                 fm_rod.diagram_M = [m1, m2]
 
-        if circuit_number == 17:
-            from schemes.brgtu.movement_method.frame_17 import create_frame_17, create_mm_primary_system_17, create_fm_primary_system_17
-            create_main_frame = create_frame_17
-            new_mm_frame = create_mm_primary_system_17
-            new_fm_frame = create_fm_primary_system_17
-        elif circuit_number == 19:
-            from schemes.brgtu.movement_method.frame_19 import create_frame_19, create_mm_primary_system_19, create_fm_primary_system_19
-            create_main_frame = create_frame_19
-            new_mm_frame = create_mm_primary_system_19
-            new_fm_frame = create_fm_primary_system_19
-        elif circuit_number == 22:
-            from schemes.brgtu.movement_method.frame_22 import create_frame_22, create_mm_primary_system_22, create_fm_primary_system_22
-            create_main_frame = create_frame_22
-            new_mm_frame = create_mm_primary_system_22
-            new_fm_frame = create_fm_primary_system_22
-        elif circuit_number == 27:
-            from schemes.brgtu.movement_method.frame_27 import create_frame_27, create_mm_primary_system_27, create_fm_primary_system_27
-            create_main_frame = create_frame_27
-            new_mm_frame = create_mm_primary_system_27
-            new_fm_frame = create_fm_primary_system_27
-        else:
-            raise ValueError(f"Схема {circuit_number} не реализована")
+        create_main_frame, new_mm_frame, new_fm_frame = get_circuit_functions(circuit_number)
 
         # Создаем главную раму и рисуем ее
         fr_nodes, fr_rods, fr_supports, fr_loads = create_main_frame(params)
@@ -195,7 +190,7 @@ class BRGTUMovementMethod(TaskPlugin):
             if entity.dxf.layer == "1.Главная рама" and entity.dxftype() == 'VIEWPORT':
                 if entity:
                     entity.dxf.view_center_point = (main_frame.geometrical_center()[0], main_frame.geometrical_center()[1], 0.0)
-        main_frame, msp, base_point = draw_main_frame(frame=main_frame, base_point=base_point, msp=msp, drowing_stiffnes=True)
+        main_frame, msp, base_point = draw_frame(frame=main_frame, base_point=base_point, msp=msp, drowing_stiffnes=True)
 
         # Отрисовываем основную систему МП
         ps_mm_nodes, ps_mm_rods, ps_mm_supports, ps_mm_loads = new_mm_frame(params)
@@ -214,8 +209,8 @@ class BRGTUMovementMethod(TaskPlugin):
         for rod in ps_mm_rods:
             linear_stiffness_text = f'i{rod.name} = {rod.stiffness}·EI / {round_up(rod.length(), 3)} = {round_up(rod.linear_stiffness, 3)}i\n'
             linear_stiffness_report += linear_stiffness_text
-        ps_mm_frame, msp, base_point = draw_main_frame(frame=ps_mm_frame, base_point=base_point, msp=msp, accuracy=3,
-                                                       drawing_sections=False, drowing_stiffnes=True)
+        ps_mm_frame, msp, base_point = draw_frame(frame=ps_mm_frame, base_point=base_point, msp=msp, accuracy=3,
+                                                  drawing_sections=False, drowing_stiffnes=True)
         for entity in layout:
             if entity.dxf.layer == 'мп_основная система' and entity.dxftype() == 'VIEWPORT':
                 if entity:
@@ -243,9 +238,6 @@ class BRGTUMovementMethod(TaskPlugin):
                 rod_diagram_report = rod.calculate_diagram_m_movement()
                 if rod_diagram_report:
                     calculating_diagram_report += rod_diagram_report
-                # if diagram == 'p' and rod.name == '12':
-                    # rod.diagram_M = [[-27.5, 55]]
-                    # rod.diagram_Q = [-15.8654, -15.8654]
             calculating_diagram_reports[diagram] = calculating_diagram_report
             print(calculating_diagram_report)
 
@@ -290,8 +282,8 @@ class BRGTUMovementMethod(TaskPlugin):
                 if mm_frame.name == i:
                     replace_m_diagram_from_mmframe_to_fmframe(mm_frame=mm_frame, fm_frame=fm_frame)
 
-            fm_frame, msp, base_point = draw_main_frame(frame=fm_frame, base_point=base_point, diagram_name='M', msp=msp,
-                                                        accuracy=3, drawing_nodes=False)
+            fm_frame, msp, base_point = draw_frame(frame=fm_frame, base_point=base_point, diagram_name='M', msp=msp,
+                                                   accuracy=3, drawing_nodes=False)
             fm_frames.append(fm_frame)
 
             for entity in layout:
@@ -317,8 +309,8 @@ class BRGTUMovementMethod(TaskPlugin):
                                 rod.diagram_M[1] += rod1.diagram_M[1]
                                 break
                         break
-        s_mm_frame, msp, base_point = draw_main_frame(frame=s_mm_frame, base_point=base_point, diagram_name='M', msp=msp,
-                                                    accuracy=3)
+        s_mm_frame, msp, base_point = draw_frame(frame=s_mm_frame, base_point=base_point, diagram_name='M', msp=msp,
+                                                 accuracy=3)
         for entity in layout:
             if entity.dxf.layer == 'мп_эпюра Мs' and entity.dxftype() == 'VIEWPORT':
                 if entity:
@@ -381,8 +373,8 @@ class BRGTUMovementMethod(TaskPlugin):
         finding_moments_report = finding_moments_report.replace('\n\n', '\n')
         finding_moments_report = finding_moments_report.replace('= =', '=')
 
-        p_fm_frame, msp, base_point = draw_main_frame(frame=p_fm_frame, base_point=base_point, msp=msp, diagram_name='M',
-                                                      accuracy=3)
+        p_fm_frame, msp, base_point = draw_frame(frame=p_fm_frame, base_point=base_point, msp=msp, diagram_name='M',
+                                                 accuracy=3)
 
         for entity in layout:
             if entity.dxf.layer == 'sf_Mp' and entity.dxftype() == 'VIEWPORT':
@@ -518,8 +510,8 @@ class BRGTUMovementMethod(TaskPlugin):
                                     rod.diagram_M[2] += rod1.diagram_M[2] * coef_z[f'z{i}']
                                 break
             print(f'{rod}.....{rod.diagram_M}')
-        ok_mm_frame, msp, base_point = draw_main_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='M', msp=msp,
-                                                    drowing_loads=False, accuracy=3)
+        ok_mm_frame, msp, base_point = draw_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='M', msp=msp,
+                                                  drowing_loads=False, accuracy=3)
 
         for entity in layout:
             if entity.dxf.layer == 'мп_эпюра Мok' and entity.dxftype() == 'VIEWPORT':
@@ -543,8 +535,8 @@ class BRGTUMovementMethod(TaskPlugin):
         finding_moments_report = finding_moments_report.replace('\n\n', '\n')
         finding_moments_report = finding_moments_report.replace('= =', '=')
 
-        s_fm_frame, msp, base_point = draw_main_frame(frame=s_fm_frame, base_point=base_point, msp=msp, diagram_name='M',
-                                                      accuracy=2)
+        s_fm_frame, msp, base_point = draw_frame(frame=s_fm_frame, base_point=base_point, msp=msp, diagram_name='M',
+                                                 accuracy=2)
 
         for entity in layout:
             if entity.dxf.layer == 'sf_Ms' and entity.dxftype() == 'VIEWPORT':
@@ -593,8 +585,8 @@ class BRGTUMovementMethod(TaskPlugin):
             i += 1
             print(f'{rod} ------ {rod.diagram_Q}')
         ok_mm_frame.base_point = base_point
-        ok_mm_frame, msp, base_point = draw_main_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='Q', msp=msp,
-                                                    drowing_loads=False, accuracy=2)
+        ok_mm_frame, msp, base_point = draw_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='Q', msp=msp,
+                                                  drowing_loads=False, accuracy=2)
 
         for entity in layout:
             if entity.dxf.layer == 'sf_Q' and entity.dxftype() == 'VIEWPORT':
@@ -630,8 +622,8 @@ class BRGTUMovementMethod(TaskPlugin):
             i += 1
 
         ok_mm_frame.base_point = base_point
-        ok_mm_frame, msp, base_point = draw_main_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='N', msp=msp,
-                                                    drowing_loads=False, accuracy=2)
+        ok_mm_frame, msp, base_point = draw_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='N', msp=msp,
+                                                  drowing_loads=False, accuracy=2)
 
         for entity in layout:
             if entity.dxf.layer == 'sf_N' and entity.dxftype() == 'VIEWPORT':
@@ -658,7 +650,7 @@ class BRGTUMovementMethod(TaskPlugin):
             print(reaction)
 
         print('-------Статическая проверка-------')
-        main_frame, msp, base_point = draw_main_frame(frame=main_frame, base_point=base_point, msp=msp)
+        main_frame, msp, base_point = draw_frame(frame=main_frame, base_point=base_point, msp=msp)
 
         for entity in layout:
             if entity.dxf.layer == 'мп_рама для статической проверки' and entity.dxftype() == 'VIEWPORT':

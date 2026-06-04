@@ -192,8 +192,8 @@ class BRGTUMovementMethod(TaskPlugin):
         create_main_frame, new_mm_frame, new_fm_frame = get_circuit_functions(circuit_number)
 
         # Создаем главную раму и рисуем ее
-        fr_nodes, fr_rods, fr_supports, fr_loads = create_main_frame(params)
-        main_frame = Frame(fr_nodes, fr_rods, fr_supports, fr_loads)
+        fr_nodes, fr_rods, fr_supports, fr_loads, symmetry = create_main_frame(params)
+        main_frame = Frame(fr_nodes, fr_rods, fr_supports, fr_loads, symmetry)
 
         for entity in layout:
             if entity.dxf.layer == "1.Главная рама" and entity.dxftype() == 'VIEWPORT':
@@ -624,6 +624,9 @@ class BRGTUMovementMethod(TaskPlugin):
             elif entity.dxf.layer == 'Расчет эпюры Q':
                 entity.text = calculating_Q_report
 
+
+
+
         zoom.extents(msp)
         doc.saveas(f'report.dxf')
 
@@ -658,6 +661,30 @@ class BRGTUMovementMethod(TaskPlugin):
                     entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
                                                     ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1],
                                                     0.0)
+
+
+        if symmetry:
+            symmetric_pare_of_rods = main_frame.get_symmetric_pare_of_rods()
+            for ok_rod in ok_mm_frame:
+                for pare_of_rods in symmetric_pare_of_rods:
+                    if ok_rod.name in [pare_of_rods[0].name, pare_of_rods[1].name]:
+                        if not ok_rod.diagram_M or not ok_rod.diagram_Q or not ok_rod.diagram_N:
+                            raise Exception(f'Стержень {ok_rod} не расчитан')
+                        else:
+                            for rod in pare_of_rods:
+                                if rod.name == ok_rod:
+                                    rod.diagram_M = ok_rod.diagram_M
+                                    rod.diagram_Q = ok_rod.diagram_Q
+                                    rod.diagram_N = ok_rod.diagram_N
+                                if rod.name != ok_rod:
+                                    if rod.dx() == 0:
+                                        rod.diagram_M = [-x for x in ok_rod.diagram_M]
+                                    else:
+                                        rod.diagram_M = sorted(ok_rod.diagram_M, reverse=True)
+                                    rod.diagram_Q = [-x for x in ok_rod.diagram_Q]
+                                    rod.diagram_N = ok_rod.diagram_N
+
+
         # чекист
         r = [-5.66, 4.09, -4.69, -0.66, -6.74, -2.28, -1.13, 6.18, -10.53]
         # мацукевич

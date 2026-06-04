@@ -31,6 +31,8 @@ def create_frame_19(params: dict):
     node12 = Node(name='T', x=l1 * 2 + l2, y=h1 + h2, is_hinge=True)
     node13 = Node(name='D', x=l1 * 2 + l2, y=h1)
 
+    symmetry = ('x', node7)
+
     rod1 = Rod(start_node=node1, end_node=node2)
     rod2 = Rod(start_node=node2, end_node=node3, stiffness=i3)
     rod3_1 = Rod(start_node=node4, end_node=node3)
@@ -73,7 +75,7 @@ def create_frame_19(params: dict):
 
     supports = [support1, support2, support3, support4]
 
-    return nodes, rods, supports, loads
+    return nodes, rods, supports, loads, symmetry
 
 
 def create_fm_primary_system_19(params: dict):

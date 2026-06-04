@@ -10,13 +10,14 @@ from services.services import round_up, normalize_equation
 
 class Frame:
     def __init__(self, nodes: List[Node], rods: List[Rod] | List[RodForMovementMethod], supports: List[Support],
-                 loads: list, finded_reactions=None, base_point=None, calkulate_diagram_rods_order: List[List[Rod]]=None,
+                 loads: list, symmetry: Tuple[str, Node] | None = None, finded_reactions=None, base_point=None, calkulate_diagram_rods_order: List[List[Rod]]=None,
                  name: str | None = None):
         self.name = name
         self.nodes = nodes
         self.rods = rods
         self.supports = supports
         self.loads = loads
+        self.symmetry = symmetry
         self.finded_reactions = finded_reactions if finded_reactions is not None else []
         self.base_point = base_point
         self.calkulate_diagram_rods_order = calkulate_diagram_rods_order
@@ -34,6 +35,40 @@ class Frame:
                 reactions.append(Force(name=f'Y{support.node.name}', node=support.node, rotation=90))
                 reactions.append(Momentum(name=f'M{support.node.name}', node=support.node, rotation=True))
         return reactions
+
+    def get_symmetric_pare_of_rods(self):
+        symmetric_pare_of_rods = []
+        if not self.symmetry:
+            raise Exception('Рама не симметрична')
+        axis_of_symmetry, node_of_symmetry = self.symmetry
+        other_axis = 'y' if axis_of_symmetry == 'x' else 'x'
+        if axis_of_symmetry == 'x':
+            for rod1 in self.rods:
+                for rod2 in self.rods:
+                    if rod1 != rod2:
+                        if rod1.dx() == rod2.dx() == 0:
+                            condition1 = rod1.start_node.y == rod2.start_node.y
+                            condition2 = abs(node_of_symmetry.x - rod1.start_node.x) == abs(node_of_symmetry.x - rod2.start_node.x)
+                            condition3 = abs(node_of_symmetry.x - rod1.end_node.x) == abs(node_of_symmetry.x - rod2.end_node.x)
+                            condition4 = True
+                        else:
+                            condition1 = rod1.start_node.y == rod2.end_node.y
+                            condition2 = rod1.end_node.y == rod2.start_node.y
+                            condition3 = abs(node_of_symmetry.x - rod1.start_node.x) == abs(node_of_symmetry.x - rod2.end_node.x)
+                            condition4 = abs(node_of_symmetry.x - rod1.end_node.x) == abs(node_of_symmetry.x - rod2.start_node.x)
+                        if condition1 and condition2 and condition3 and condition4:
+                            pare_of_rods = [rod1, rod2]
+                            pare_of_rods.sort(key=lambda i: i.start_node.x)
+                            pare_of_rods = tuple(pare_of_rods)
+                            if pare_of_rods not in symmetric_pare_of_rods:
+                                symmetric_pare_of_rods.append(tuple(pare_of_rods))
+
+        if len(self.rods) != len(symmetric_pare_of_rods) * 2:
+            raise Exception(f'Количество пар стержней не равно общему количеству стержней \n{symmetric_pare_of_rods}')
+        return symmetric_pare_of_rods
+
+
+
 
     def geometrical_center(self) -> Tuple[float, float]:
         x_min = 0

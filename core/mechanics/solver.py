@@ -947,16 +947,7 @@ class FrameForMovementMethod(Frame):
         if not displacement_node:
             raise Exception(f'В раме {self.name} нет узла {displacement.node.name}')
 
-        rods_with_impact_of_displacement = []
-        x = displacement_node.x
-        y = displacement_node.y
-        for rod in self.rods:
-            if displacement.rotation in [90, 270] and rod.dy() == 0 and rod.dx() != 0:
-                if rod.start_node.x == x or rod.end_node.x == x:
-                    rods_with_impact_of_displacement.append(rod)
-            elif displacement.rotation in [0, 180] and rod.dx() == 0 and rod.dy() != 0:
-                if rod.start_node.y == y or rod.end_node.y == y:
-                    rods_with_impact_of_displacement.append(rod)
+        rods_with_impact_of_displacement = displacement.find_rods_with_impact_of_displacement(frame=self)
 
         for rod in rods_with_impact_of_displacement:
             if rod.diagram_Q:

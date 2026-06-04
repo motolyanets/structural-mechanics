@@ -257,7 +257,6 @@ class Rod:
 
         return report
 
-
     def multiply_diagrams_Simpson(self, diagram_1_name, diagram_2_name, q: float | None = None):
         diagram_1 = self.__getattribute__(f'diagram_{diagram_1_name}')
         diagram_2 = self.__getattribute__(f'diagram_{diagram_2_name}')
@@ -300,6 +299,20 @@ class Rod:
                 multiplied_diagram.append(result)
 
         return multiplied_diagram
+
+    def calculate_diagram_q(self, q: float | None = None) -> str:
+        Q = (self.diagram_M[0] - self.diagram_M[-1]) / self.length()
+        if not q:
+            report = f'Q{self.name} = ({round_up(self.diagram_M[0])} - {round_up(self.diagram_M[-1])}) / {self.length()} = {round_up(Q)} кН'
+            self.diagram_Q = [Q, Q]
+        else:
+            Q1 = Q + q * self.length() / 2
+            Q2 = Q - q * self.length() / 2
+            report = (
+                f'Q{self.name} = ({round_up(self.diagram_M[0])} - {round_up(self.diagram_M[-1])}) / {self.length()} + {q} · {self.length()} / 2 = {round_up(Q1)} кН\n'
+                f'Q{self.name} = ({round_up(self.diagram_M[0])} - {round_up(self.diagram_M[-1])}) / {self.length()} - {q} · {self.length()} / 2 = {round_up(Q2)} кН')
+            self.diagram_Q = [Q1, Q2]
+        return report
 
     def __repr__(self) -> str:
         return f"Rod({self.start_node.name}→{self.end_node.name}, L={self.length():.3f})"

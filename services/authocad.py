@@ -3,6 +3,7 @@ from typing import List
 
 from ezdxf.lldxf.const import HATCH_PATTERN_TYPE, HATCH_TYPE_PREDEFINED, HATCH_TYPE_CUSTOM
 from ezdxf.math import Vec2
+from openpyxl import drawing
 
 from core.mechanics.frame import Frame
 from core.mechanics.load import Force, Momentum, DistributedForce, Twist, Displacement
@@ -13,7 +14,7 @@ from services.services import round_up
 
 h_r = 0.1
 
-def drow_hinge(hinge_point, direction_point, msp, hinge_radius=h_r):
+def draw_hinge(hinge_point: Node, direction_point, msp, hinge_radius=h_r):
     # Вычисляем вектор направления линии
     dx = direction_point.x - hinge_point.x
     dy = direction_point.y - hinge_point.y
@@ -93,11 +94,11 @@ def draw_rod(rod: Rod, base_point: List[float], msp, hinge_radius=h_r, drowing_s
         if rod.is_start_hinge:
             hinge_point = line.dxf.start
             direction_point = line.dxf.end
-            drow_hinge(hinge_point, direction_point, msp)
+            draw_hinge(hinge_point, direction_point, msp)
         if rod.is_end_hinge:
             hinge_point = line.dxf.end
             direction_point = line.dxf.start
-            drow_hinge(hinge_point, direction_point, msp)
+            draw_hinge(hinge_point, direction_point, msp)
     except:
         pass
 
@@ -163,14 +164,14 @@ def draw_frame(frame: Frame, base_point: List[float], msp, diagram_name: str = N
             for load in frame.loads:
                 if isinstance(load, (Force, Momentum, Twist, Displacement)):
                     insert_point = (load.node.x + base_point[0], load.node.y + base_point[1])
-                    msp = load.drow(insert_point, msp)
+                    msp = load.draw(insert_point, msp)
                 elif isinstance(load, DistributedForce):
                     insert_point = (load.center()[0] + base_point[0], load.center()[1] + base_point[1])
-                    msp = load.drow(insert_point, msp)
+                    msp = load.draw(insert_point, msp)
 
         for reaction in frame.finded_reactions:
             insert_point = (reaction.node.x + base_point[0], reaction.node.y + base_point[1])
-            msp = reaction.drow(insert_point, msp)
+            msp = reaction.draw(insert_point, msp)
 
 
     base_point = [base_point[0] + frame.length() + 10, base_point[1]]
@@ -203,18 +204,36 @@ def draw_mm_diagram(frame: Frame, base_point: List[float], msp, diagram_name: st
         for load in frame.loads:
             if isinstance(load, (Force, Momentum, Twist, Displacement)):
                 insert_point = (load.node.x + base_point[0], load.node.y + base_point[1])
-                msp = load.drow(insert_point, msp)
+                msp = load.draw(insert_point, msp)
             elif isinstance(load, DistributedForce):
                 insert_point = (load.center()[0] + base_point[0], load.center()[1] + base_point[1])
-                msp = load.drow(insert_point, msp)
+                msp = load.draw(insert_point, msp)
 
     base_point = [base_point[0] + frame.length() + 10, base_point[1]]
     return frame, msp, base_point
 
 
-def draw_node_with_inner_loads(frame: Frame, node_name:str, msp, is_drawing_m: bool = True, is_drawing_q: bool = True,
+def get_direction_of_rod(base_node: Node, rod: Rod) -> Vec2:
+    node_point = Vec2(base_node.x, base_node.y)
+    if rod.start_node == base_node:
+        other_node = rod.end_node
+    elif rod.end_node == base_node:
+        other_node = rod.start_node
+    else:
+        raise Exception(f'Узел {base_node} не связан со стержнем {rod}')
+
+    other_point = Vec2(other_node.x, other_node.y)
+    direction = other_point - node_point
+    return direction
+
+
+def draw_node_with_inner_loads(frame: Frame, node_name:str, msp, n_base_point: Vec2 | None, is_drawing_m: bool = True, is_drawing_q: bool = True,
                                is_drawing_n: bool = True, truncate_length: float = 1):
-    base_point = Vec2(frame.base_point[0], frame.base_point[1]) + Vec2(0, -15)
+    if not n_base_point:
+        n_base_point = Vec2(frame.base_point[0], frame.base_point[1]) + Vec2(0, -20)
+    else:
+        n_base_point = n_base_point + Vec2(0, -5)
+
     node = None
     for frame_node in frame.nodes:
         if frame_node.name == node_name:
@@ -230,21 +249,13 @@ def draw_node_with_inner_loads(frame: Frame, node_name:str, msp, is_drawing_m: b
 
     node_point = Vec2(node.x, node.y)
     for rod_with_node in rods_with_node:
-        if rod_with_node.start_node == node:
-            other_node = rod_with_node.end_node
-        elif rod_with_node.end_node == node:
-            other_node = rod_with_node.start_node
-        else:
-            raise Exception(f'Узел {node} не связан со стержнем {rod_with_node}')
-
-        other_point = Vec2(other_node.x, other_node.y)
-        direction = other_point - node_point
+        direction = get_direction_of_rod(base_node=node, rod=rod_with_node)
         direction_normalized = direction.normalize()
         end_point = node_point + direction_normalized * truncate_length
 
         line = msp.add_line(
-            start=node_point + base_point,
-            end=end_point + base_point,
+            start=node_point + n_base_point,
+            end=end_point + n_base_point,
             dxfattribs={
                 'layer': 'Rod',
                 'lineweight': 30
@@ -273,15 +284,119 @@ def draw_node_with_inner_loads(frame: Frame, node_name:str, msp, is_drawing_m: b
                         block_name = 'Момент по часовой (для вырезания узла)'
 
 
-                msp.add_blockref(block_name, insert=end_point + base_point,
+                msp.add_blockref(block_name, insert=end_point + n_base_point,
                                  dxfattribs={
                                      "layer": "Loads",
                                      'rotation': angle_deg,
                                  })
                 text = f'{round_up(abs(m), 3)}'
-                placement = end_point + base_point + direction_normalized * Vec2(0, -1)
+                # print(direction)
+                # print(direction_normalized)
+                if direction_normalized == Vec2(1, 0):
+                    offset = direction_normalized * 0.5
+                elif direction_normalized == Vec2(0, 1):
+                    offset = direction_normalized * 0.5
+                elif direction_normalized == Vec2(-1, 0):
+                    offset = direction_normalized * 1.2
+                elif direction_normalized == Vec2(0, -1):
+                    offset = direction_normalized * 0.7
+                else:
+                    offset = direction_normalized * 0.2
+                placement = end_point + n_base_point + offset
                 msp.add_text(text=text, height=0.2, dxfattribs={"layer": "Loads", "color": 1}).set_placement(placement)
-    return msp
+    return msp, n_base_point
+
+
+def draw_displacement_finding(frame: Frame, displacement: Displacement, msp, n_base_point: Vec2 | None, truncate_length: float = 1):
+    if not n_base_point:
+        n_base_point = Vec2(frame.base_point[0], frame.base_point[1]) + Vec2(0, -20)
+    else:
+        n_base_point = n_base_point + Vec2(0, -15)
+
+    relatives_nodes = displacement.find_relatives_nodes(frame)
+    relatives_nodes.append(displacement.node)
+    rods_with_impact_of_displacement = displacement.find_rods_with_impact_of_displacement(frame=frame)
+
+    for rod in frame.rods:
+        if rod.start_node in relatives_nodes and rod.end_node in relatives_nodes:
+            draw_rod(rod=rod, base_point=[n_base_point[0], n_base_point[1]], msp=msp)
+
+    for node in relatives_nodes:
+        if node.is_hinge:
+            msp.add_circle(
+                center=(node.x + n_base_point[0], node.y + n_base_point[1]),
+                radius=h_r,
+                dxfattribs={
+                    'layer': 'CIRCLES',
+                    'lineweight': 30
+                }
+            )
+
+    for load in frame.loads:
+        if isinstance(load, Force):
+            if load.rotation in [0, 180] and displacement.rotation in [0, 180]:
+                if load.node in relatives_nodes:
+                    insert_point = (load.node.x + n_base_point[0], load.node.y + n_base_point[1])
+                    load.draw(insert_point=insert_point, msp=msp)
+
+    for rod in rods_with_impact_of_displacement:
+        base_node = None
+        if displacement.rotation in [0, 180]:
+            if rod.start_node.y == displacement.node.y:
+                base_node = rod.start_node
+            elif rod.end_node.y == displacement.node.y:
+                base_node = rod.end_node
+        elif displacement.rotation in [90, 270]:
+            if rod.start_node.x == displacement.node.x:
+                base_node = rod.start_node
+            elif rod.end_node.x == displacement.node.x:
+                base_node = rod.end_node
+        if not base_node:
+            raise Exception(f'Узел {base_node} не связан со стержнем {rod}')
+        node_point = Vec2(base_node.x, base_node.y)
+        direction = get_direction_of_rod(base_node=base_node, rod=rod)
+        direction_normalized = direction.normalize()
+        end_point = node_point + direction_normalized * truncate_length
+
+        line = msp.add_line(
+            start=node_point + n_base_point,
+            end=end_point + n_base_point,
+            dxfattribs={
+                'layer': 'Rod',
+                'lineweight': 30
+            }
+        )
+
+        dx = end_point[0] - node_point[0]
+        dy = end_point[1] - node_point[1]
+        angle_rad = math.atan2(dy, dx)
+        angle_deg = math.degrees(angle_rad)
+
+        if rod.diagram_Q:
+            if direction_normalized in [Vec2(1, 0), Vec2(0, 1)]:
+                q = rod.diagram_Q[0]
+                offset = direction_normalized * 0.5
+            elif direction_normalized in [Vec2(-1, 0), Vec2(0, -1)]:
+                q = rod.diagram_Q[-1]
+                offset = direction_normalized * 0.5
+            else:
+                offset = direction_normalized * 0.2
+
+            if q >= 0:
+                q_angle = angle_deg - 90
+            else:
+                q_angle = angle_deg + 90
+
+            msp.add_blockref('сила Q', insert=end_point + n_base_point + direction_normalized * 0.2,
+                             dxfattribs={
+                                 "layer": "Loads",
+                                 'rotation': q_angle,
+                             })
+            text = f'{round_up(abs(q), 3)}'
+            placement = end_point + n_base_point + offset
+            msp.add_text(text=text, height=0.2, dxfattribs={"layer": "Loads", "color": 5}).set_placement(placement)
+
+    return msp, n_base_point
 
 
 def find_perpendicular_angle(start_point: Vec2, end_point: Vec2) -> float:

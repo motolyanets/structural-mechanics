@@ -77,7 +77,7 @@ class Force(Load):
             expression = f' - {self.name}'
         return projection, expression
 
-    def drow(self, insert_point: Tuple[float, float], msp):
+    def draw(self, insert_point: Tuple[float, float], msp):
         msp.add_blockref('Сосредоточенная сила', insert=insert_point,
                          dxfattribs={
                              "layer": "Loads",
@@ -117,7 +117,7 @@ class Momentum(Load):
                 raise Exception('Если момент приложен к шарниру, нужно указать на какой стержень он действует')
 
 
-    def drow(self, insert_point: Tuple[float, float], msp):
+    def draw(self, insert_point: Tuple[float, float], msp):
         if self.rotation:
             block_name = 'Момент (по часовой)'
         else:
@@ -250,7 +250,7 @@ class DistributedForce(Load):
                                  end_coordinates=self.end_coordinates, rotation=self.rotation, )
         return [load1, load2]
 
-    def drow(self, insert_point: Tuple[float, float], msp):
+    def draw(self, insert_point: Tuple[float, float], msp):
         msp.add_blockref('Распределенная нагрузка', insert=insert_point,
                          dxfattribs={
                              "layer": "Loads",
@@ -278,7 +278,7 @@ class Twist(Load):
         self.x = node.x
         self.y = node.y
 
-    def drow(self, insert_point: Tuple[float, float], msp):
+    def draw(self, insert_point: Tuple[float, float], msp, load_name: str | None = None):
         if self.rotation:
             block_name = 'Поворот (по часовой)'
         else:
@@ -288,7 +288,10 @@ class Twist(Load):
                          dxfattribs={
                              "layer": "Loads",
                          })
-        text = f'{self.name} = {self.value}'
+        if not load_name:
+            text = f'{self.name} = {self.value}'
+        else:
+            text = load_name
         placement = (insert_point[0] + 0.5, insert_point[1] - 0.4)
         msp.add_text(text=text, height=0.2, dxfattribs={"layer": "Loads",}).set_placement(placement)
         return msp
@@ -311,20 +314,20 @@ class Displacement(Load):
 
     def find_relatives_nodes(self, frame):
         rods = frame.rods
-        relative_nodes = [self.node]
+        relative_nodes_coordinates = [(self.node.x, self.node.y)]
 
         if self.rotation in [90, 270]:
             while True:
                 changed = False
                 for rod in rods:
                     if rod.dx() == 0:
-                        if rod.start_node in relative_nodes:
-                            if rod.end_node not in relative_nodes:
-                                relative_nodes.append(rod.end_node)
+                        if (rod.start_node.x, rod.start_node.y) in relative_nodes_coordinates:
+                            if (rod.end_node.x, rod.end_node.y) not in relative_nodes_coordinates:
+                                relative_nodes_coordinates.append((rod.end_node.x, rod.end_node.y))
                                 changed = True
-                        elif rod.end_node in relative_nodes:
-                            if rod.start_node not in relative_nodes:
-                                relative_nodes.append(rod.start_node)
+                        elif (rod.end_node.x, rod.end_node.y) in relative_nodes_coordinates:
+                            if (rod.start_node.x, rod.start_node.y) not in relative_nodes_coordinates:
+                                relative_nodes_coordinates.append((rod.start_node.x, rod.start_node.y))
                                 changed = True
                 if not changed:
                     break
@@ -333,32 +336,53 @@ class Displacement(Load):
                 changed = False
                 for rod in rods:
                     if rod.dy() == 0:
-                        if rod.start_node in relative_nodes:
-                            if rod.end_node not in relative_nodes:
-                                relative_nodes.append(rod.end_node)
+                        if (rod.start_node.x, rod.start_node.y) in relative_nodes_coordinates:
+                            if (rod.end_node.x, rod.end_node.y) not in relative_nodes_coordinates:
+                                relative_nodes_coordinates.append((rod.end_node.x, rod.end_node.y))
                                 changed = True
-                        elif rod.end_node in relative_nodes:
-                            if rod.start_node not in relative_nodes:
-                                relative_nodes.append(rod.start_node)
+                        elif (rod.end_node.x, rod.end_node.y) in relative_nodes_coordinates:
+                            if (rod.start_node.x, rod.start_node.y) not in relative_nodes_coordinates:
+                                relative_nodes_coordinates.append((rod.start_node.x, rod.start_node.y))
                                 changed = True
                 if not changed:
                     break
+        relative_nodes = []
+        for node in frame.nodes:
+            if (node.x, node.y) in relative_nodes_coordinates:
+                relative_nodes.append(node)
         return relative_nodes
 
-    def drow(self, insert_point: Tuple[float, float], msp):
+    def find_rods_with_impact_of_displacement(self, frame):
+        rods_with_impact_of_displacement = []
+        x = self.node.x
+        y = self.node.y
+        for rod in frame.rods:
+            if self.rotation in [90, 270] and rod.dy() == 0 and rod.dx() != 0:
+                if rod.start_node.x == x or rod.end_node.x == x:
+                    rods_with_impact_of_displacement.append(rod)
+            elif self.rotation in [0, 180] and rod.dx() == 0 and rod.dy() != 0:
+                if rod.start_node.y == y or rod.end_node.y == y:
+                    rods_with_impact_of_displacement.append(rod)
+        return rods_with_impact_of_displacement
+
+
+    def draw(self, insert_point: Tuple[float, float], msp, load_name: str | None = None):
         msp.add_blockref('Сдвиг', insert=insert_point,
                          dxfattribs={
                              "layer": "Loads",
                              "rotation": self.rotation,
                          })
-        text = f'{self.name} = {round_up(self.value)}'
+        if not load_name:
+            text = f'{self.name} = {self.value}'
+        else:
+            text = load_name
 
         # Рассчитываем вектор направления
         angle_rad = math.radians(self.rotation)
         direction = Vec2(math.cos(angle_rad), math.sin(angle_rad))
 
         # Вычисляем точку на конце стрелки
-        tip_point = Vec2(insert_point) - direction * 1.4 + Vec2(0.1, 0)
+        tip_point = Vec2(insert_point) - direction * 1.4 + Vec2(0.1, 0.1)
 
         msp.add_text(text=text, height=0.2, dxfattribs={"layer": "Loads",}).set_placement(tip_point)
         return msp

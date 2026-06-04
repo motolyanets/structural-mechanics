@@ -7,8 +7,9 @@ from ezdxf import zoom
 
 from core.mechanics.frame import Frame
 from core.mechanics.load import Twist, Displacement, Force
+from core.mechanics.rod import Rod
 from core.mechanics.solver import FrameForMovementMethod, SolvableFrame, multiply_M_frames_by_Simpson
-from services.authocad import draw_frame
+from services.authocad import draw_frame, draw_node_with_inner_loads, draw_displacement_finding
 from services.services import round_up, is_subsegment_2d, relative_error_percent
 from tasks.base import TaskPlugin
 from tasks.brgtu.movement_method.loader import MovementMethodLoader
@@ -135,7 +136,7 @@ class BRGTUMovementMethod(TaskPlugin):
                         reports[f'r{load_name}{frame.name}'] = report
             return coefficients, reports
 
-        def replace_m_diagram_from_mmframe_to_fmframe(mm_frame: FrameForMovementMethod, fm_frame: SolvableFrame):
+        def replace_diagrams_from_mmframe_to_fmframe(mm_frame: FrameForMovementMethod, fm_frame: SolvableFrame):
             for mm_rod in mm_frame.rods:
                 fm_rods_related_to_mm_rod = []
                 for fm_rod in fm_frame.rods:
@@ -145,9 +146,8 @@ class BRGTUMovementMethod(TaskPlugin):
                         fm_rods_related_to_mm_rod.append(fm_rod)
                 if len(mm_rod.diagram_M) == len(fm_rods_related_to_mm_rod):
                     for i, fm_rod in enumerate(fm_rods_related_to_mm_rod):
-                        # if not fm_rod.diagram_M:
-                        #     fm_rod.diagram_M = []
                         fm_rod.diagram_M = mm_rod.diagram_M[i]
+                        fm_rod.diagram_Q = mm_rod.diagram_Q
                 else:
                     if len(mm_rod.diagram_M) <= len(fm_rods_related_to_mm_rod):
                         if fm_rods_related_to_mm_rod[0].dx() == 0:
@@ -160,6 +160,8 @@ class BRGTUMovementMethod(TaskPlugin):
                         if len(mm_rod.diagram_M) == 1:
                             m_start = mm_rod.diagram_M[0][0]
                             m_end = mm_rod.diagram_M[0][1]
+                            q_start = mm_rod.diagram_Q[0]
+                            q_end = mm_rod.diagram_Q[1]
                             mm_length = mm_rod.length()
                             fm_length = 0
                             for fm_rod in sorted_rods:
@@ -171,14 +173,21 @@ class BRGTUMovementMethod(TaskPlugin):
                                     l1 = fm_rod.length()
                                     m1 = m_start
                                     m2 = m_start + (m_end - m_start) * l1 / mm_length
+                                    q1 = q_start
+                                    q2 = q_start + (q_end - q_start) * l1 / mm_length
                                 elif i == len(sorted_rods) - 1:
                                     m1 = m2
                                     m2 = m_end
+                                    q1 = q2
+                                    q2 = q_end
                                 else:
                                     m1 = m2
+                                    q1 = q2
                                     l1 += fm_rod.length()
                                     m2 = m_start + (m_end - m_start) * l1 / mm_length
+                                    q2 = q_start + (q_end - q_start) * l1 / mm_length
                                 fm_rod.diagram_M = [m1, m2]
+                                fm_rod.diagram_Q = [q1, q2]
 
         create_main_frame, new_mm_frame, new_fm_frame = get_circuit_functions(circuit_number)
 
@@ -265,11 +274,11 @@ class BRGTUMovementMethod(TaskPlugin):
                         raise Exception(f'{coefficient} = {finded_coefficients[coefficient]} ....{c} = {coefficients[c]}')
 
         # Нужно сделать логику для построения грузовой эпюры на свободном конце рамы
-        # finded_coefficients['r3p'] = finded_coefficients['r3p'] - 15.865
         print(finded_coefficients)
 
         # Преобразовываем рамы МП в МС, отрисовываем их в автокаде
         fm_frames = []
+        _, _, _, mm_loads = new_mm_frame(params)
         for i in ed_diagrams_with_p:
             fm_nodes, fm_rods, fm_supports, fm_loads = new_fm_frame(params)
 
@@ -280,10 +289,34 @@ class BRGTUMovementMethod(TaskPlugin):
             fm_frame = SolvableFrame(name=i, nodes=fm_nodes, rods=fm_rods, supports=m_fr.supports, loads=m_fr.loads)
             for mm_frame in mm_frames:
                 if mm_frame.name == i:
-                    replace_m_diagram_from_mmframe_to_fmframe(mm_frame=mm_frame, fm_frame=fm_frame)
+                    replace_diagrams_from_mmframe_to_fmframe(mm_frame=mm_frame, fm_frame=fm_frame)
 
             fm_frame, msp, base_point = draw_frame(frame=fm_frame, base_point=base_point, diagram_name='M', msp=msp,
                                                    accuracy=3, drawing_nodes=False)
+            n_base_point = None
+            for mm_load in mm_loads:
+                for fm_node in fm_frame.nodes:
+                    if mm_loads[mm_load][0].node.x == fm_node.x and mm_loads[mm_load][0].node.y == fm_node.y:
+                        if isinstance(mm_loads[mm_load][0], Twist):
+                            msp, n_base_point = draw_node_with_inner_loads(frame=fm_frame, node_name=fm_node.name,
+                                                                           n_base_point=n_base_point, msp=msp)
+                            node_point = (fm_node.x + n_base_point[0], fm_node.y + n_base_point[1])
+                            mm_loads[mm_load][0].draw(insert_point=node_point, msp=msp,
+                                                      load_name=f'r{mm_load}{fm_frame.name}')
+                        elif isinstance(mm_loads[mm_load][0], Displacement):
+                            msp, n_base_point = draw_displacement_finding(frame=fm_frame, displacement=mm_loads[mm_load][0],
+                                                                           n_base_point=n_base_point, msp=msp)
+                            node_point = (fm_node.x + n_base_point[0], fm_node.y + n_base_point[1])
+                            mm_loads[mm_load][0].draw(insert_point=node_point, msp=msp,
+                                                      load_name=f'r{mm_load}{fm_frame.name}')
+
+                        for entity in layout:
+                            if entity.dxf.layer == f'мп_узел r{mm_load}{fm_frame.name}' and entity.dxftype() == 'VIEWPORT':
+                                if entity:
+                                    entity.dxf.view_center_point = node_point
+
+
+
             fm_frames.append(fm_frame)
 
             for entity in layout:
@@ -570,17 +603,11 @@ class BRGTUMovementMethod(TaskPlugin):
         calculating_Q_report = ''
         i = 1
         for rod in ok_mm_frame.rods:
-            Q = (rod.diagram_M[0] - rod.diagram_M[-1]) / rod.length()
-            if len(rod.diagram_M) == 2:
-                report = f'Q{i} = ({round_up(rod.diagram_M[0])} - {round_up(rod.diagram_M[-1])}) / {rod.length()} = {round_up(Q)} кН'
-                rod.diagram_Q = [Q, Q]
-            elif len(rod.diagram_M) == 3:
+            q = None
+            if len(rod.diagram_M) == 3:
                 q = params['q']
-                Q1 = Q + q * rod.length() / 2
-                Q2 = Q - q * rod.length() / 2
-                report = (f'Q{i} = ({round_up(rod.diagram_M[0])} - {round_up(rod.diagram_M[-1])}) / {rod.length()} + {q} · {rod.length()} / 2 = {round_up(Q1)} кН\n'
-                          f'Q{i} = ({round_up(rod.diagram_M[0])} - {round_up(rod.diagram_M[-1])}) / {rod.length()} - {q} · {rod.length()} / 2 = {round_up(Q2)} кН')
-                rod.diagram_Q = [Q1, Q2]
+
+            report = rod.calculate_diagram_q(q=q)
             calculating_Q_report += report + '\n'
             i += 1
             print(f'{rod} ------ {rod.diagram_Q}')

@@ -543,15 +543,15 @@ class BRGTUMovementMethod(TaskPlugin):
                                     rod.diagram_M[2] += rod1.diagram_M[2] * coef_z[f'z{i}']
                                 break
             print(f'{rod}.....{rod.diagram_M}')
-        ok_mm_frame, msp, base_point = draw_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='M', msp=msp,
-                                                  drowing_loads=False, accuracy=3)
-
-        for entity in layout:
-            if entity.dxf.layer == 'мп_эпюра Мok' and entity.dxftype() == 'VIEWPORT':
-                if entity:
-                    entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
-                                                    ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1],
-                                                    0.0)
+        # ok_mm_frame, msp, base_point = draw_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='M', msp=msp,
+        #                                           drowing_loads=False, accuracy=3)
+        #
+        # for entity in layout:
+        #     if entity.dxf.layer == 'мп_эпюра Мok' and entity.dxftype() == 'VIEWPORT':
+        #         if entity:
+        #             entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
+        #                                             ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1],
+        #                                             0.0)
 
 
         print('-------Деформационная проверка-------')
@@ -599,6 +599,7 @@ class BRGTUMovementMethod(TaskPlugin):
             if entity.dxf.layer == 'Деформационная проверка':
                 entity.text += deformation_check
 
+
         print('-------"Эпюра Q"-------')
         calculating_Q_report = ''
         i = 1
@@ -611,94 +612,144 @@ class BRGTUMovementMethod(TaskPlugin):
             calculating_Q_report += report + '\n'
             i += 1
             print(f'{rod} ------ {rod.diagram_Q}')
-        ok_mm_frame.base_point = base_point
-        ok_mm_frame, msp, base_point = draw_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='Q', msp=msp,
-                                                  drowing_loads=False, accuracy=2)
-
+        # ok_mm_frame.base_point = base_point
+        # ok_mm_frame, msp, base_point = draw_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='Q', msp=msp,
+        #                                           drowing_loads=False, accuracy=2)
+        #
+        # for entity in layout:
+        #     if entity.dxf.layer == 'sf_Q' and entity.dxftype() == 'VIEWPORT':
+        #         if entity:
+        #             entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
+        #                                             ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1],
+        #                                             0.0)
+        #     elif entity.dxf.layer == 'Расчет эпюры Q':
+        #         entity.text = calculating_Q_report
         for entity in layout:
-            if entity.dxf.layer == 'sf_Q' and entity.dxftype() == 'VIEWPORT':
-                if entity:
-                    entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
-                                                    ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1],
-                                                    0.0)
-            elif entity.dxf.layer == 'Расчет эпюры Q':
+            if entity.dxf.layer == 'Расчет эпюры Q':
                 entity.text = calculating_Q_report
 
+        ok_mm_frame.calculate_diagram_N()
 
 
 
-        zoom.extents(msp)
-        doc.saveas(f'report.dxf')
+        # zoom.extents(msp)
+        # doc.saveas(f'report.dxf')
+        #
+        # input('Проверьте файл report.dxf, подготовьтесь вводить значения эпюры N и опорные реакции, далее нажмите ENTER')
+        # doc = ezdxf.readfile('report.dxf')
+        # msp = doc.modelspace()
+        # layout = doc.layouts.get("Шаблон (метод перемещений)")
+        # print(f'\n')
 
-        input('Проверьте файл report.dxf, подготовьтесь вводить значения эпюры N и опорные реакции, далее нажмите ENTER')
-        doc = ezdxf.readfile('report.dxf')
-        msp = doc.modelspace()
-        layout = doc.layouts.get("Шаблон (метод перемещений)")
-        print(f'\n')
+        # # чекист
+        # nn = [-4.09, 0, -7.21, -7.21, -7.21, 0, -6.74, -14.18, -1.13, -1.13]
+        # # мацукевич
+        # # nn = [-20.2, -18.66, -18.66, 0, 0.21, 0.21, -14.85]
+        # # демон
+        # # nn = [3.37, 0, 0, 13.29, 0, 13, 0, 3.37]
+        # print('-------"Эпюра N"-------')
+        # i = 0
+        # for rod in ok_mm_frame.rods:
+        #     # print(rod)
+        #     # N1 = float(input('Введите N1:'))
+        #     N1 = nn[i]
+        #     rod.diagram_N = [N1, N1]
+        #     i += 1
 
-        # чекист
-        nn = [-4.09, 0, -7.21, -7.21, -7.21, 0, -6.74, -14.18, -1.13, -1.13]
-        # мацукевич
-        # nn = [-20.2, -18.66, -18.66, 0, 0.21, 0.21, -14.85]
-        # демон
-        # nn = [3.37, 0, 0, 13.29, 0, 13, 0, 3.37]
-        print('-------"Эпюра N"-------')
-        i = 0
-        for rod in ok_mm_frame.rods:
-            # print(rod)
-            # N1 = float(input('Введите N1:'))
-            N1 = nn[i]
-            rod.diagram_N = [N1, N1]
-            i += 1
-
-        ok_mm_frame.base_point = base_point
-        ok_mm_frame, msp, base_point = draw_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='N', msp=msp,
-                                                  drowing_loads=False, accuracy=2)
-
-        for entity in layout:
-            if entity.dxf.layer == 'sf_N' and entity.dxftype() == 'VIEWPORT':
-                if entity:
-                    entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
-                                                    ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1],
-                                                    0.0)
+        # ok_mm_frame.base_point = base_point
+        # ok_mm_frame, msp, base_point = draw_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='N', msp=msp,
+        #                                           drowing_loads=False, accuracy=2)
+        #
+        # for entity in layout:
+        #     if entity.dxf.layer == 'sf_N' and entity.dxftype() == 'VIEWPORT':
+        #         if entity:
+        #             entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
+        #                                             ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1],
+        #                                             0.0)
 
 
         if symmetry:
             symmetric_pare_of_rods = main_frame.get_symmetric_pare_of_rods()
-            for ok_rod in ok_mm_frame:
+            for ok_rod in ok_mm_frame.rods:
                 for pare_of_rods in symmetric_pare_of_rods:
                     if ok_rod.name in [pare_of_rods[0].name, pare_of_rods[1].name]:
                         if not ok_rod.diagram_M or not ok_rod.diagram_Q or not ok_rod.diagram_N:
                             raise Exception(f'Стержень {ok_rod} не расчитан')
                         else:
                             for rod in pare_of_rods:
-                                if rod.name == ok_rod:
+                                if rod.name == ok_rod.name:
                                     rod.diagram_M = ok_rod.diagram_M
                                     rod.diagram_Q = ok_rod.diagram_Q
                                     rod.diagram_N = ok_rod.diagram_N
-                                if rod.name != ok_rod:
+                                if rod.name != ok_rod.name:
                                     if rod.dx() == 0:
                                         rod.diagram_M = [-x for x in ok_rod.diagram_M]
                                     else:
                                         rod.diagram_M = sorted(ok_rod.diagram_M, reverse=True)
                                     rod.diagram_Q = [-x for x in ok_rod.diagram_Q]
                                     rod.diagram_N = ok_rod.diagram_N
+        else:
+            for main_rod in main_frame.rods:
+                for ok_rod in ok_mm_frame:
+                    if not ok_rod.diagram_M or not ok_rod.diagram_Q or not ok_rod.diagram_N:
+                        raise Exception(f'Стержень {ok_rod} не расчитан')
+                    else:
+                        if main_rod.name == ok_rod.name:
+                            main_rod.diagram_M = ok_rod.diagram_M
+                            main_rod.diagram_Q = ok_rod.diagram_Q
+                            main_rod.diagram_N = ok_rod.diagram_N
+                            break
 
 
-        # чекист
-        r = [-5.66, 4.09, -4.69, -0.66, -6.74, -2.28, -1.13, 6.18, -10.53]
-        # мацукевич
-        # r = [1.64, 20.2, 2.19, -1.64, 20.2, -2.19]
-        # демон
-        # r = [-3.37, 11.84, -25.49, 0.8, 3.37, -0.51, 1.64, -6.13]
-        i = 0
-        for reaction in main_frame.reactions():
-            # print(reaction)
-            # v = float(input('Введите значение реакции:'))
-            # reaction.value = v
-            reaction.value = r[i]
-            main_frame.finded_reactions.append(reaction)
-            i += 1
+        main_frame, msp, base_point = draw_frame(frame=main_frame, base_point=base_point, diagram_name='M',
+                                                  msp=msp,
+                                                  drowing_loads=False, accuracy=3)
+
+        for entity in layout:
+            if entity.dxf.layer == 'мп_эпюра Мok' and entity.dxftype() == 'VIEWPORT':
+                if entity:
+                    entity.dxf.view_center_point = (main_frame.base_point[0] + main_frame.geometrical_center()[0],
+                                                    main_frame.base_point[1] + main_frame.geometrical_center()[1],
+                                                    0.0)
+        main_frame, msp, base_point = draw_frame(frame=main_frame, base_point=base_point, diagram_name='Q', msp=msp,
+                                                  drowing_loads=False, accuracy=2)
+        for entity in layout:
+            if entity.dxf.layer == 'sf_Q' and entity.dxftype() == 'VIEWPORT':
+                if entity:
+                    entity.dxf.view_center_point = (main_frame.base_point[0] + main_frame.geometrical_center()[0],
+                                                    main_frame.base_point[1] + main_frame.geometrical_center()[1],
+                                                    0.0)
+
+
+
+        main_frame, msp, base_point = draw_frame(frame=main_frame, base_point=base_point, diagram_name='N', msp=msp,
+                                                  drowing_loads=False, accuracy=2)
+        for entity in layout:
+            if entity.dxf.layer == 'sf_N' and entity.dxftype() == 'VIEWPORT':
+                if entity:
+                    entity.dxf.view_center_point = (main_frame.base_point[0] + main_frame.geometrical_center()[0],
+                                                    main_frame.base_point[1] + main_frame.geometrical_center()[1],
+                                                    0.0)
+
+
+
+
+        # # чекист
+        # r = [-5.66, 4.09, -4.69, -0.66, -6.74, -2.28, -1.13, 6.18, -10.53]
+        # # мацукевич
+        # # r = [1.64, 20.2, 2.19, -1.64, 20.2, -2.19]
+        # # демон
+        # # r = [-3.37, 11.84, -25.49, 0.8, 3.37, -0.51, 1.64, -6.13]
+        # i = 0
+        # for reaction in main_frame.reactions():
+        #     # print(reaction)
+        #     # v = float(input('Введите значение реакции:'))
+        #     # reaction.value = v
+        #     reaction.value = r[i]
+        #     main_frame.finded_reactions.append(reaction)
+        #     i += 1
+
+        main_frame.set_reactions_from_diagrams()
 
         for reaction in main_frame.finded_reactions:
             print(reaction)
@@ -761,4 +812,6 @@ class BRGTUMovementMethod(TaskPlugin):
                 entity.text = static_check
 
         zoom.extents(msp)
-        doc.save()
+        # doc.save()
+        doc.saveas(f'report.dxf')
+

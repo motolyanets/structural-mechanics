@@ -15,7 +15,7 @@ class Load:
 class Force(Load):
     """Создаем класс для сосредоточенного усилия"""
 
-    def __init__(self, name: str, node: Node, rotation: int, value: float | None = None):
+    def __init__(self, name: str, node: Node, rotation: int | float, value: float | None = None):
         self.name = name
         self.node = node
         self.value = value

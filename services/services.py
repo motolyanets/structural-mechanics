@@ -1,5 +1,6 @@
 import math
 import re
+from typing import List
 
 
 def round_up(number: float, decimals: int = 2):
@@ -227,6 +228,50 @@ def are_collinear(p1, p2, q1, q2, tolerance=1e-9):
     cross2 = cross_product(subtract(q2, q1), subtract(p2, q1))
 
     return abs(cross1) < tolerance and abs(cross2) < tolerance
+
+
+def are_collinear_nodes(points: List[tuple], tolerance=1e-9):
+    """
+    Проверяет, лежат ли все точки на одной прямой.
+
+    points: список точек в формате [(x1, y1), (x2, y2), ...]
+            или объектов с атрибутами x, y
+
+    Возвращает: True если все точки коллинеарны, иначе False
+    """
+    if len(points) <= 2:
+        # Любые 0, 1 или 2 точки всегда лежат на прямой
+        return True
+
+    # Приводим первые две точки к единому формату Vec2/кортеж
+    def get_coords(point):
+        if hasattr(point, 'x') and hasattr(point, 'y'):
+            return (point.x, point.y)
+        return (point[0], point[1])
+
+    p1 = get_coords(points[0])
+    p2 = get_coords(points[1])
+
+    # Вектор между первыми двумя точками
+    dx_base = p2[0] - p1[0]
+    dy_base = p2[1] - p1[1]
+
+    # Проверяем каждую следующую точку
+    for i in range(2, len(points)):
+        p = get_coords(points[i])
+
+        # Вектор от первой точки к текущей
+        dx = p[0] - p1[0]
+        dy = p[1] - p1[1]
+
+        # Векторное произведение (должно быть = 0 для коллинеарности)
+        cross_product = dx_base * dy - dy_base * dx
+
+        # Используем небольшой допуск для учета погрешностей float
+        if abs(cross_product) > 1e-9:
+            return False
+
+    return True
 
 
 def is_point_between(point, a, b, tolerance=1e-9):

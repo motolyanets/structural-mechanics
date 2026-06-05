@@ -58,6 +58,13 @@ class Rod:
         dy = self.end_node.y - self.start_node.y
         return math.fabs(dy)
 
+    def get_angle_deg(self) -> float:
+        dx = self.dx()
+        dy = self.dy()
+        angle_rad = math.atan2(dy, dx)
+        angle_deg = math.degrees(angle_rad)
+        return angle_deg
+
     def middle(self) -> Tuple[float, float]:
         x = (self.start_node.x + self.end_node.x) / 2
         y = (self.start_node.y + self.end_node.y) / 2

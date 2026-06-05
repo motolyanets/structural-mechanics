@@ -5,7 +5,7 @@ from core.mechanics.node import Node
 from core.mechanics.rod import Rod
 from core.mechanics.rod_movementmethod import RodForMovementMethod
 from core.mechanics.support import Support
-from services.services import round_up, normalize_equation
+from services.services import round_up, normalize_equation, are_collinear_nodes
 
 
 class Frame:
@@ -66,9 +66,6 @@ class Frame:
         if len(self.rods) != len(symmetric_pare_of_rods) * 2:
             raise Exception(f'Количество пар стержней не равно общему количеству стержней \n{symmetric_pare_of_rods}')
         return symmetric_pare_of_rods
-
-
-
 
     def geometrical_center(self) -> Tuple[float, float]:
         x_min = 0
@@ -331,3 +328,329 @@ class Frame:
 
         if not self.is_all_rods_with_sections():
             raise Exception(f'Созданы сечения не на всех стержнях')
+
+    def calculate_N_in_node(self, node: Node, rods_with_node:List[Rod]) -> bool:
+        unsoleved_rods = []
+        for rod in rods_with_node:
+            if not rod.diagram_N:
+                unsoleved_rods.append(rod)
+            elif len(rod.diagram_N) == 1:
+                unsoleved_rods.append(rod)
+        if len(unsoleved_rods) > 2 or len(unsoleved_rods) == 0:
+            return False
+        elif len(unsoleved_rods) == 2:
+            if unsoleved_rods[0].get_angle_deg() == unsoleved_rods[1].get_angle_deg():
+                return False
+
+        known_intentions = []
+        for rod in rods_with_node:
+            if rod.dx() != 0 and rod.dy() != 0:
+                raise Exception('Расчет эпюры N для наклонных стержней не реализован')
+            if rod.diagram_N:
+                if rod.dx() == 0:
+                    if node == rod.start_node:
+                        n_value = abs(rod.diagram_N[0])
+                        if rod.diagram_N[0] >= 0:
+                            n_direction = 90
+                        else:
+                            n_direction = 270
+                    elif node == rod.end_node:
+                        n_value = abs(rod.diagram_N[-1])
+                        if rod.diagram_N[-1] >= 0:
+                            n_direction = 270
+                        else:
+                            n_direction = 90
+                elif rod.dy() == 0:
+                    if node == rod.start_node:
+                        n_value = abs(rod.diagram_N[0])
+                        if rod.diagram_N[0] >= 0:
+                            n_direction = 0
+                        else:
+                            n_direction = 180
+                    elif node == rod.end_node:
+                        n_value = abs(rod.diagram_N[-1])
+                        if rod.diagram_N[-1] >= 0:
+                            n_direction = 180
+                        else:
+                            n_direction = 0
+                intention = Force(name=f'N{rod.name}', node=node, rotation=n_direction, value=n_value)
+                known_intentions.append(intention)
+            if rod.diagram_Q:
+                if rod.dx() == 0:
+                    if node == rod.start_node:
+                        q_value = abs(rod.diagram_Q[0])
+                        if rod.diagram_Q[0] >= 0:
+                            q_direction = 0
+                        else:
+                            q_direction = 180
+                    elif node == rod.end_node:
+                        q_value = abs(rod.diagram_Q[-1])
+                        if rod.diagram_Q[-1] >= 0:
+                            q_direction = 180
+                        else:
+                            q_direction = 0
+                elif rod.dy() == 0:
+                    if node == rod.start_node:
+                        q_value = abs(rod.diagram_Q[0])
+                        if rod.diagram_Q[0] >= 0:
+                            q_direction = 270
+                        else:
+                            q_direction = 90
+                    elif node == rod.end_node:
+                        q_value = abs(rod.diagram_Q[-1])
+                        if rod.diagram_Q[-1] >= 0:
+                            q_direction = 90
+                        else:
+                            q_direction = 270
+                intention = Force(name=f'Q{rod.name}', node=node, rotation=q_direction, value=q_value)
+                known_intentions.append(intention)
+        for load in self.loads:
+            if isinstance(load, Force):
+                if load.node == node:
+                    known_intentions.append(load)
+
+        if len(known_intentions) == 0:
+            return False
+
+        for unsoleved_rod in unsoleved_rods:
+            n = 0
+            if unsoleved_rod.dx() == 0:
+                for known_intention in known_intentions:
+                    if known_intention.rotation in [90, 270]:
+                        if known_intention.rotation == 90:
+                            n += known_intention.value
+                        elif known_intention.rotation == 270:
+                            n -= known_intention.value
+
+                if unsoleved_rod.start_node == node:
+                    if not unsoleved_rod.diagram_N:
+                        unsoleved_rod.diagram_N = [-n]
+                    elif len(unsoleved_rod.diagram_N) == 1:
+                        diagram_N = [-n, unsoleved_rod.diagram_N[0]]
+                        unsoleved_rod.diagram_N = diagram_N
+                elif unsoleved_rod.end_node == node:
+                    if not unsoleved_rod.diagram_N:
+                        unsoleved_rod.diagram_N = [n]
+                    elif len(unsoleved_rod.diagram_N) == 1:
+                        diagram_N = [unsoleved_rod.diagram_N[0], -n]
+                        unsoleved_rod.diagram_N = diagram_N
+
+            elif unsoleved_rod.dy() == 0:
+                for known_intention in known_intentions:
+                    if known_intention.rotation in [0, 180]:
+                        if known_intention.rotation == 0:
+                            n += known_intention.value
+                        elif known_intention.rotation == 180:
+                            n -= known_intention.value
+                if unsoleved_rod.start_node == node:
+                    if not unsoleved_rod.diagram_N:
+                        unsoleved_rod.diagram_N = [-n]
+                    elif len(unsoleved_rod.diagram_N) == 1:
+                        diagram_N = [-n, unsoleved_rod.diagram_N[0]]
+                        unsoleved_rod.diagram_N = diagram_N
+                elif unsoleved_rod.end_node == node:
+                    if not unsoleved_rod.diagram_N:
+                        unsoleved_rod.diagram_N = [n]
+                    elif len(unsoleved_rod.diagram_N) == 1:
+                        diagram_N = [unsoleved_rod.diagram_N[0], -n]
+                        unsoleved_rod.diagram_N = diagram_N
+            else:
+                raise Exception('Расчет эпюры N для наклонных стержней не реализован')
+
+            is_there_q_on_rod = False
+            for load in self.loads:
+                if isinstance(load, DistributedForce):
+                    if load.rod == unsoleved_rod:
+                        is_there_q_on_rod = True
+
+            inclined_rod = unsoleved_rod.dx() != 0 and unsoleved_rod.dy() != 0
+
+            if len(unsoleved_rod.diagram_N) == 1:
+                if not inclined_rod:
+                    unsoleved_rod.diagram_N = [unsoleved_rod.diagram_N[0], unsoleved_rod.diagram_N[0]]
+                elif inclined_rod and not is_there_q_on_rod:
+                    unsoleved_rod.diagram_N = [unsoleved_rod.diagram_N[0], unsoleved_rod.diagram_N[0]]
+        return True
+
+    def replace_N_from_collinear_rode(self, node: Node, rods_with_node:List[Rod]) -> bool:
+        if len(rods_with_node) != 2:
+            raise Exception('Для коллинеальности нужны 2 стержня')
+        rod1, rod2 = rods_with_node
+        if rod1.diagram_N and not rod2.diagram_N:
+            rod2.diagram_N = rod1.diagram_N
+            return True
+        elif rod2.diagram_N and not rod1.diagram_N:
+            rod1.diagram_N = rod2.diagram_N
+            return True
+        return False
+
+    def calculate_diagram_N(self):
+        rods = self.rods
+        for rod in rods:
+            if not rod.diagram_Q:
+                raise Exception(f'В сержне {rod} не расчитана эпюра Q')
+
+        nodes_for_calculating = []
+        nodes_with_collinear_rodes = []
+
+        for node in self.nodes:
+            rods_with_node = []
+            for rod in self.rods:
+                if node is rod.start_node or node is rod.end_node:
+                    rods_with_node.append(rod)
+            if len(rods_with_node) > 1:
+                other_nodes = [node]
+                for rod_with_node in rods_with_node:
+                    other_node = rod_with_node.end_node if rod_with_node.end_node is not node else rod_with_node.start_node
+                    other_nodes.append(other_node)
+                if len(other_nodes) > 2:
+                    coordinates_of_nodes = []
+                    for other_node in other_nodes:
+                        coordinates_of_nodes.append((other_node.x, other_node.y))
+                    condition = are_collinear_nodes(points=coordinates_of_nodes)
+                    if not condition:
+                        nodes_for_calculating.append(node)
+                    if len(other_nodes) == 3 and condition:
+                        nodes_with_collinear_rodes.append(node)
+
+        while True:
+            changed = False
+            for node in nodes_for_calculating:
+                rods_with_node = []
+                for rod in self.rods:
+                    if node is rod.start_node or node is rod.end_node:
+                        rods_with_node.append(rod)
+                changing_in_node = self.calculate_N_in_node(node=node, rods_with_node=rods_with_node)
+                if changing_in_node:
+                    changed = True
+            for node in nodes_with_collinear_rodes:
+                rods_with_node = []
+                for rod in self.rods:
+                    if node is rod.start_node or node is rod.end_node:
+                        rods_with_node.append(rod)
+                changing_in_node = self.replace_N_from_collinear_rode(node=node, rods_with_node=rods_with_node)
+                if changing_in_node:
+                    changed = True
+            if not changed:
+                break
+
+        for rod in rods:
+            if not rod.diagram_N:
+                print(f'Эпюра N на стержне {rod} не расчитана')
+
+    def set_reactions_from_diagrams(self):
+        for rod in self.rods:
+            if not rod.diagram_M or not rod.diagram_Q or not rod.diagram_N:
+                raise Exception('Рама не решена')
+        finded_reactions = []
+        for reaction in self.reactions():
+            if reaction not in finded_reactions:
+                r_node = reaction.node
+                r_rod = None
+                for rod in self.rods:
+                    if rod.start_node == r_node or rod.end_node == r_node:
+                        if not r_rod:
+                            r_rod = rod
+                        else:
+                            raise Exception('К опоре может подходить только 1 стержень')
+                if not r_rod:
+                    raise Exception('К опоре не подходит ни один стержень')
+
+                if isinstance(reaction, Momentum):
+                    if r_node == r_rod.start_node:
+                        value = abs(r_rod.diagram_M[0])
+                        if r_rod.diagram_M[0] >= 0:
+                            rotation = False
+                        else:
+                            rotation = True
+                    elif r_node == r_rod.end_node:
+                        value = abs(r_rod.diagram_M[-1])
+                        if r_rod.diagram_M[0] >= 0:
+                            rotation = True
+                        else:
+                            rotation = False
+                    reaction.value = value
+                    reaction.rotation = rotation
+                    finded_reactions.append(reaction)
+                elif isinstance(reaction, Force):
+                    if r_node == r_rod.start_node:
+                        if r_rod.dy() == 0:
+                            n = r_rod.diagram_N[0]
+                            if n >= 0:
+                                n_rotation = 180
+                            else:
+                                n_rotation = 0
+                            q = r_rod.diagram_Q[0]
+                            if q >= 0:
+                                q_rotation = 90
+                            else:
+                                q_rotation = 270
+
+                            if reaction.rotation in [0, 180]:
+                                reaction.rotation = n_rotation
+                                reaction.value = abs(n)
+                            elif reaction.rotation in [90, 270]:
+                                reaction.rotation = q_rotation
+                                reaction.value = abs(q)
+                            finded_reactions.append(reaction)
+                        elif r_rod.dx() == 0:
+                            n = r_rod.diagram_N[0]
+                            if n >= 0:
+                                n_rotation = 270
+                            else:
+                                n_rotation = 90
+                            q = r_rod.diagram_Q[0]
+                            if q >= 0:
+                                q_rotation = 180
+                            else:
+                                q_rotation = 0
+
+                            if reaction.rotation in [90, 270]:
+                                reaction.rotation = n_rotation
+                                reaction.value = abs(n)
+                            elif reaction.rotation in [0, 180]:
+                                reaction.rotation = q_rotation
+                                reaction.value = abs(q)
+                            finded_reactions.append(reaction)
+                    if r_node == r_rod.end_node:
+                        if r_rod.dy() == 0:
+                            n = r_rod.diagram_N[-1]
+                            if n >= 0:
+                                n_rotation = 0
+                            else:
+                                n_rotation = 180
+                            q = r_rod.diagram_Q[-1]
+                            if q >= 0:
+                                q_rotation = 270
+                            else:
+                                q_rotation = 90
+
+                            if reaction.rotation in [0, 180]:
+                                reaction.rotation = n_rotation
+                                reaction.value = abs(n)
+                            elif reaction.rotation in [90, 270]:
+                                reaction.rotation = q_rotation
+                                reaction.value = abs(q)
+                            finded_reactions.append(reaction)
+                        elif r_rod.dx() == 0:
+                            n = r_rod.diagram_N[-1]
+                            if n >= 0:
+                                n_rotation = 90
+                            else:
+                                n_rotation = 270
+                            q = r_rod.diagram_Q[-1]
+                            if q >= 0:
+                                q_rotation = 0
+                            else:
+                                q_rotation = 180
+
+                            if reaction.rotation in [90, 270]:
+                                reaction.rotation = n_rotation
+                                reaction.value = abs(n)
+                            elif reaction.rotation in [0, 180]:
+                                reaction.rotation = q_rotation
+                                reaction.value = abs(q)
+                            finded_reactions.append(reaction)
+        self.finded_reactions = finded_reactions
+
+

@@ -484,7 +484,7 @@ class Frame:
             return True
         return False
 
-    def calculate_diagram_N(self):
+    def calculate_diagram_N(self) -> List[Node]:
         rods = self.rods
         for rod in rods:
             if not rod.diagram_Q:
@@ -537,6 +537,7 @@ class Frame:
         for rod in rods:
             if not rod.diagram_N:
                 print(f'Эпюра N на стержне {rod} не расчитана')
+        return nodes_for_calculating
 
     def set_reactions_from_diagrams(self):
         for rod in self.rods:

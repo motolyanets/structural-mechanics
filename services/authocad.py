@@ -290,20 +290,85 @@ def draw_node_with_inner_loads(frame: Frame, node_name:str, msp, n_base_point: V
                                      'rotation': angle_deg,
                                  })
                 text = f'{round_up(abs(m), 3)}'
-                # print(direction)
-                # print(direction_normalized)
                 if direction_normalized == Vec2(1, 0):
-                    offset = direction_normalized * 0.5
+                    offset = Vec2(0, 0.4)
                 elif direction_normalized == Vec2(0, 1):
-                    offset = direction_normalized * 0.5
+                    offset = Vec2(0.4, 0.2)
                 elif direction_normalized == Vec2(-1, 0):
-                    offset = direction_normalized * 1.2
+                    offset = Vec2(-0.6, -0.6)
                 elif direction_normalized == Vec2(0, -1):
-                    offset = direction_normalized * 0.7
+                    offset = Vec2(0.4, -0.4)
                 else:
-                    offset = direction_normalized * 0.2
+                    offset = Vec2(0.1, -0.1)
                 placement = end_point + n_base_point + offset
                 msp.add_text(text=text, height=0.2, dxfattribs={"layer": "Loads", "color": 1}).set_placement(placement)
+        if is_drawing_q:
+            if rod_with_node.diagram_Q:
+                if node == rod_with_node.start_node:
+                    q = rod_with_node.diagram_Q[0]
+                elif node == rod_with_node.end_node:
+                    q = rod_with_node.diagram_Q[-1]
+
+                text = f'{round_up(abs(q), 3)}'
+
+                if direction_normalized == Vec2(1, 0):
+                    offset = Vec2(0.5, -0.6)
+                elif direction_normalized == Vec2(0, 1):
+                    offset = Vec2(0.4, 0.6)
+                elif direction_normalized == Vec2(-1, 0):
+                    offset = Vec2(-0.9, 0.5)
+                elif direction_normalized == Vec2(0, -1):
+                    offset = Vec2(0.4, -0.8)
+                else:
+                    offset = direction_normalized * 0.7
+
+                if q >= 0:
+                    q_angle = angle_deg - 90
+                else:
+                    q_angle = angle_deg + 90
+
+                msp.add_blockref('сила Q', insert=end_point + n_base_point + direction_normalized * 0.7,
+                                 dxfattribs={
+                                     "layer": "Loads",
+                                     'rotation': q_angle,
+                                 })
+
+                placement = end_point + n_base_point + offset
+                msp.add_text(text=text, height=0.2, dxfattribs={"layer": "Loads", "color": 5}).set_placement(placement)
+        if is_drawing_n:
+            if rod_with_node.diagram_N:
+                if node == rod_with_node.start_node:
+                    n = rod_with_node.diagram_N[0]
+                elif node == rod_with_node.end_node:
+                    n = rod_with_node.diagram_N[-1]
+
+                text = f'{round_up(abs(n), 3)}'
+
+                if direction_normalized == Vec2(1, 0):
+                    offset = Vec2(1, 0.15)
+                elif direction_normalized == Vec2(0, 1):
+                    offset = Vec2(0.15, 1.2)
+                elif direction_normalized == Vec2(-1, 0):
+                    offset = Vec2(-1.55, -0.35)
+                elif direction_normalized == Vec2(0, -1):
+                    offset = Vec2(0.15, -1.3)
+                else:
+                    offset = direction_normalized * 1.2
+                if n >= 0:
+                    n_angle = angle_deg
+                else:
+                    if angle_deg in [0, 180]:
+                        n_angle = angle_deg - 180
+                    else:
+                        n_angle = -angle_deg
+                msp.add_blockref('сила N', insert=end_point + n_base_point + direction_normalized * 1.2,
+                                 dxfattribs={
+                                     "layer": "Loads",
+                                     'rotation': n_angle,
+                                 })
+
+                placement = end_point + n_base_point + offset
+                msp.add_text(text=text, height=0.2, dxfattribs={"layer": "Loads", "color": 3}).set_placement(placement)
     return msp, n_base_point
 
 

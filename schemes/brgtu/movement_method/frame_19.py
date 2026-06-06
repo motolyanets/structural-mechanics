@@ -75,7 +75,10 @@ def create_frame_19(params: dict):
 
     supports = [support1, support2, support3, support4]
 
-    return nodes, rods, supports, loads, symmetry
+    details = dict()
+    details['node_name_for_static_check'] = 'E'
+
+    return nodes, rods, supports, loads, symmetry, details
 
 
 def create_fm_primary_system_19(params: dict):
@@ -135,7 +138,10 @@ def create_fm_primary_system_19(params: dict):
     loads['p'] = loads_p
     supports = [support1, support2]
 
-    return nodes, rods, supports, loads
+    details = dict()
+    details['equation_of_static_determinacy'] = ' 3 · 5 - 10 = 5'
+
+    return nodes, rods, supports, loads, details
 
 
 def create_mm_primary_system_19(params: dict):
@@ -194,5 +200,8 @@ def create_mm_primary_system_19(params: dict):
 
     supports = [support1, support2, support3]
 
-    return nodes, rods, supports, loads
+    details = dict()
+    details['equation_of_static_determinacy'] = ' 4 + 3 = 7'
+
+    return nodes, rods, supports, loads, details
 

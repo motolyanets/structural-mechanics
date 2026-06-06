@@ -4,6 +4,7 @@ from typing import Dict, Any
 import ezdxf
 import numpy
 from ezdxf import zoom
+from ezdxf.acc.vector import Vec2
 
 from core.mechanics.frame import Frame
 from core.mechanics.load import Twist, Displacement, Force
@@ -192,17 +193,23 @@ class BRGTUMovementMethod(TaskPlugin):
         create_main_frame, new_mm_frame, new_fm_frame = get_circuit_functions(circuit_number)
 
         # Создаем главную раму и рисуем ее
-        fr_nodes, fr_rods, fr_supports, fr_loads, symmetry = create_main_frame(params)
+        fr_nodes, fr_rods, fr_supports, fr_loads, symmetry, main_details = create_main_frame(params)
+        _, _, _, _, mm_details = new_mm_frame(params)
+        _, _, _, _, fm_details = new_fm_frame(params)
         main_frame = Frame(fr_nodes, fr_rods, fr_supports, fr_loads, symmetry)
 
         for entity in layout:
             if entity.dxf.layer == "1.Главная рама" and entity.dxftype() == 'VIEWPORT':
                 if entity:
                     entity.dxf.view_center_point = (main_frame.geometrical_center()[0], main_frame.geometrical_center()[1], 0.0)
+            elif entity.dxf.layer == "мп_определение ССН":
+                entity.text += mm_details['equation_of_static_determinacy']
+            elif entity.dxf.layer == "мс_определение ССН":
+                entity.text += fm_details['equation_of_static_determinacy']
         main_frame, msp, base_point = draw_frame(frame=main_frame, base_point=base_point, msp=msp, drowing_stiffnes=True)
 
         # Отрисовываем основную систему МП
-        ps_mm_nodes, ps_mm_rods, ps_mm_supports, ps_mm_loads = new_mm_frame(params)
+        ps_mm_nodes, ps_mm_rods, ps_mm_supports, ps_mm_loads, _ = new_mm_frame(params)
 
         ed_diagrams = []
         for load in ps_mm_loads:
@@ -238,7 +245,7 @@ class BRGTUMovementMethod(TaskPlugin):
 
         for diagram in ed_diagrams_with_p:
             print(f'Расчет эпюры М{diagram} метода перемещений')
-            mm_nodes, mm_rods, mm_supports, mm_loads = new_mm_frame(params)
+            mm_nodes, mm_rods, mm_supports, mm_loads, _ = new_mm_frame(params)
             frame = FrameForMovementMethod(name=diagram, nodes=mm_nodes, rods=mm_rods, supports=mm_supports, loads=mm_loads[diagram])
             mm_frames.append(frame)
 
@@ -278,9 +285,9 @@ class BRGTUMovementMethod(TaskPlugin):
 
         # Преобразовываем рамы МП в МС, отрисовываем их в автокаде
         fm_frames = []
-        _, _, _, mm_loads = new_mm_frame(params)
+        _, _, _, mm_loads, _ = new_mm_frame(params)
         for i in ed_diagrams_with_p:
-            fm_nodes, fm_rods, fm_supports, fm_loads = new_fm_frame(params)
+            fm_nodes, fm_rods, fm_supports, fm_loads, _ = new_fm_frame(params)
 
             for mm_frame in mm_frames:
                 if mm_frame.name == i:
@@ -329,7 +336,7 @@ class BRGTUMovementMethod(TaskPlugin):
                     entity.text = calculating_diagram_reports[i]
 
         # Расчитываем эпюру Ms и отрисовываем ее
-        fm_nodes, fm_rods, fm_supports, fm_loads = new_fm_frame(params)
+        fm_nodes, fm_rods, fm_supports, fm_loads, _ = new_fm_frame(params)
         s_mm_frame = SolvableFrame(name='s', nodes=fm_nodes, rods=fm_rods, supports=m_fr.supports, loads=None)
         for rod in s_mm_frame.rods:
             rod.diagram_M = [0, 0]
@@ -391,7 +398,7 @@ class BRGTUMovementMethod(TaskPlugin):
 
         print('\n-------Столбцовая проверка-------')
         column_check = '\n\n'
-        fm_nodes, fm_rods, fm_supports, fm_loads = new_fm_frame(params)
+        fm_nodes, fm_rods, fm_supports, fm_loads, _ = new_fm_frame(params)
         p_fm_frame = SolvableFrame(name='fm_p', nodes=fm_nodes, rods=fm_rods, supports=fm_supports, loads=fm_loads['p']).classify_part()
         report = p_fm_frame.solve_frame()
         p_fm_frame.base_point = base_point
@@ -513,7 +520,7 @@ class BRGTUMovementMethod(TaskPlugin):
 
 
         print('-------"Эпюра Мок"-------')
-        fm_nodes, fm_rods, fm_supports, fm_loads = new_fm_frame(params)
+        fm_nodes, fm_rods, fm_supports, fm_loads, _ = new_fm_frame(params)
         ok_mm_frame = SolvableFrame(name='ok', nodes=fm_nodes, rods=fm_rods, supports=m_fr.supports, loads=fm_loads['p'])
         for rod in ok_mm_frame.rods:
             rod.diagram_M = [0, 0]
@@ -543,20 +550,11 @@ class BRGTUMovementMethod(TaskPlugin):
                                     rod.diagram_M[2] += rod1.diagram_M[2] * coef_z[f'z{i}']
                                 break
             print(f'{rod}.....{rod.diagram_M}')
-        # ok_mm_frame, msp, base_point = draw_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='M', msp=msp,
-        #                                           drowing_loads=False, accuracy=3)
-        #
-        # for entity in layout:
-        #     if entity.dxf.layer == 'мп_эпюра Мok' and entity.dxftype() == 'VIEWPORT':
-        #         if entity:
-        #             entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
-        #                                             ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1],
-        #                                             0.0)
 
 
         print('-------Деформационная проверка-------')
         deformation_check = '\n\n'
-        fm_nodes, fm_rods, fm_supports, fm_loads = new_fm_frame(params)
+        fm_nodes, fm_rods, fm_supports, fm_loads, _ = new_fm_frame(params)
         s_fm_frame = SolvableFrame(name='fm_s', nodes=fm_nodes, rods=fm_rods, supports=fm_supports, loads=fm_loads['s']).classify_part()
         report = s_fm_frame.solve_frame()
         s_fm_frame.base_point = base_point
@@ -612,61 +610,24 @@ class BRGTUMovementMethod(TaskPlugin):
             calculating_Q_report += report + '\n'
             i += 1
             print(f'{rod} ------ {rod.diagram_Q}')
-        # ok_mm_frame.base_point = base_point
-        # ok_mm_frame, msp, base_point = draw_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='Q', msp=msp,
-        #                                           drowing_loads=False, accuracy=2)
-        #
-        # for entity in layout:
-        #     if entity.dxf.layer == 'sf_Q' and entity.dxftype() == 'VIEWPORT':
-        #         if entity:
-        #             entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
-        #                                             ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1],
-        #                                             0.0)
-        #     elif entity.dxf.layer == 'Расчет эпюры Q':
-        #         entity.text = calculating_Q_report
+
         for entity in layout:
             if entity.dxf.layer == 'Расчет эпюры Q':
                 entity.text = calculating_Q_report
 
-        ok_mm_frame.calculate_diagram_N()
+        nodes_for_calculating = ok_mm_frame.calculate_diagram_N()
 
-
-
-        # zoom.extents(msp)
-        # doc.saveas(f'report.dxf')
-        #
-        # input('Проверьте файл report.dxf, подготовьтесь вводить значения эпюры N и опорные реакции, далее нажмите ENTER')
-        # doc = ezdxf.readfile('report.dxf')
-        # msp = doc.modelspace()
-        # layout = doc.layouts.get("Шаблон (метод перемещений)")
-        # print(f'\n')
-
-        # # чекист
-        # nn = [-4.09, 0, -7.21, -7.21, -7.21, 0, -6.74, -14.18, -1.13, -1.13]
-        # # мацукевич
-        # # nn = [-20.2, -18.66, -18.66, 0, 0.21, 0.21, -14.85]
-        # # демон
-        # # nn = [3.37, 0, 0, 13.29, 0, 13, 0, 3.37]
-        # print('-------"Эпюра N"-------')
-        # i = 0
-        # for rod in ok_mm_frame.rods:
-        #     # print(rod)
-        #     # N1 = float(input('Введите N1:'))
-        #     N1 = nn[i]
-        #     rod.diagram_N = [N1, N1]
-        #     i += 1
-
-        # ok_mm_frame.base_point = base_point
-        # ok_mm_frame, msp, base_point = draw_frame(frame=ok_mm_frame, base_point=base_point, diagram_name='N', msp=msp,
-        #                                           drowing_loads=False, accuracy=2)
-        #
-        # for entity in layout:
-        #     if entity.dxf.layer == 'sf_N' and entity.dxftype() == 'VIEWPORT':
-        #         if entity:
-        #             entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
-        #                                             ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1],
-        #                                             0.0)
-
+        ok_mm_frame.base_point = base_point
+        n_base_point = None
+        for node_for_calculating in nodes_for_calculating:
+            msp, n_base_point = draw_node_with_inner_loads(frame=ok_mm_frame, node_name=node_for_calculating.name,
+                                                           n_base_point=n_base_point, msp=msp)
+        for entity in layout:
+            if entity.dxf.layer == 'sf_N вырезание узлов' and entity.dxftype() == 'VIEWPORT':
+                if entity:
+                    entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
+                                                    ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1] - 20,
+                                                    0.0)
 
         if symmetry:
             symmetric_pare_of_rods = main_frame.get_symmetric_pare_of_rods()
@@ -731,28 +692,15 @@ class BRGTUMovementMethod(TaskPlugin):
                                                     main_frame.base_point[1] + main_frame.geometrical_center()[1],
                                                     0.0)
 
-
-
-
-        # # чекист
-        # r = [-5.66, 4.09, -4.69, -0.66, -6.74, -2.28, -1.13, 6.18, -10.53]
-        # # мацукевич
-        # # r = [1.64, 20.2, 2.19, -1.64, 20.2, -2.19]
-        # # демон
-        # # r = [-3.37, 11.84, -25.49, 0.8, 3.37, -0.51, 1.64, -6.13]
-        # i = 0
-        # for reaction in main_frame.reactions():
-        #     # print(reaction)
-        #     # v = float(input('Введите значение реакции:'))
-        #     # reaction.value = v
-        #     reaction.value = r[i]
-        #     main_frame.finded_reactions.append(reaction)
-        #     i += 1
-
         main_frame.set_reactions_from_diagrams()
 
         for reaction in main_frame.finded_reactions:
             print(reaction)
+
+
+
+
+
 
         print('-------Статическая проверка-------')
         main_frame, msp, base_point = draw_frame(frame=main_frame, base_point=base_point, msp=msp)
@@ -766,7 +714,7 @@ class BRGTUMovementMethod(TaskPlugin):
 
         static_check = '\n\n'
         # node_name = str(input("\nВведите имя, относительно которого хотите составить уравнение моментов: "))
-        node_name = 'E'
+        node_name = main_details['node_name_for_static_check']
         for node in main_frame.nodes:
             if node.name == node_name:
                 node_for_checking = node
@@ -814,4 +762,3 @@ class BRGTUMovementMethod(TaskPlugin):
         zoom.extents(msp)
         # doc.save()
         doc.saveas(f'report.dxf')
-

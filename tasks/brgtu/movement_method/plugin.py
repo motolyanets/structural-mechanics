@@ -11,7 +11,6 @@ from core.mechanics.load import Twist, Displacement, Force
 from core.mechanics.rod import Rod
 from core.mechanics.solver import FrameForMovementMethod, SolvableFrame, multiply_M_frames_by_Simpson
 from services.authocad import draw_frame, draw_node_with_inner_loads, draw_displacement_finding
-from services.plotting import export_rectangles_to_single_pdf
 from services.services import round_up, is_subsegment_2d, relative_error_percent
 from tasks.base import TaskPlugin
 from tasks.brgtu.movement_method.loader import MovementMethodLoader
@@ -762,8 +761,3 @@ class BRGTUMovementMethod(TaskPlugin):
 
         zoom.extents(msp)
         doc.saveas(f'report.dxf')
-
-        input(f'Файл report.dxf, сохранен. Проверьте оформление и нажмите ENTER для печати в pdf')
-        doc = ezdxf.readfile('report.dxf')
-        export_rectangles_to_single_pdf(doc=doc, layout_name='Шаблон (метод перемещений)', output_pdf=f'{cipher} МП.pdf')
-

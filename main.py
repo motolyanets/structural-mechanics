@@ -26,9 +26,14 @@ def main():
             "excel_path": Path("data/brgtu/force_method.xlsx")
         },
         "3": {
-            "name": "Метод перемещений",
+            "name": "Метод перемещений (Задание 4)",
             "class": BRGTUMovementMethod,
-            "excel_path": Path("data/brgtu/movement_method.xlsx")
+            "excel_path": Path("data/brgtu/movement_method_4.xlsx")
+        },
+        "4": {
+            "name": "Метод перемещений (Задача 8)",
+            "class": BRGTUMovementMethod,
+            "excel_path": Path("data/brgtu/movement_method_8.xlsx")
         },
     }
 

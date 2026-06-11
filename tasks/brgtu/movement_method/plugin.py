@@ -4,24 +4,25 @@ from typing import Dict, Any
 import ezdxf
 import numpy
 from ezdxf import zoom
-from ezdxf.acc.vector import Vec2
 
 from core.mechanics.frame import Frame
 from core.mechanics.load import Twist, Displacement, Force
-from core.mechanics.rod import Rod
 from core.mechanics.solver import FrameForMovementMethod, SolvableFrame, multiply_M_frames_by_Simpson
 from services.authocad import draw_frame, draw_node_with_inner_loads, draw_displacement_finding
 from services.services import round_up, is_subsegment_2d, relative_error_percent
 from tasks.base import TaskPlugin
-from tasks.brgtu.movement_method.loader import MovementMethodLoader
 
 
 class BRGTUMovementMethod(TaskPlugin):
-    task_id = "movement_method"
+    task_id = "movement_method_4"
     task_name = "Метод перемещений"
     university = "brgtu"
 
     def _init_loader(self):
+        if self.excel_path.parts[-1] == 'movement_method_8.xlsx':
+            from tasks.brgtu.movement_method.loader_8 import MovementMethodLoader
+        elif self.excel_path.parts[-1] == 'movement_method_4.xlsx':
+            from tasks.brgtu.movement_method.loader_4 import MovementMethodLoader
         self.loader = MovementMethodLoader(self.excel_path)
 
     def get_available_schemes(self) -> list:
@@ -35,26 +36,42 @@ class BRGTUMovementMethod(TaskPlugin):
             # {"scheme_id": 29, "name": "Схема 29"},
         ]
 
+    def get_task_condition_text(self, cipher: str, params: dict) -> str:
+        if self.excel_path.parts[-1] == 'movement_method_4.xlsx':
+            task_condition_text = (f'{cipher}\n'
+                                   f'Схема - {params["circuit_number"]}       Нагрузка - {params['load_index']}\n'
+                                   f"l\\H0.5x;1\\H2.0x;={params['l1']}м          l\\H0.5x;2\\H2.0x;={params['l2']}м\n"
+                                   f"m = {params['m']}кН·м\n"
+                                   f"P = {params['P']}кН\n"
+                                   f"h\\H0.5x;1\\H2.0x;={params['h1']}м          h\\H0.5x;2\\H2.0x;={params['h2']}м\n"
+                                   f"q = {params['q']}кН/м\n"
+                                   f"I2/I1 = {params['i2']}\n"
+                                   f"I3/I1 = {params['i3']}")
+        elif self.excel_path.parts[-1] == 'movement_method_8.xlsx':
+            task_condition_text = (f'{cipher}\n'
+                                   f'Схема - {str(params["circuit_number"])[1]}       Вариант - {str(params["circuit_number"])[0]}\n'
+                                   f"l\\H0.5x;1\\H2.0x;={params['l1']}м          l\\H0.5x;2\\H2.0x;={params['l2']}м\n"
+                                   f"h\\H0.5x;1\\H2.0x;={params['h1']}м          h\\H0.5x;2\\H2.0x;={params['h2']}м\n"
+                                   f"q = {params['q']}кН/м\n"
+                                   f"P = {params['P']}кН")
+        return task_condition_text
+
     def solve(self, cipher: str) -> Dict[str, Any]:
         params = self.loader.load_cipher(cipher)
         circuit_number = params["circuit_number"]
+        if self.excel_path.parts[-1] == 'movement_method_4.xlsx':
+            layout_name = "Шаблон (метод перемещений 4)"
+        elif self.excel_path.parts[-1] == 'movement_method_8.xlsx':
+            layout_name = "Шаблон (метод перемещений 8)"
 
         # Создаем новый DXF документ
         doc = ezdxf.readfile('Шаблон.dxf')
         msp = doc.modelspace()
         msp.delete_all_entities()
-        layout = doc.layouts.get("Шаблон (метод перемещений)")
+        layout = doc.layouts.get(layout_name)
         base_point = [0, 0]
 
-        task_condition_text = (f'{cipher}\n'
-                               f'Схема - {circuit_number}       Нагрузка - {params['load_index']}\n'
-                               f"l\\H0.5x;1\\H2.0x;={params['l1']}м          l\\H0.5x;2\\H2.0x;={params['l2']}м\n"
-                               f"m = {params['m']}кН·м\n"
-                               f"P = {params['P']}кН\n"
-                               f"h\\H0.5x;1\\H2.0x;={params['h1']}м          h\\H0.5x;2\\H2.0x;={params['h2']}м\n"
-                               f"q = {params['q']}кН/м\n"
-                               f"I2/I1 = {params['i2']}\n"
-                               f"I3/I1 = {params['i3']}")
+        task_condition_text = self.get_task_condition_text(cipher=cipher, params=params)
 
         for entity in layout:
             if entity.dxf.layer == "Условие задачи":
@@ -66,23 +83,18 @@ class BRGTUMovementMethod(TaskPlugin):
         print(f"Шифр: {cipher}")
         print(f"Схема: {circuit_number}")
         print(f"\nПараметры:")
-        print(f"  l1 = {params['l1']} м")
-        print(f"  l2 = {params['l2']} м")
-        print(f"  h1 = {params['h1']} м")
-        print(f"  h2 = {params['h2']} м")
-        print(f"  m = {params['m']} кН·м")
-        print(f"  P = {params['P']} кН")
-        print(f"  q = {params['q']} кН/м")
-        print(f"  I2 = {params['i2']}")
-        print(f"  I3 = {params['i3']}")
-        print(f"  load_index = {params['load_index']}")
+        for parameter in params:
+            print(f"  {parameter} = {params[parameter]}")
         print(f"{'=' * 60}")
 
         def get_circuit_functions(circuit_number):
-            try:
-                # Импортируем модуль динамически
-                module = importlib.import_module(f'schemes.brgtu.movement_method.frame_{circuit_number}')
+            # Импортируем модуль динамически
+            if self.excel_path.parts[-1] == 'movement_method_4.xlsx':
+                module = importlib.import_module(f'schemes.brgtu.movement_method_4.frame_{circuit_number}')
+            elif self.excel_path.parts[-1] == 'movement_method_8.xlsx':
+                module = importlib.import_module(f'schemes.brgtu.movement_method_8.frame_{circuit_number}')
 
+            try:
                 # Получаем функции из модуля
                 create_main_frame = getattr(module, f'create_frame_{circuit_number}')
                 new_mm_frame = getattr(module, f'create_mm_primary_system_{circuit_number}')

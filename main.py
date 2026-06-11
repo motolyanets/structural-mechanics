@@ -42,7 +42,7 @@ def main():
         print(f"  {key}. {task['name']}")
 
     # choice = input("\nВыберите задачу: ").strip()
-    choice = "3"
+    choice = "4"
 
     if choice not in tasks:
         print("❌ Неверный выбор")

@@ -8,6 +8,7 @@ from ezdxf import zoom
 from core.mechanics.frame import Frame
 from core.mechanics.load import Twist, Displacement, Force
 from core.mechanics.solver import FrameForMovementMethod, SolvableFrame, multiply_M_frames_by_Simpson
+from schemes.brgtu.composite_frame.base_composit_frame import CompositeFrame
 from services.authocad import draw_frame, draw_node_with_inner_loads, draw_displacement_finding
 from services.services import round_up, is_subsegment_2d, relative_error_percent
 from tasks.base import TaskPlugin
@@ -411,8 +412,41 @@ class BRGTUMovementMethod(TaskPlugin):
         print('\n-------Столбцовая проверка-------')
         column_check = '\n\n'
         fm_nodes, fm_rods, fm_supports, fm_loads, _ = new_fm_frame(params)
-        p_fm_frame = SolvableFrame(name='fm_p', nodes=fm_nodes, rods=fm_rods, supports=fm_supports, loads=fm_loads['p']).classify_part()
-        report = p_fm_frame.solve_frame()
+        if 'splitted_frames_order' in fm_details:
+            report = ''
+            p_fm_frame = CompositeFrame(name='fm_p', nodes=fm_nodes, rods=fm_rods, supports=fm_supports, loads=fm_loads['p'],
+                                        splitted_frames_order=fm_details['splitted_frames_order'])
+            parts_of_frame = p_fm_frame.split_frame()
+            inner_reactions = []
+            p_fm_frame.finded_reactions = []
+            for i, part in enumerate(parts_of_frame):
+                # if i > 1:
+                #     break
+
+                if inner_reactions:
+                    for reaction in inner_reactions:
+                        if reaction.node.name[0] in [node.name for node in part.nodes]:
+                            new_reaction = Force(
+                                name=reaction.name,
+                                node=reaction.node,
+                                rotation=reaction.rotation + 180,
+                                value=reaction.value
+                            )
+                            part.loads.append(new_reaction)
+
+                report += part.solve_frame()
+
+                for reaction in part.finded_reactions:
+                    if reaction not in inner_reactions:
+                        inner_reactions.append(reaction)
+
+                for finded_reaction in part.finded_reactions:
+                    if finded_reaction.name in [r.name for r in p_fm_frame.reactions()]:
+                        p_fm_frame.finded_reactions.append(finded_reaction)
+
+        else:
+            p_fm_frame = SolvableFrame(name='fm_p', nodes=fm_nodes, rods=fm_rods, supports=fm_supports, loads=fm_loads['p']).classify_part()
+            report = p_fm_frame.solve_frame()
         p_fm_frame.base_point = base_point
         p_fm_frame.create_sections_for_diagrams()
         finding_moments_report = ''
@@ -533,7 +567,7 @@ class BRGTUMovementMethod(TaskPlugin):
 
         print('-------"Эпюра Мок"-------')
         fm_nodes, fm_rods, fm_supports, fm_loads, _ = new_fm_frame(params)
-        ok_mm_frame = SolvableFrame(name='ok', nodes=fm_nodes, rods=fm_rods, supports=m_fr.supports, loads=fm_loads['p'])
+        ok_mm_frame = SolvableFrame(name='ok', nodes=fm_nodes, rods=fm_rods, supports=fr_supports, loads=fm_loads['p'])
         for rod in ok_mm_frame.rods:
             rod.diagram_M = [0, 0]
             for i in ed_diagrams_with_p:
@@ -567,8 +601,42 @@ class BRGTUMovementMethod(TaskPlugin):
         print('-------Деформационная проверка-------')
         deformation_check = '\n\n'
         fm_nodes, fm_rods, fm_supports, fm_loads, _ = new_fm_frame(params)
-        s_fm_frame = SolvableFrame(name='fm_s', nodes=fm_nodes, rods=fm_rods, supports=fm_supports, loads=fm_loads['s']).classify_part()
-        report = s_fm_frame.solve_frame()
+
+
+        if 'splitted_frames_order' in fm_details:
+            report = ''
+            s_fm_frame = CompositeFrame(name='fm_s', nodes=fm_nodes, rods=fm_rods, supports=fm_supports, loads=fm_loads['s'],
+                                        splitted_frames_order=fm_details['splitted_frames_order'])
+            parts_of_frame = s_fm_frame.split_frame()
+            inner_reactions = []
+            s_fm_frame.finded_reactions = []
+            for i, part in enumerate(parts_of_frame):
+                if inner_reactions:
+                    for reaction in inner_reactions:
+                        if reaction.node.name[0] in [node.name for node in part.nodes]:
+                            new_reaction = Force(
+                                name=reaction.name,
+                                node=reaction.node,
+                                rotation=reaction.rotation + 180,
+                                value=reaction.value
+                            )
+                            part.loads.append(new_reaction)
+
+                report += part.solve_frame()
+
+                for reaction in part.finded_reactions:
+                    if reaction not in inner_reactions:
+                        inner_reactions.append(reaction)
+
+                for finded_reaction in part.finded_reactions:
+                    if finded_reaction.name in [r.name for r in s_fm_frame.reactions()]:
+                        s_fm_frame.finded_reactions.append(finded_reaction)
+
+        else:
+            s_fm_frame = SolvableFrame(name='fm_s', nodes=fm_nodes, rods=fm_rods, supports=fm_supports,
+                                       loads=fm_loads['s']).classify_part()
+            report = s_fm_frame.solve_frame()
+
         s_fm_frame.base_point = base_point
         s_fm_frame.create_sections_for_diagrams()
         finding_moments_report = ''
@@ -627,7 +695,9 @@ class BRGTUMovementMethod(TaskPlugin):
             if entity.dxf.layer == 'Расчет эпюры Q':
                 entity.text = calculating_Q_report
 
+
         nodes_for_calculating = ok_mm_frame.calculate_diagram_N()
+
 
         ok_mm_frame.base_point = base_point
         n_base_point = None
@@ -663,7 +733,7 @@ class BRGTUMovementMethod(TaskPlugin):
                                     rod.diagram_N = ok_rod.diagram_N
         else:
             for main_rod in main_frame.rods:
-                for ok_rod in ok_mm_frame:
+                for ok_rod in ok_mm_frame.rods:
                     if not ok_rod.diagram_M or not ok_rod.diagram_Q or not ok_rod.diagram_N:
                         raise Exception(f'Стержень {ok_rod} не расчитан')
                     else:

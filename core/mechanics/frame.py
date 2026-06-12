@@ -36,6 +36,13 @@ class Frame:
                 reactions.append(Momentum(name=f'M{support.node.name}', node=support.node, rotation=True))
         return reactions
 
+    def get_rods_with_node(self, node_name: str) -> List[Rod]:
+        rods_with_node = []
+        for rod in self.rods:
+            if node_name in [rod.start_node.name, rod.end_node.name]:
+                rods_with_node.append(rod)
+        return rods_with_node
+
     def get_symmetric_pare_of_rods(self):
         symmetric_pare_of_rods = []
         if not self.symmetry:
@@ -489,6 +496,18 @@ class Frame:
         for rod in rods:
             if not rod.diagram_Q:
                 raise Exception(f'В сержне {rod} не расчитана эпюра Q')
+
+        supports = self.supports
+        for support in supports:
+            if support.number_of_reactions == 1:
+                node = support.node
+                rods_with_node = self.get_rods_with_node(node_name=node.name)
+                if len(rods_with_node) == 1:
+                    the_only_rod = rods_with_node[0]
+                    if support.rotation in [90, 270] and the_only_rod.dy() == 0:
+                        the_only_rod.diagram_N = [0, 0]
+                    elif support.rotation in [0, 180] and the_only_rod.dx() == 0:
+                        the_only_rod.diagram_N = [0, 0]
 
         nodes_for_calculating = []
         nodes_with_collinear_rodes = []

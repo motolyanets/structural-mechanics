@@ -390,7 +390,7 @@ class RodForMovementMethod:
 
                     m_start = sign * 6 * linear_stiffness / length
                     m_end = -sign * 6 * linear_stiffness / length
-                    Q = 12 * linear_stiffness / length ** 2
+                    Q = sign * 12 * linear_stiffness / length ** 2
                     self.diagram_Q = [Q, Q]
                     self.diagram_M = [[m_start, m_end]]
                     text = f'M{self.name} = 6 · i / l = {abs(round_up(m_start, 3))}\n'
@@ -840,6 +840,77 @@ class RodForMovementMethod:
                     text = f'M{self.name} = m · b / l = {abs(round_up(m_start, 3))}\n'
                     text += f'M{self.name} = m · a / l = {abs(round_up(m_2, 3))}\n'
                     report += text
+
+            elif self.start_support_type == 'Шарнирный' and self.end_support_type == 'Шарнирный':
+                if len(self.loads) == 1 and isinstance(self.loads[0], Twist):
+                    self.diagram_M = [[0, 0]]
+                    self.diagram_Q = [0, 0]
+                elif len(self.loads) == 1 and isinstance(self.loads[0], Displacement):
+                    self.diagram_M = [[0, 0]]
+                    self.diagram_Q = [0, 0]
+                elif len(self.loads) == 1 and isinstance(self.loads[0], DistributedForce):
+                    load = self.loads[0]
+                    if load.rotation in [0, 270]:
+                        sign = 1
+                    elif load.rotation in [90, 180]:
+                        sign = -1
+                    m_start = 0
+                    m_midl = -sign * load.value * length ** 2 / 8
+                    m_end = 0
+                    Q_start = sign * load.value * length / 2
+                    Q_end = -sign * load.value * length / 2
+                    self.diagram_M = [[m_start, m_midl, m_end]]
+                    self.diagram_Q = [Q_start, Q_end]
+                    text = f'M{self.name} = q · l² / 8 = {abs(round_up(m_midl,3))}\n'
+                    report += text
+                elif len(self.loads) == 1 and isinstance(self.loads[0], Force):
+                    load = self.loads[0]
+                    if load.rotation in [0, 270]:
+                        sign = 1
+                    elif load.rotation in [90, 180]:
+                        sign = -1
+
+                    a = distance_between_two_points(point_1=(self.start_node.x, self.start_node.y), point_2=(load.node.x, load.node.y))
+                    if a < length:
+                        b = length - a
+                    else:
+                        raise Exception('Расстояние от начала стержня не может быть больше длины стержня')
+                    if a != 0 and b != 0:
+                        m_start = 0
+                        m_p = -sign * (load.value * a * b) / length
+                        m_end = 0
+                        Q_start = sign * load.value * b / length
+                        Q_end = -sign * load.value * a / length
+                        self.diagram_Q = [Q_start, Q_end]
+                        self.diagram_M = [[m_start, m_p], [m_p, m_end]]
+                        text = f'M{self.name} = P · a · b / l = {abs(round_up(m_p, 3))}\n'
+                        report += text
+                elif len(self.loads) == 1 and isinstance(self.loads[0], Momentum):
+                    load = self.loads[0]
+                    if load.rotation:
+                        sign = 1
+                    else:
+                        sign = -1
+
+                    a = distance_between_two_points(point_1=(self.start_node.x, self.start_node.y),
+                                                    point_2=(load.node.x, load.node.y))
+                    if a < length:
+                        b = length - a
+                    else:
+                        raise Exception('Расстояние от начала стержня не может быть больше длины стержня')
+
+                    m_start = 0
+                    m_1 = sign * load.value * a / length
+                    m_2 = -sign * load.value * b / length
+                    m_end = 0
+                    Q = -sign * load.value / length
+                    self.diagram_Q = [Q, Q]
+                    # self.diagram_Q = [0, 0]
+                    self.diagram_M = [[m_start, m_1], [m_2, m_end]]
+                    text = f'M{self.name} = m · a / l = {abs(round_up(m_1, 3))}\n'
+                    text += f'M{self.name} = m · b / l = {abs(round_up(m_2, 3))}\n'
+                    report += text
+
 
 
 

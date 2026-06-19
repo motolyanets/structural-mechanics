@@ -42,7 +42,7 @@ def main():
         print(f"  {key}. {task['name']}")
 
     # choice = input("\nВыберите задачу: ").strip()
-    choice = "4"
+    choice = "3"
 
     if choice not in tasks:
         print("❌ Неверный выбор")
@@ -58,7 +58,8 @@ def main():
     # cipher = "0762".strip()
     # cipher = "3716".strip()
     # cipher = "6279".strip()
-    cipher = "5938".strip()
+    # cipher = "5938".strip()
+    cipher = "2935".strip()
 
     try:
         plugin = task_info["class"](task_info["excel_path"])

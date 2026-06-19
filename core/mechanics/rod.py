@@ -74,7 +74,7 @@ class Rod:
         dx = self.dx()
         dy = self.dy()
         length = math.sqrt(dx ** 2 + dy ** 2)
-        return round_up(length)
+        return length
 
     def is_node_on_rod(self, node: Node):
         if node.name != self.start_node.name and node.name != self.end_node.name:

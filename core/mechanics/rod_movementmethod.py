@@ -319,7 +319,7 @@ class RodForMovementMethod:
                     Q_start = sign * force_1.value * (1 - 1.5 * (a / length) * (1 - a / length))
                     Q_end = -sign * force_1.value * (1 + 1.5 * (a / length) * (1 - a / length))
                     self.diagram_Q = [Q_start, Q_end]
-                    self.diagram_M = [m[_start, m_1], [m_1, m_2], [m_2, m_end]]
+                    self.diagram_M = [[m_start, m_1], [m_1, m_2], [m_2, m_end]]
                     text = f'M{self.name} = 1.5 · P · a · (1 - a / l) = {abs(round_up(m_end, 3))}\n'
                     text += f'M{self.name} = P · a · (1.5 · a / l · (2 - a / l) - 0.5) = {abs(round_up(m_2, 3))}\n'
                     text += f'M{self.name} = P · a · (1 - 1.5 · (a / l) · (1 - a / l)) = {abs(round_up(m_1, 3))}\n'
@@ -916,6 +916,7 @@ class RodForMovementMethod:
 
         else:
             self.diagram_M = [[0, 0]]
+            self.diagram_Q = [0, 0]
         if self.diagram_M:
             return report
 

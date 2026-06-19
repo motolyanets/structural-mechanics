@@ -735,7 +735,11 @@ class BRGTUMovementMethod(TaskPlugin):
             for main_rod in main_frame.rods:
                 for ok_rod in ok_mm_frame.rods:
                     if not ok_rod.diagram_M or not ok_rod.diagram_Q or not ok_rod.diagram_N:
-                        raise Exception(f'Стержень {ok_rod} не расчитан')
+                        pass
+                        # raise Exception(f'Стержень {ok_rod} не расчитан')
+                        if not ok_rod.diagram_N:
+                            ok_rod.diagram_N = [0, 0]
+
                     else:
                         if main_rod.name == ok_rod.name:
                             main_rod.diagram_M = ok_rod.diagram_M

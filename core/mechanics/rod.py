@@ -74,7 +74,7 @@ class Rod:
         dx = self.dx()
         dy = self.dy()
         length = math.sqrt(dx ** 2 + dy ** 2)
-        return length
+        return round_up(length, 4)
 
     def is_node_on_rod(self, node: Node):
         if node.name != self.start_node.name and node.name != self.end_node.name:
@@ -227,7 +227,7 @@ class Rod:
             sorted_sections = sorted(self.sections, key=lambda x: x.x)
         return sorted_sections
 
-    def calculate_diagram_m(self, diagram_name: str):
+    def calculate_diagram_m(self, diagram_name: str = 'm'):
         diagram = []
 
         finding_moments = []

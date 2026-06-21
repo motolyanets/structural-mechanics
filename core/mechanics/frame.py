@@ -345,6 +345,7 @@ class Frame:
                 unsoleved_rods.append(rod)
         if len(unsoleved_rods) > 2 or len(unsoleved_rods) == 0:
             return False
+
         elif len(unsoleved_rods) == 2:
             if unsoleved_rods[0].get_angle_deg() == unsoleved_rods[1].get_angle_deg():
                 return False
@@ -352,6 +353,7 @@ class Frame:
         known_intentions = []
         for rod in rods_with_node:
             if rod.dx() != 0 and rod.dy() != 0:
+
                 raise Exception('Расчет эпюры N для наклонных стержней не реализован')
             if rod.diagram_N:
                 if rod.dx() == 0:
@@ -501,13 +503,75 @@ class Frame:
         for support in supports:
             if support.number_of_reactions == 1:
                 node = support.node
+                forces_in_node = []
+                for load in self.loads:
+                    if isinstance(load, Force) and load.node.name == node.name:
+                        forces_in_node.append(load)
                 rods_with_node = self.get_rods_with_node(node_name=node.name)
                 if len(rods_with_node) == 1:
                     the_only_rod = rods_with_node[0]
+                    n = 0
+                    if forces_in_node:
+                        for force in forces_in_node:
+                            if force.rotation in [0, 180] and the_only_rod.dy() == 0:
+                                if node.name == the_only_rod.end_node.name and force.rotation == 0:
+                                    n += force.value
+                                elif node.name == the_only_rod.end_node.name and force.rotation == 180:
+                                    n -= force.value
+                                elif node.name == the_only_rod.start_node.name and force.rotation == 180:
+                                    n += force.value
+                                elif node.name == the_only_rod.start_node.name and force.rotation == 0:
+                                    n -= force.value
+                            if force.rotation in [90, 270] and the_only_rod.dx() == 0:
+                                if node.name == the_only_rod.end_node.name and force.rotation == 90:
+                                    n += force.value
+                                elif node.name == the_only_rod.end_node.name and force.rotation == 270:
+                                    n -= force.value
+                                elif node.name == the_only_rod.start_node.name and force.rotation == 270:
+                                    n += force.value
+                                elif node.name == the_only_rod.start_node.name and force.rotation == 90:
+                                    n -= force.value
                     if support.rotation in [90, 270] and the_only_rod.dy() == 0:
-                        the_only_rod.diagram_N = [0, 0]
+                        the_only_rod.diagram_N = [n, n]
                     elif support.rotation in [0, 180] and the_only_rod.dx() == 0:
-                        the_only_rod.diagram_N = [0, 0]
+                        the_only_rod.diagram_N = [n, n]
+
+        for node in self.nodes:
+            rodes_with_node = self.get_rods_with_node(node_name=node.name)
+            if len(rodes_with_node) == 1:
+                is_free_node = True
+                for support in self.supports:
+                    if support.node.name == node.name:
+                        is_free_node = False
+                if is_free_node:
+                    forces_in_node = []
+                    for load in self.loads:
+                        if isinstance(load, Force) and load.node.name == node.name:
+                            forces_in_node.append(load)
+                    the_only_rod = rodes_with_node[0]
+                    n = 0
+                    if forces_in_node:
+                        for force in forces_in_node:
+                            if force.rotation in [0, 180] and the_only_rod.dy() == 0:
+                                if node.name == the_only_rod.end_node.name and force.rotation == 0:
+                                    n += force.value
+                                elif node.name == the_only_rod.end_node.name and force.rotation == 180:
+                                    n -= force.value
+                                elif node.name == the_only_rod.start_node.name and force.rotation == 180:
+                                    n += force.value
+                                elif node.name == the_only_rod.start_node.name and force.rotation == 0:
+                                    n -= force.value
+                            if force.rotation in [90, 270] and the_only_rod.dx() == 0:
+                                if node.name == the_only_rod.end_node.name and force.rotation == 90:
+                                    n += force.value
+                                elif node.name == the_only_rod.end_node.name and force.rotation == 270:
+                                    n -= force.value
+                                elif node.name == the_only_rod.start_node.name and force.rotation == 270:
+                                    n += force.value
+                                elif node.name == the_only_rod.start_node.name and force.rotation == 90:
+                                    n -= force.value
+                    the_only_rod.diagram_N = [n, n]
+
 
         nodes_for_calculating = []
         nodes_with_collinear_rodes = []
@@ -561,6 +625,7 @@ class Frame:
     def set_reactions_from_diagrams(self):
         for rod in self.rods:
             if not rod.diagram_M or not rod.diagram_Q or not rod.diagram_N:
+                pass
                 raise Exception('Рама не решена')
         finded_reactions = []
         for reaction in self.reactions():

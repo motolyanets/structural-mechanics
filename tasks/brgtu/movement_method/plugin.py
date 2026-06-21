@@ -180,7 +180,7 @@ class BRGTUMovementMethod(TaskPlugin):
                             fm_length = 0
                             for fm_rod in sorted_rods:
                                 fm_length += fm_rod.length()
-                            if mm_length != fm_length:
+                            if abs(mm_length - fm_length) > 0.00001:
                                 raise Exception('Длины стержней из рамы МП и рамы МС должны быть равны')
                             for i, fm_rod in enumerate(sorted_rods):
                                 if i == 0:
@@ -292,6 +292,10 @@ class BRGTUMovementMethod(TaskPlugin):
                 else:
                     if finded_coefficients[coefficient] != coefficients[c]:
                         raise Exception(f'{coefficient} = {finded_coefficients[coefficient]} ....{c} = {coefficients[c]}')
+                # if c == 'r3p':
+                #     finded_coefficients[c] -= 15
+
+
 
         # Нужно сделать логику для построения грузовой эпюры на свободном конце рамы
         print(finded_coefficients)
@@ -319,7 +323,8 @@ class BRGTUMovementMethod(TaskPlugin):
                     if mm_loads[mm_load][0].node.x == fm_node.x and mm_loads[mm_load][0].node.y == fm_node.y:
                         if isinstance(mm_loads[mm_load][0], Twist):
                             msp, n_base_point = draw_node_with_inner_loads(frame=fm_frame, node_name=fm_node.name,
-                                                                           n_base_point=n_base_point, msp=msp)
+                                                                           n_base_point=n_base_point, msp=msp,
+                                                                           is_drawing_q=False, is_drawing_n=False)
                             node_point = (fm_node.x + n_base_point[0], fm_node.y + n_base_point[1])
                             mm_loads[mm_load][0].draw(insert_point=node_point, msp=msp,
                                                       load_name=f'r{mm_load}{fm_frame.name}')
@@ -695,6 +700,8 @@ class BRGTUMovementMethod(TaskPlugin):
             if entity.dxf.layer == 'Расчет эпюры Q':
                 entity.text = calculating_Q_report
 
+        doc.saveas(f'report.dxf')
+
 
         nodes_for_calculating = ok_mm_frame.calculate_diagram_N()
 
@@ -703,7 +710,7 @@ class BRGTUMovementMethod(TaskPlugin):
         n_base_point = None
         for node_for_calculating in nodes_for_calculating:
             msp, n_base_point = draw_node_with_inner_loads(frame=ok_mm_frame, node_name=node_for_calculating.name,
-                                                           n_base_point=n_base_point, msp=msp)
+                                                           n_base_point=n_base_point, msp=msp, is_drawing_m=False)
         for entity in layout:
             if entity.dxf.layer == 'sf_N вырезание узлов' and entity.dxftype() == 'VIEWPORT':
                 if entity:
@@ -727,18 +734,23 @@ class BRGTUMovementMethod(TaskPlugin):
                                 if rod.name != ok_rod.name:
                                     if rod.dx() == 0:
                                         rod.diagram_M = [-x for x in ok_rod.diagram_M]
+                                        rod.diagram_Q = [-x for x in ok_rod.diagram_Q]
                                     else:
-                                        rod.diagram_M = sorted(ok_rod.diagram_M, reverse=True)
-                                    rod.diagram_Q = [-x for x in ok_rod.diagram_Q]
+                                        d_M = ok_rod.diagram_M.copy()
+                                        d_M.reverse()
+                                        rod.diagram_M = d_M
+                                        d_Q = [-x for x in ok_rod.diagram_Q]
+                                        d_Q.reverse()
+                                        rod.diagram_Q = d_Q
                                     rod.diagram_N = ok_rod.diagram_N
         else:
             for main_rod in main_frame.rods:
                 for ok_rod in ok_mm_frame.rods:
                     if not ok_rod.diagram_M or not ok_rod.diagram_Q or not ok_rod.diagram_N:
                         pass
-                        # raise Exception(f'Стержень {ok_rod} не расчитан')
-                        if not ok_rod.diagram_N:
-                            ok_rod.diagram_N = [0, 0]
+                        raise Exception(f'Стержень {ok_rod} не расчитан')
+                        # if not ok_rod.diagram_N:
+                        #     ok_rod.diagram_N = [0, 0]
 
                     else:
                         if main_rod.name == ok_rod.name:
@@ -766,8 +778,6 @@ class BRGTUMovementMethod(TaskPlugin):
                     entity.dxf.view_center_point = (main_frame.base_point[0] + main_frame.geometrical_center()[0],
                                                     main_frame.base_point[1] + main_frame.geometrical_center()[1],
                                                     0.0)
-
-
 
         main_frame, msp, base_point = draw_frame(frame=main_frame, base_point=base_point, diagram_name='N', msp=msp,
                                                   drowing_loads=False, accuracy=2)

@@ -146,7 +146,10 @@ def draw_frame(frame: Frame, base_point: List[float], msp, diagram_name: str = N
             draw_section(rod=rod, base_point=base_point, msp=msp)
         if diagram_name:
             max_value = frame.find_max_value_on_diagram(diagram_name=diagram_name)
-            scale = 2 / max_value
+            if max_value != 0:
+                scale = 2 / max_value
+            else:
+                scale = 1
             diagram = rod.__getattribute__(f'diagram_{diagram_name}')
             if diagram_name.startswith('M'):
                 draw_diagram_m(rod=rod, base_point=base_point, diagram=diagram, msp=msp, scale=scale, accuracy=accuracy)
@@ -232,7 +235,7 @@ def draw_node_with_inner_loads(frame: Frame, node_name:str, msp, n_base_point: V
     if not n_base_point:
         n_base_point = Vec2(frame.base_point[0], frame.base_point[1]) + Vec2(0, -20)
     else:
-        n_base_point = n_base_point + Vec2(0, -5)
+        n_base_point = n_base_point + Vec2(0, -10)
 
     node = None
     for frame_node in frame.nodes:

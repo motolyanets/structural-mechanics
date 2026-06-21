@@ -49,6 +49,7 @@ def multiply_rods_diagrams_Simpson(rod1: Rod, rod2: Rod, q: float | None = None)
     else:
         result = (length / (6 * stiffness)) * (
                 d1_start * d2_start + 4 * d1_center * d2_center + d1_end * d2_end + 4 * d1_center * q * length ** 2 / 8)
+                # d1_start * d2_start + 4 * d1_center * d2_center + d1_end * d2_end + 4 * d1_center * q * (7.5 / length) * length ** 2 / 8)
         if result:
             text = (
                 f'({length} / (6·{stiffness}·EI)) * ({d1_start_t}·{d2_start_t} + 4·{d1_center_t}·{d2_center_t} + '
@@ -324,19 +325,22 @@ class SolvableFrame(Frame):
             print('   - Простая рама')
             return SimpleFrame(
                 nodes=self.nodes, rods=self.rods, supports=self.supports,
-                loads=self.loads, finded_reactions=self.finded_reactions
+                loads=self.loads, finded_reactions=self.finded_reactions,
+                name=self.name
             )
         elif amount_of_reactions == 4 and amount_of_hinges == 0:
             print('   - Затяжка')
             return Tightening(
                 nodes=self.nodes, rods=self.rods, supports=self.supports,
-                loads=self.loads, finded_reactions=self.finded_reactions
+                loads=self.loads, finded_reactions=self.finded_reactions,
+                name=self.name
             )
         elif amount_of_reactions == 4 and amount_of_hinges == 1:
             print('   - Трехшарнирная рама')
             return ThreeHingedFrame(
                 nodes=self.nodes, rods=self.rods, supports=self.supports,
-                loads=self.loads, finded_reactions=self.finded_reactions
+                loads=self.loads, finded_reactions=self.finded_reactions,
+                name=self.name
             )
         else:
             raise Exception(f"Вид рамы не определен: reactions={amount_of_reactions}, hinges={amount_of_hinges}")
@@ -474,6 +478,8 @@ class ThreeHingedFrame(SolvableFrame, BaseFrame):
 
         traverse_from_hinge(rods_connected_to_hinge[0], left_nodes, left_rods)
         traverse_from_hinge(rods_connected_to_hinge[1], right_nodes, right_rods)
+        # traverse_from_hinge(rods_connected_to_hinge[1], left_nodes, left_rods)
+        # traverse_from_hinge(rods_connected_to_hinge[0], right_nodes, right_rods)
 
         left_nodes_list = [node for node in self.nodes if node in left_nodes]
         left_rods_list = [rod for rod in self.rods if rod in left_rods]

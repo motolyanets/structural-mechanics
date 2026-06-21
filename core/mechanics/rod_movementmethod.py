@@ -250,8 +250,8 @@ class RodForMovementMethod:
                     m_start = 0
                     m_midl = -sign * load.value * length ** 2 / 16
                     m_end = sign * load.value * length ** 2 / 8
-                    Q_start = -sign * 3 * load.value * length / 8
-                    Q_end = sign * 5 * load.value * length / 8
+                    Q_start = sign * 3 * load.value * length / 8
+                    Q_end = -sign * 5 * load.value * length / 8
                     self.diagram_M = [[m_start, m_midl, m_end]]
                     self.diagram_Q = [Q_start, Q_end]
                     text = f'M{self.name} = q · l² / 8 = {abs(round_up(m_end,3))}\n'
@@ -772,8 +772,10 @@ class RodForMovementMethod:
                     m_start = sign * 6 * linear_stiffness / length
                     m_end = -m_start
                     Q = sign * 12 * linear_stiffness / length ** 2
-                    self.diagram_M = [[m_start, m_end]]
-                    self.diagram_Q = [Q, Q]
+                    # self.diagram_M = [[m_start, m_end]]
+                    # self.diagram_Q = [Q, Q]
+                    self.diagram_M = [[0, 0]]
+                    self.diagram_Q = [0, 0]
                     text = f'M{self.name} = 6 · i / l = {abs(round_up(m_start, 3))}\n'
                     report += text
                 elif len(self.loads) == 1 and isinstance(self.loads[0], DistributedForce):

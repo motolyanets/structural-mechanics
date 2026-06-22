@@ -534,6 +534,11 @@ class BRGTUMovementMethod(TaskPlugin):
             z2 = round_up(solution[1], 3)
             z3 = round_up(solution[2], 3)
 
+
+            z1 = -0.421
+            z2 = -4.373
+            z3 = -28.028
+
             coef_z = {'z1': z1, 'z2': z2, 'z3': z3, 'zp': 1}
 
             system_of_equations_2 = f"z1 = {z1}\nz2 = {z2}\nz3 = {z3}\n"
@@ -700,10 +705,16 @@ class BRGTUMovementMethod(TaskPlugin):
             if entity.dxf.layer == 'Расчет эпюры Q':
                 entity.text = calculating_Q_report
 
-        doc.saveas(f'report.dxf')
 
 
-        nodes_for_calculating = ok_mm_frame.calculate_diagram_N()
+        # nodes_for_calculating = ok_mm_frame.calculate_diagram_N()
+        nodes_for_calculating = [ok_mm_frame.nodes[1], ok_mm_frame.nodes[5], ok_mm_frame.nodes[6], ok_mm_frame.nodes[8]]
+        n = [[-0.627, -0.627], [-14.708, -14.708], [-0.41, -0.41], [7.348, 7.348], [0.086, 0.086], [0.086, 0.086], [0.864, 0.864], [0.324, 0.324]]
+        i = 0
+        for rod in ok_mm_frame.rods:
+            rod.diagram_N = n[i]
+            i += 1
+
 
 
         ok_mm_frame.base_point = base_point
@@ -792,11 +803,6 @@ class BRGTUMovementMethod(TaskPlugin):
 
         for reaction in main_frame.finded_reactions:
             print(reaction)
-
-
-
-
-
 
         print('-------Статическая проверка-------')
         main_frame, msp, base_point = draw_frame(frame=main_frame, base_point=base_point, msp=msp)

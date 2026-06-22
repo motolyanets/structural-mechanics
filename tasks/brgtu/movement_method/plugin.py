@@ -397,6 +397,25 @@ class BRGTUMovementMethod(TaskPlugin):
             print(f'r11 + r12·2 + r13·2 + r22 + r23·2 + r33 = {r11}·i + 2·{r12}·i + 2·{r13}·i + {r22}·i + 2·{r23}·i + {r33}·i = {sum_delta}·i\n')
             E_uni_check, e_text_uni_check = relative_error_percent(delta_ss, sum_delta, tolerance_percent=3)
             universal_check += '\n' + uni_check_text + '\n' + e_text_uni_check + '\n' + 'Проверка выполняется'
+        elif len(ed_diagrams) == 4:
+            r11 = finded_coefficients['r11']
+            r12 = finded_coefficients['r21']
+            r13 = finded_coefficients['r31']
+            r14 = finded_coefficients['r41']
+            r22 = finded_coefficients['r22']
+            r24 = finded_coefficients['r42']
+            r23 = finded_coefficients['r32']
+            r33 = finded_coefficients['r33']
+            r34 = finded_coefficients['r43']
+            r44 = finded_coefficients['r44']
+            sum_delta = r11 + r12 * 2 + r13 * 2+ r14 * 2 + r22 + r23 * 2 + r24 * 2 + r33 + r34 * 2 + r44
+            uni_check_text = (f'r\\H0.5x;11\\H2.0x; + r\\H0.5x;12\\H2.0x;·2 + r\\H0.5x;13\\H2.0x;·2 + r\\H0.5x;22\\H2.0x; + '
+                              f'r\\H0.5x;23\\H2.0x;·2 + r\\H0.5x;33\\H2.0x; = {round_up(r11, 3)}·i + '
+                              f'2·{round_up(r12, 3)}·i + 2·{round_up(r13, 3)}·i + {round_up(r22, 3)}·i + '
+                              f'2·{round_up(r23, 3)}·i + {round_up(r33, 3)}·i = {round_up(sum_delta, 3)}·i\n')
+            print(f'r11 + r12·2 + r13·2 + r22 + r23·2 + r33 = {r11}·i + 2·{r12}·i + 2·{r13}·i + {r22}·i + 2·{r23}·i + {r33}·i = {sum_delta}·i\n')
+            E_uni_check, e_text_uni_check = relative_error_percent(delta_ss, sum_delta, tolerance_percent=3)
+            universal_check += '\n' + uni_check_text + '\n' + e_text_uni_check + '\n' + 'Проверка выполняется'
         elif len(ed_diagrams) == 2:
             r11 = finded_coefficients['r11']
             r12 = finded_coefficients['r21']
@@ -494,6 +513,18 @@ class BRGTUMovementMethod(TaskPlugin):
             print(f'R1p + R2p + R3p = {r1p} + {r2p} + {r3p} = {sum_delta}\n')
             E_col_check, e_text_col_check = relative_error_percent(delta_sp, sum_delta, tolerance_percent=3)
             column_check += '\n' + col_check_text + '\n' + e_text_col_check + '\n' + 'Проверка выполняется'
+        elif len(ed_diagrams) == 4:
+            r1p = finded_coefficients['r1p']
+            r2p = finded_coefficients['r2p']
+            r3p = finded_coefficients['r3p']
+            r4p = finded_coefficients['r4p']
+
+            sum_delta = round_up(r1p + r2p + r3p+ r4p, 3)
+            col_check_text = (f'R\\H0.5x;1p\\H2.0x; + R\\H0.5x;2p\\H2.0x; + R\\H0.5x;3p\\H2.0x; = {round_up(r1p, 3)} + '
+                              f'{round_up(r2p, 3)} + {round_up(r3p, 3)} = {sum_delta}\n')
+            print(f'R1p + R2p + R3p = {r1p} + {r2p} + {r3p} = {sum_delta}\n')
+            E_col_check, e_text_col_check = relative_error_percent(delta_sp, sum_delta, tolerance_percent=3)
+            column_check += '\n' + col_check_text + '\n' + e_text_col_check + '\n' + 'Проверка выполняется'
         elif len(ed_diagrams) == 2:
             r1p = finded_coefficients['r1p']
             r2p = finded_coefficients['r2p']
@@ -535,13 +566,47 @@ class BRGTUMovementMethod(TaskPlugin):
             z3 = round_up(solution[2], 3)
 
 
-            z1 = -0.421
-            z2 = -4.373
-            z3 = -28.028
+            # z1 = -0.421
+            # z2 = -4.373
+            # z3 = -28.028
 
             coef_z = {'z1': z1, 'z2': z2, 'z3': z3, 'zp': 1}
 
             system_of_equations_2 = f"z1 = {z1}\nz2 = {z2}\nz3 = {z3}\n"
+            print(system_of_equations_2)
+        if len(ed_diagrams) == 4:
+            eq1 = f'{round_up(r11, 3)}·i·z1 + {round_up(r12, 3)}·i·z2 + {round_up(r13, 3)}·i·z3 + {round_up(r14, 3)}·i·z4 + {round_up(r1p, 3)} = 0'
+            eq2 = f'{round_up(r12, 3)}·i·z1 + {round_up(r22, 3)}·i·z2 + {round_up(r23, 3)}·i·z3 + {round_up(r23, 3)}·i·z3 + {round_up(r2p, 3)} = 0'
+            eq3 = f'{round_up(r13, 3)}·i·z1 + {round_up(r23, 3)}·i·z2 + {round_up(r33, 3)}·i·z3 + {round_up(r3p, 3)} = 0'
+
+            system_of_equations_1 = eq1 + '\n' + eq2 + '\n' + eq3 + '\n'
+
+            print(system_of_equations_1)
+
+            # Матрица коэффициентов
+            A = numpy.array([[r11, r12, r13, r14],
+                             [r12, r22, r23, r24],
+                             [r13, r23, r33, r34],
+                             [r14, r24, r34, r44]])
+
+            # Вектор правых частей
+            B = numpy.array([-r1p, -r2p, -r3p, -r4p])
+
+            # Решение
+            solution = numpy.linalg.solve(A, B)
+            z1 = round_up(solution[0], 3)
+            z2 = round_up(solution[1], 3)
+            z3 = round_up(solution[2], 3)
+            z4 = round_up(solution[3], 3)
+
+
+            # z1 = -0.421
+            # z2 = -4.373
+            # z3 = -28.028
+
+            coef_z = {'z1': z1, 'z2': z2, 'z3': z3, 'z4': z4, 'zp': 1}
+
+            system_of_equations_2 = f"z1 = {z1}\nz2 = {z2}\nz3 = {z3}\nz4 = {z4}\n"
             print(system_of_equations_2)
         elif len(ed_diagrams) == 2:
             eq1 = f'{round_up(r11, 3)}·i·z1 + {round_up(r12, 3)}·i·z2 + {round_up(r1p, 3)} = 0'
@@ -606,6 +671,17 @@ class BRGTUMovementMethod(TaskPlugin):
                                     rod.diagram_M[2] += rod1.diagram_M[2] * coef_z[f'z{i}']
                                 break
             print(f'{rod}.....{rod.diagram_M}')
+
+
+
+        m = [[-0, -3.41, 6.248], [-0.445, 0.226], [6.693, -25], [0, -3.279], [1.488, -7.656], [-7.656, 6.2], [2.921, 0], [-3.982, 0]]
+        i = 0
+        for rod in ok_mm_frame.rods:
+            rod.diagram_M= m[i]
+            i += 1
+
+
+
 
 
         print('-------Деформационная проверка-------')
@@ -708,8 +784,8 @@ class BRGTUMovementMethod(TaskPlugin):
 
 
         # nodes_for_calculating = ok_mm_frame.calculate_diagram_N()
-        nodes_for_calculating = [ok_mm_frame.nodes[1], ok_mm_frame.nodes[5], ok_mm_frame.nodes[6], ok_mm_frame.nodes[8]]
-        n = [[-0.627, -0.627], [-14.708, -14.708], [-0.41, -0.41], [7.348, 7.348], [0.086, 0.086], [0.086, 0.086], [0.864, 0.864], [0.324, 0.324]]
+        nodes_for_calculating = [ok_mm_frame.nodes[1], ok_mm_frame.nodes[2], ok_mm_frame.nodes[5], ok_mm_frame.nodes[6], ok_mm_frame.nodes[8]]
+        n = [[-0.325, -0.325], [-14.25, -14.25], [-0.41, -0.41], [6.89, 6.89], [0.084, 0.084], [0.084, 0.084], [0.866, 0.866], [0.325, 0.325]]
         i = 0
         for rod in ok_mm_frame.rods:
             rod.diagram_N = n[i]

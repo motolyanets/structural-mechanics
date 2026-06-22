@@ -119,7 +119,7 @@ def create_fm_primary_system_14(params: dict):
     load_x7 = Force(name='x5', node=node3, value=1, rotation=0)
     load_x8 = Force(name='x6', node=node3, value=1, rotation=90)
 
-    loads_s = [load_x1, load_x2, load_x3, load_x4, load_x5]
+    loads_s = [load_x1, load_x2, load_x3, load_x4, load_x5, load_x6, load_x7, load_x8]
 
     if load_index == 1:
         rod3 = Rod(start_node=node2, end_node=node6_1)
@@ -169,16 +169,16 @@ def create_mm_primary_system_14(params: dict):
     i2 = params["i2"]
     i3 = params["i3"]
 
-    node1 = Node(name='A', x=0, y=0)
+    node1 = Node(name='1', x=0, y=0)
     node2 = Node(name='2', x=0, y=h1)
-    node3 = Node(name='B', x=l1, y=h1)
-    node4 = Node(name='4', x=0, y=h1 + h2 / 3)
-    node5 = Node(name='5', x=0, y=h1 + h2 * 2 / 3)
-    node6 = Node(name='D', x=0, y=h1 + h2, is_hinge=True)
-    node7 = Node(name='7', x=l1, y=h1 + h2)
-    node8 = Node(name='8', x=l1, y=h1 + h2 * 0.5)
-    node9 = Node(name='E', x=l1 + l2, y=h1 + h2, is_hinge=True)
-    node10 = Node(name='C', x=l1 + l2, y=h1)
+    node3 = Node(name='3', x=l1, y=h1)
+    node4 = Node(name='0', x=0, y=h1 + h2 / 3)
+    node5 = Node(name='0', x=0, y=h1 + h2 * 2 / 3)
+    node6 = Node(name='4', x=0, y=h1 + h2, is_hinge=True)
+    node7 = Node(name='5', x=l1, y=h1 + h2)
+    node8 = Node(name='0', x=l1, y=h1 + h2 * 0.5)
+    node9 = Node(name='6', x=l1 + l2, y=h1 + h2, is_hinge=True)
+    node10 = Node(name='7', x=l1 + l2, y=h1)
 
     rod1 = RodForMovementMethod(start_node=node1, end_node=node2, start_support_type='Шарнирный', end_support_type='Жесткий')
     rod2 = RodForMovementMethod(start_node=node2, end_node=node3, start_support_type='Жесткий', end_support_type='Жесткий', stiffness=i2)
@@ -213,10 +213,13 @@ def create_mm_primary_system_14(params: dict):
     load_z1 = Twist(name='z1', node=node2)
     load_z2 = Twist(name='z2', node=node7)
     load_z3 = Displacement(name='z3', node=node6, value=1, rotation=0)
+    # load_z4 = Twist(name='z4', node=node3)
+
 
     loads['1'] = [load_z1]
     loads['2'] = [load_z2]
     loads['3'] = [load_z3]
+    # loads['4'] = [load_z4]
     loads['p'] = loads_p
 
     supports = [support1, support2, support3]

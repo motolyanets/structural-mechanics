@@ -454,7 +454,7 @@ class ThreeHingedFrame(SolvableFrame, BaseFrame):
 
         def traverse_from_hinge(start_rod, collected_nodes, collected_rods):
             collected_rods.add(start_rod)
-            if start_rod.start_node == hinge_node:
+            if start_rod.start_node.name == hinge_node.name:
                 current_node = start_rod.end_node
             else:
                 current_node = start_rod.start_node
@@ -466,8 +466,8 @@ class ThreeHingedFrame(SolvableFrame, BaseFrame):
                 for rod in self.rods:
                     if rod in collected_rods:
                         continue
-                    if rod.start_node == node or rod.end_node == node:
-                        if rod.start_node == node:
+                    if rod.start_node.name == node.name or rod.end_node.name == node.name:
+                        if rod.start_node.name == node.name:
                             neighbor = rod.end_node
                         else:
                             neighbor = rod.start_node
@@ -481,13 +481,13 @@ class ThreeHingedFrame(SolvableFrame, BaseFrame):
         # traverse_from_hinge(rods_connected_to_hinge[1], left_nodes, left_rods)
         # traverse_from_hinge(rods_connected_to_hinge[0], right_nodes, right_rods)
 
-        left_nodes_list = [node for node in self.nodes if node in left_nodes]
+        left_nodes_list = [node for node in self.nodes if node.name in [node.name for node in left_nodes]]
         left_rods_list = [rod for rod in self.rods if rod in left_rods]
-        left_supports = [sup for sup in self.supports if sup.node in left_nodes]
+        left_supports = [sup for sup in self.supports if sup.node.name in [node.name for node in left_nodes]]
 
-        right_nodes_list = [node for node in self.nodes if node in right_nodes]
+        right_nodes_list = [node for node in self.nodes if node.name in [node.name for node in right_nodes]]
         right_rods_list = [rod for rod in self.rods if rod in right_rods]
-        right_supports = [sup for sup in self.supports if sup.node in right_nodes]
+        right_supports = [sup for sup in self.supports if sup.node.name in [node.name for node in right_nodes]]
 
         left_loads, right_loads = self._distribute_loads_with_hinge(
             hinge_node, left_nodes, right_nodes, left_rods, right_rods
@@ -515,21 +515,21 @@ class ThreeHingedFrame(SolvableFrame, BaseFrame):
                 continue
 
             if isinstance(load, (Force, Momentum)):
-                if load.node == hinge_node:
+                if load.node.name == hinge_node.name:
                     left_loads.append(load)
                     distributed_loads.add(load_id)
-                elif load.node in left_nodes:
+                elif load.node.name in [node.name for node in left_nodes]:
                     left_loads.append(load)
                     distributed_loads.add(load_id)
-                elif load.node in right_nodes:
+                elif load.node.name in [node.name for node in right_nodes]:
                     right_loads.append(load)
                     distributed_loads.add(load_id)
 
             elif isinstance(load, DistributedForce):
-                if load.rod in left_rods:
+                if load.rod.name in [rod.name for rod in left_rods]:
                     left_loads.append(load)
                     distributed_loads.add(load_id)
-                elif load.rod in right_rods:
+                elif load.rod.name in [rod.name for rod in right_rods]:
                     right_loads.append(load)
                     distributed_loads.add(load_id)
 

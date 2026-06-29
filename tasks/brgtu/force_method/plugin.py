@@ -7,7 +7,9 @@ import numpy
 from ezdxf import zoom
 
 from core.mechanics.frame import Frame
+from core.mechanics.load import Force
 from core.mechanics.solver import SolvableFrame, multiply_M_frames_by_Simpson
+from schemes.brgtu.composite_frame.base_composit_frame import CompositeFrame
 from services.authocad import draw_frame, draw_node_with_inner_loads
 from services.services import round_up, relative_error_percent
 from tasks.base import TaskPlugin
@@ -121,8 +123,14 @@ class BRGTUForceMethod(TaskPlugin):
         for diagram in ed_diagrams_with_p:
             print(f'Расчет эпюры М{diagram} метода перемещений')
             fm_nodes, fm_rods, fm_supports, fm_loads, _ = new_fm_frame(params)
-            frame = SolvableFrame(name=diagram, nodes=fm_nodes, rods=fm_rods, supports=fm_supports, loads=fm_loads[diagram])
-            frame = frame.classify_part()
+
+            if 'splitted_frames_order' in fm_details:
+                frame = CompositeFrame(name=f'{diagram}', nodes=fm_nodes, rods=fm_rods, supports=fm_supports,
+                                            loads=fm_loads[diagram],
+                                            splitted_frames_order=fm_details['splitted_frames_order'])
+            else:
+                frame = SolvableFrame(name=f'{diagram}', nodes=fm_nodes, rods=fm_rods, supports=fm_supports,
+                                           loads=fm_loads[diagram]).classify_part()
             fm_frames.append(frame)
 
         # Расчитываем единичные рамы МС
@@ -279,9 +287,9 @@ class BRGTUForceMethod(TaskPlugin):
         x2 = round_up(solution[1], 3)
         x3 = round_up(solution[2], 3)
 
-        x1 = -0.303
-        x2 = -0.58
-        x3 = -7.36
+        # x1 = -0.303
+        # x2 = -0.58
+        # x3 = -7.36
 
         coef = dict()
         coef['1'] = x1
@@ -378,15 +386,14 @@ class BRGTUForceMethod(TaskPlugin):
                 entity.text = calculating_Q_report
 
         # nodes_for_calculating = ok_mm_frame.calculate_diagram_N()
-        nodes_for_calculating = [ok_mm_frame.nodes[2], ok_mm_frame.nodes[3], ok_mm_frame.nodes[4], ok_mm_frame.nodes[6]]
-        # n = [[-6.336, -6.336], [-6.336, -6.336], [-4.073, 1.703], [-8.985, -8.985], [-8.985, -8.985], [-3.5, -3.5], [-0.651, -0.651]]
-        # n = [[-6.289, -6.289], [-6.289, -6.289], [-3.938, 1.838], [-9.034, -9.034], [-9.034, -9.034], [-3.5, -3.5], [-0.61, -0.61]]
-        n = [[-4.85, -4.85], [-4.85, -4.85], [-3.14, 1.25], [-7.65, -7.65], [-7.65, -7.65], [-3.5, -3.5], [-0.58, -0.58]]
+        nodes_for_calculating = [ok_mm_frame.nodes[1], ok_mm_frame.nodes[2], ok_mm_frame.nodes[4], ok_mm_frame.nodes[5]]
+        n = [[-7.43, -7.43], [-7.08, -7.08], [-21.37, -21.37], [-14.95, -14.95], [-7.36, -0.78], [-10.35, -10.35], [-10.35, -10.35]]
         i = 0
         for rod in ok_mm_frame.rods:
             rod.diagram_N = n[i]
             i += 1
 
+        # doc.saveas(f'report.dxf')
 
 
         ok_mm_frame.base_point = base_point

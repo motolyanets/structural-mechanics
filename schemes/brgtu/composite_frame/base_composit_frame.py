@@ -25,7 +25,7 @@ class CompositeFrame(Frame):
             is_adding_new_support_in_hinge = False
             for node_name in small_frame:
                 if len(node_name) > 1:
-                    new_name_of_hinge = node_name
+                    new_name_of_hinge = node_name[0]
                     is_adding_new_support_in_hinge = True
 
             new_nodes = []
@@ -33,8 +33,9 @@ class CompositeFrame(Frame):
                 for n_name in small_frame:
                     if node.name == n_name[0]:
                         new_node = deepcopy(node)
-                        new_node.name = n_name
+                        new_node.name = n_name[0]
                         new_nodes.append(new_node)
+                        break
 
             new_supports = []
             for support in self.supports:
@@ -68,10 +69,11 @@ class CompositeFrame(Frame):
                         if new_node.name in [new_rod.start_node.name, new_rod.end_node.name]:
                             amount_of_rods_with_node += 1
                     if amount_of_rods_with_node == 1:
+                        new_node.is_hinge = False
                         if is_adding_new_support_in_hinge:
                             sup = Support(node=new_node, number_of_reactions=2, rotation=90)
                             new_supports.append(sup)
-                    new_node.is_hinge = False
+
 
             new_loads = []
             for load in self.loads:
@@ -105,3 +107,33 @@ class CompositeFrame(Frame):
         print(50 * '-')
         return parts_of_frame
 
+    def solve_frame(self):
+        report = ''
+        parts_of_frame = self.split_frame()
+        inner_reactions = []
+        self.finded_reactions = []
+        for i, part in enumerate(parts_of_frame):
+            # if i > 1:
+            #     break
+
+            if inner_reactions:
+                for reaction in inner_reactions:
+                    if reaction.node.name[0] in [node.name for node in part.nodes]:
+                        new_reaction = Force(
+                            name=reaction.name,
+                            node=reaction.node,
+                            rotation=reaction.rotation + 180,
+                            value=reaction.value
+                        )
+                        part.loads.append(new_reaction)
+
+            report += part.solve_frame()
+
+            for reaction in part.finded_reactions:
+                if reaction not in inner_reactions:
+                    inner_reactions.append(reaction)
+
+            for finded_reaction in part.finded_reactions:
+                if finded_reaction.name in [r.name for r in self.reactions()]:
+                    self.finded_reactions.append(finded_reaction)
+        return report

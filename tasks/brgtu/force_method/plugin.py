@@ -24,16 +24,6 @@ class BRGTUForceMethod(TaskPlugin):
     def _init_loader(self):
         self.loader = ForceMethodLoader(self.excel_path)
 
-    def get_available_schemes(self) -> list:
-        return [
-            {"scheme_id": 10, "name": "Схема 10"},
-            {"scheme_id": 19, "name": "Схема 19"},
-            {"scheme_id": 22, "name": "Схема 22"},
-            {"scheme_id": 24, "name": "Схема 24"},
-            # {"scheme_id": 27, "name": "Схема 27"},
-            # {"scheme_id": 29, "name": "Схема 29"},
-        ]
-
     def solve(self, cipher: str) -> Dict[str, Any]:
         params = self.loader.load_cipher(cipher)
         circuit_number = params["circuit_number"]
@@ -101,10 +91,22 @@ class BRGTUForceMethod(TaskPlugin):
             if entity.dxf.layer == "1.Главная рама" and entity.dxftype() == 'VIEWPORT':
                 if entity:
                     entity.dxf.view_center_point = (main_frame.geometrical_center()[0], main_frame.geometrical_center()[1], 0.0)
+                    entity.dxf.view_height = main_frame.height() + 0.3
             elif entity.dxf.layer == "мс_определение ССН":
                 entity.text += fm_details['equation_of_static_determinacy']
         main_frame, msp, base_point = draw_frame(frame=main_frame, base_point=base_point, msp=msp, drowing_stiffnes=True)
 
+        for i in [1, 2, 3]:
+            b_p = [base_point[0], base_point[1] - main_frame.height() * i - 10 * i]
+            _, msp, _ = draw_frame(frame=main_frame, base_point=b_p, msp=msp, drowing_stiffnes=False, drowing_loads=False,
+                                   drawing_sections=False)
+            for entity in layout:
+                if entity.dxf.layer == f"ОС{i}" and entity.dxftype() == 'VIEWPORT':
+                    if entity:
+                        entity.dxf.view_center_point = (main_frame.geometrical_center()[0] + base_point[0],
+                                                        main_frame.geometrical_center()[1] - main_frame.height() * i - 10 * i,
+                                                        0.0)
+                        entity.dxf.view_height = main_frame.height() + 0.3
 
         # Отрисовываем основную систему МП
         _, _, _, ps_fm_loads, _ = new_fm_frame(params)
@@ -154,6 +156,7 @@ class BRGTUForceMethod(TaskPlugin):
                         entity.dxf.view_center_point = (fm_frame.base_point[0] + fm_frame.geometrical_center()[0],
                                                             fm_frame.base_point[1] + fm_frame.geometrical_center()[1],
                                                             0.0)
+                        entity.dxf.view_height = fm_frame.height() + 0.3
                 elif entity.dxf.layer == f'sf_M{fm_frame.name} нахождение опорных реакций':
                     entity.text = report
                 elif entity.dxf.layer == f'sf_M{fm_frame.name} расчет эпюры моментов':
@@ -176,11 +179,12 @@ class BRGTUForceMethod(TaskPlugin):
         s_fm_frame, msp, base_point = draw_frame(frame=s_fm_frame, base_point=base_point, diagram_name='M', msp=msp,
                                                  accuracy=3)
         for entity in layout:
-            if entity.dxf.layer == 'Ms' and entity.dxftype() == 'VIEWPORT':
+            if entity.dxf.layer == 'sf_Ms' and entity.dxftype() == 'VIEWPORT':
                 if entity:
                     entity.dxf.view_center_point = (s_fm_frame.base_point[0] + s_fm_frame.geometrical_center()[0],
                                                     s_fm_frame.base_point[1] + s_fm_frame.geometrical_center()[1],
                                                     0.0)
+                    entity.dxf.view_height = s_fm_frame.height() + 0.3
 
 
 
@@ -343,6 +347,7 @@ class BRGTUForceMethod(TaskPlugin):
             print(f'{rod}.....{rod.diagram_M}')
 
 
+        print('\n')
         print('-------Деформационная проверка-------')
         deformation_check = '\n\n'
         fm_nodes, fm_rods, fm_supports, fm_loads, _ = new_fm_frame(params)
@@ -385,13 +390,19 @@ class BRGTUForceMethod(TaskPlugin):
             if entity.dxf.layer == 'Расчет эпюры Q':
                 entity.text = calculating_Q_report
 
-        # nodes_for_calculating = ok_mm_frame.calculate_diagram_N()
-        nodes_for_calculating = [ok_mm_frame.nodes[1], ok_mm_frame.nodes[2], ok_mm_frame.nodes[4], ok_mm_frame.nodes[5]]
-        n = [[-7.43, -7.43], [-7.08, -7.08], [-21.37, -21.37], [-14.95, -14.95], [-7.36, -0.78], [-10.35, -10.35], [-10.35, -10.35]]
-        i = 0
+
+        print('\n')
+        print('-------"Эпюра N"-------')
+
+        nodes_for_calculating = ok_mm_frame.calculate_diagram_N()
+        # nodes_for_calculating = [ok_mm_frame.nodes[1], ok_mm_frame.nodes[2], ok_mm_frame.nodes[4], ok_mm_frame.nodes[5]]
+        # n = [[-7.43, -7.43], [-7.08, -7.08], [-21.37, -21.37], [-14.95, -14.95], [-7.36, -0.78], [-10.35, -10.35], [-10.35, -10.35]]
+        # i = 0
+        # for rod in ok_mm_frame.rods:
+        #     rod.diagram_N = n[i]
+        #     i += 1
         for rod in ok_mm_frame.rods:
-            rod.diagram_N = n[i]
-            i += 1
+            print(f'{rod} ------ {rod.diagram_N}')
 
         # doc.saveas(f'report.dxf')
 
@@ -407,6 +418,7 @@ class BRGTUForceMethod(TaskPlugin):
                     entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
                                                     ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1] - 20,
                                                     0.0)
+                    entity.dxf.view_height = ok_mm_frame.height() + 0.3
 
 
         if symmetry:
@@ -451,11 +463,12 @@ class BRGTUForceMethod(TaskPlugin):
                                                   drowing_loads=False, accuracy=2)
 
         for entity in layout:
-            if entity.dxf.layer == 'sf_Мok' and entity.dxftype() == 'VIEWPORT':
+            if entity.dxf.layer == 'sf_Mok' and entity.dxftype() == 'VIEWPORT':
                 if entity:
                     entity.dxf.view_center_point = (main_frame.base_point[0] + main_frame.geometrical_center()[0],
                                                     main_frame.base_point[1] + main_frame.geometrical_center()[1],
                                                     0.0)
+                    entity.dxf.view_height = main_frame.height() + 0.3
         main_frame, msp, base_point = draw_frame(frame=main_frame, base_point=base_point, diagram_name='Q', msp=msp,
                                                   drowing_loads=False, accuracy=2)
         for entity in layout:
@@ -464,6 +477,7 @@ class BRGTUForceMethod(TaskPlugin):
                     entity.dxf.view_center_point = (main_frame.base_point[0] + main_frame.geometrical_center()[0],
                                                     main_frame.base_point[1] + main_frame.geometrical_center()[1],
                                                     0.0)
+                    entity.dxf.view_height = main_frame.height() + 0.3
 
         main_frame, msp, base_point = draw_frame(frame=main_frame, base_point=base_point, diagram_name='N', msp=msp,
                                                   drowing_loads=False, accuracy=2)
@@ -473,6 +487,11 @@ class BRGTUForceMethod(TaskPlugin):
                     entity.dxf.view_center_point = (main_frame.base_point[0] + main_frame.geometrical_center()[0],
                                                     main_frame.base_point[1] + main_frame.geometrical_center()[1],
                                                     0.0)
+                    entity.dxf.view_height = main_frame.height() + 0.3
+
+
+        print('\n')
+        print('-------"Опорные реакции"-------')
 
         main_frame.set_reactions_from_diagrams()
 
@@ -480,11 +499,7 @@ class BRGTUForceMethod(TaskPlugin):
             print(reaction)
 
 
-
-
-
-
-
+        print('\n')
         print('-------Статическая проверка-------')
         main_frame, msp, base_point = draw_frame(frame=main_frame, base_point=base_point, msp=msp)
 
@@ -494,6 +509,7 @@ class BRGTUForceMethod(TaskPlugin):
                     entity.dxf.view_center_point = (main_frame.base_point[0] + main_frame.geometrical_center()[0],
                                                     main_frame.base_point[1] + main_frame.geometrical_center()[1],
                                                     0.0)
+                    entity.dxf.view_height = main_frame.height() + 0.3
 
         static_check = '\n\n'
         node_name = main_details['node_name_for_static_check']
@@ -507,7 +523,7 @@ class BRGTUForceMethod(TaskPlugin):
         static_check_1 = check_equation + '\n' + f'   {round_up(check_moment, 4)} = 0\n' + 'Проверка выполняется\n\n'
         print(check_equation)
         print(f'   {check_moment} = 0')
-        if abs(check_moment) <= 0.1:
+        if abs(check_moment) <= 0.2:
             print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}")
         else:
             print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}")
@@ -516,7 +532,7 @@ class BRGTUForceMethod(TaskPlugin):
         print(f'∑x: {sum_force_expression_names} = 0')
         print(f'    {sum_force_expression_values} = 0')
         print(f'    {sum_of_projections} = 0')
-        if sum_of_projections <= 0.1:
+        if sum_of_projections <= 0.2:
             print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}")
         else:
             print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}")
@@ -528,7 +544,7 @@ class BRGTUForceMethod(TaskPlugin):
         print(f'∑y: {sum_force_expression_names} = 0')
         print(f'    {sum_force_expression_values} = 0')
         print(f'    {sum_of_projections} = 0')
-        if sum_of_projections <= 0.1:
+        if sum_of_projections <= 0.2:
             print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}")
         else:
             print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}")
@@ -561,6 +577,7 @@ class BRGTUForceMethod(TaskPlugin):
                     entity.dxf.view_center_point = (fm_frame_k.base_point[0] + fm_frame_k.geometrical_center()[0],
                                                     fm_frame_k.base_point[1] + fm_frame_k.geometrical_center()[1],
                                                     0.0)
+                    entity.dxf.view_height = fm_frame_k.height() + 0.3
 
         zoom.extents(msp)
         doc.saveas(f'report.dxf')

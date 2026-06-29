@@ -15,13 +15,13 @@ class Rod:
             qy: int | None = None,
             is_start_hinge: bool = False,
             is_end_hinge: bool = False,
-            diagram_M1: List | None = None,
-            diagram_M2: List | None = None,
-            diagram_M3: List | None = None,
-            diagram_Ms: List | None = None,
-            diagram_Mp: List | None = None,
-            diagram_Mok: List | None = None,
-            diagram_Mk: List | None = None,
+            # diagram_M1: List | None = None,
+            # diagram_M2: List | None = None,
+            # diagram_M3: List | None = None,
+            # diagram_Ms: List | None = None,
+            # diagram_Mp: List | None = None,
+            # diagram_Mok: List | None = None,
+            # diagram_Mk: List | None = None,
             diagram_M: List | None = None,
             diagram_Q: List | None = None,
             diagram_N: List | None = None,
@@ -35,13 +35,13 @@ class Rod:
         self.qy = qy
         self.is_start_hinge = is_start_hinge
         self.is_end_hinge = is_end_hinge
-        self.diagram_M1 = diagram_M1
-        self.diagram_M2 = diagram_M2
-        self.diagram_M3 = diagram_M3
-        self.diagram_Ms = diagram_Ms
-        self.diagram_Mp = diagram_Mp
-        self.diagram_Mok = diagram_Mok
-        self.diagram_Mk = diagram_Mk
+        # self.diagram_M1 = diagram_M1
+        # self.diagram_M2 = diagram_M2
+        # self.diagram_M3 = diagram_M3
+        # self.diagram_Ms = diagram_Ms
+        # self.diagram_Mp = diagram_Mp
+        # self.diagram_Mok = diagram_Mok
+        # self.diagram_Mk = diagram_Mk
         self.diagram_M = diagram_M
         self.diagram_Q = diagram_Q
         self.diagram_N = diagram_N
@@ -59,8 +59,8 @@ class Rod:
         return math.fabs(dy)
 
     def get_angle_deg(self) -> float:
-        dx = self.dx()
-        dy = self.dy()
+        dx = self.end_node.x - self.start_node.x
+        dy = self.end_node.y - self.start_node.y
         angle_rad = math.atan2(dy, dx)
         angle_deg = math.degrees(angle_rad)
         return angle_deg

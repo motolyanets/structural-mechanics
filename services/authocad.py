@@ -1,5 +1,5 @@
 import math
-from typing import List
+from typing import List, Tuple
 
 from ezdxf.lldxf.const import HATCH_PATTERN_TYPE, HATCH_TYPE_PREDEFINED, HATCH_TYPE_CUSTOM
 from ezdxf.math import Vec2
@@ -47,6 +47,19 @@ def draw_hinge(hinge_point: Node, direction_point, msp, hinge_radius=h_r):
         )
 
 
+def draw_hinge(node_point: Tuple[float, float], hinge_radius: float, msp):
+    circle_radius = hinge_radius
+
+    msp.add_circle(
+        center=node_point,
+        radius=circle_radius,
+        dxfattribs={
+            'layer': 'HINGE',
+            'lineweight': 30
+        }
+    )
+
+
 def draw_node(node: Node, base_point: List[float], msp, task_method: str, hinge_radius=h_r):
     if task_method not in ['fm', 'mm']:
         raise Exception('Неизвестный метод задачи')
@@ -64,16 +77,7 @@ def draw_node(node: Node, base_point: List[float], msp, task_method: str, hinge_
             msp.add_text(text=node.name, height=0.2, dxfattribs={"layer": "Node", }).set_placement(placement)
 
     if node.is_hinge:
-        circle_radius = hinge_radius
-
-        msp.add_circle(
-            center=node_point,
-            radius=circle_radius,
-            dxfattribs={
-                'layer': 'HINGE',
-                'lineweight': 30
-            }
-        )
+        draw_hinge(node_point=node_point, hinge_radius=hinge_radius, msp=msp)
 
 
 def draw_rod(rod: Rod, base_point: List[float], msp, hinge_radius=h_r, drowing_stiffnes: bool | str = False):
@@ -133,6 +137,11 @@ def draw_frame(frame: Frame, base_point: List[float], msp, diagram_name: str = N
             else:
                 task_method = 'fm'
             draw_node(node, base_point, msp, task_method=task_method)
+
+    for node in frame.nodes:
+        if node.is_hinge:
+            node_point = (node.x + base_point[0], node.y + base_point[1])
+            draw_hinge(node_point=node_point, hinge_radius=h_r, msp=msp)
 
     for rod in frame.rods:
         if drowing_stiffnes:

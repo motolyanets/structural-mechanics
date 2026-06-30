@@ -130,8 +130,8 @@ def making_report_of_multiply(lst):
             result += i[1]
 
     text_2 = text_2.replace("+ -", "- ")
-    result = round_up(result)
-    text = f'{text_1[:-3]} = {text_2[:-3]} = {result}/EI'
+    result = result
+    text = f'{text_1[:-3]} = {text_2[:-3]} = {round_up(result)}/EI'
 
     return text, result
 

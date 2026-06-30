@@ -264,48 +264,53 @@ class Rod:
 
         return report
 
-    def multiply_diagrams_Simpson(self, diagram_1_name, diagram_2_name, q: float | None = None):
-        diagram_1 = self.__getattribute__(f'diagram_{diagram_1_name}')
-        diagram_2 = self.__getattribute__(f'diagram_{diagram_2_name}')
-
-        length = self.length()
-        stiffness = self.stiffness
-
-        multiplied_diagram = []
-
-        d1_start = diagram_1[0]
-        d1_center = round_up((diagram_1[0] + diagram_1[-1]) / 2, 3)
-        d1_end = diagram_1[-1]
-        d2_start = diagram_2[0]
-        d2_center = round_up((diagram_2[0] + diagram_2[-1]) / 2, 3)
-        d2_end = diagram_2[-1]
-
-        d1_start_t = round_up(d1_start)
-        d1_center_t = round_up(d1_center)
-        d1_end_t = round_up(d1_end)
-        d2_start_t = round_up(d2_start)
-        d2_center_t = round_up(d2_center)
-        d2_end_t = round_up(d2_end)
-
-        if len(diagram_1) == len(diagram_2) == 2:
-            result = (length / (6 * stiffness)) * (d1_start * d2_start + 4 * d1_center * d2_center + d1_end * d2_end)
-            if result:
-                text = (
-                    f'({length} / (6·{stiffness}·EI)) · ({d1_start_t}·{d2_start_t} + 4·{d1_center_t}·{d2_center_t} + '
-                    f'{d1_end_t}·{d2_end_t})')
-                multiplied_diagram.append(text)
-                multiplied_diagram.append(result)
-        else:
-            result = (length / (6 * stiffness)) * (
-                        d1_start * d2_start + 4 * d1_center * d2_center + d1_end * d2_end + 4 * d1_center * q * length ** 2 / 8)
-            if result:
-                text = (
-                    f'({length} / (6·{stiffness}·EI)) * ({d1_start_t}·{d2_start_t} + 4·{d1_center_t}·{d2_center_t} + '
-                    f'{d1_end_t}·{d2_end_t} + 4·{d1_center_t}·{q}·{length}² / 8)')
-                multiplied_diagram.append(text)
-                multiplied_diagram.append(result)
-
-        return multiplied_diagram
+    # def multiply_diagrams_Simpson(self, diagram_1_name, diagram_2_name, q: float | None = None):
+    #     diagram_1 = self.__getattribute__(f'diagram_{diagram_1_name}')
+    #     diagram_2 = self.__getattribute__(f'diagram_{diagram_2_name}')
+    #
+    #     length = self.length()
+    #     stiffness = self.stiffness
+    #
+    #     multiplied_diagram = []
+    #
+    #     d1_start = diagram_1[0]
+    #     d1_center = round_up((diagram_1[0] + diagram_1[-1]) / 2, 3)
+    #     d1_end = diagram_1[-1]
+    #     d2_start = diagram_2[0]
+    #     d2_center = round_up((diagram_2[0] + diagram_2[-1]) / 2, 3)
+    #     d2_end = diagram_2[-1]
+    #
+    #     d1_start_t = round_up(d1_start)
+    #     d1_center_t = round_up(d1_center)
+    #     d1_end_t = round_up(d1_end)
+    #     d2_start_t = round_up(d2_start)
+    #     d2_center_t = round_up(d2_center)
+    #     d2_end_t = round_up(d2_end)
+    #
+    #     if len(diagram_1) == len(diagram_2) == 2:
+    #         result = (length / (6 * stiffness)) * (d1_start * d2_start + 4 * d1_center * d2_center + d1_end * d2_end)
+    #         if result:
+    #             text = (
+    #                 f'({length} / (6·{stiffness}·EI)) · ({d1_start_t}·{d2_start_t} + 4·{d1_center_t}·{d2_center_t} + '
+    #                 f'{d1_end_t}·{d2_end_t})')
+    #             multiplied_diagram.append(text)
+    #             multiplied_diagram.append(result)
+    #     else:
+    #         # result = (length / (6 * stiffness)) * (
+    #         #             d1_start * d2_start + 4 * d1_center * d2_center + d1_end * d2_end + 4 * d1_center * q * length ** 2 / 8)
+    #         result = (length / (6 * stiffness)) * (
+    #                     d1_start * d2_start + 4 * d1_center * diagram_2[1] + d1_end * d2_end)
+    #         if result:
+    #             # text = (
+    #             #     f'({length} / (6·{stiffness}·EI)) * ({d1_start_t}·{d2_start_t} + 4·{d1_center_t}·{d2_center_t} + '
+    #             #     f'{d1_end_t}·{d2_end_t} + 4·{d1_center_t}·{q}·{length}² / 8)')
+    #             text = (
+    #                 f'({length} / (6·{stiffness}·EI)) * ({d1_start_t}·{d2_start_t} + 4·{d1_center_t}·{diagram_2[1]} + '
+    #                 f'{d1_end_t}·{d2_end_t})')
+    #             multiplied_diagram.append(text)
+    #             multiplied_diagram.append(result)
+    #
+    #     return multiplied_diagram
 
     def calculate_diagram_q(self, q: float | None = None) -> str:
         Q = (self.diagram_M[0] - self.diagram_M[-1]) / self.length()

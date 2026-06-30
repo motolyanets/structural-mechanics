@@ -269,9 +269,9 @@ class BRGTUForceMethod(TaskPlugin):
 
 
         print('-------Решение системы уравнений-------')
-        eq1 = f'({delta_11}/EI)·x1 + ({delta_12}/EI)·x2 +({delta_13}/EI)·x3 + {delta_1p}/EI = 0'
-        eq2 = f'({delta_12}/EI)·x1 + ({delta_22}/EI)·x2 +({delta_23}/EI)·x3 + {delta_2p}/EI = 0'
-        eq3 = f'({delta_13}/EI)·x1 + ({delta_23}/EI)·x2 +({delta_33}/EI)·x3 + {delta_3p}/EI = 0'
+        eq1 = f'({round_up(delta_11,3)}/EI)·x1 + ({round_up(delta_12,3)}/EI)·x2 +({round_up(delta_13,3)}/EI)·x3 + {round_up(delta_1p,3)}/EI = 0'
+        eq2 = f'({round_up(delta_12,3)}/EI)·x1 + ({round_up(delta_22,3)}/EI)·x2 +({round_up(delta_23,3)}/EI)·x3 + {round_up(delta_2p,3)}/EI = 0'
+        eq3 = f'({round_up(delta_13,3)}/EI)·x1 + ({round_up(delta_23,3)}/EI)·x2 +({round_up(delta_33,3)}/EI)·x3 + {round_up(delta_3p,3)}/EI = 0'
 
         system_of_equations_1 = eq1 + '\n' + eq2 + '\n' + eq3 + '\n'
 
@@ -287,9 +287,9 @@ class BRGTUForceMethod(TaskPlugin):
 
         # Решение
         solution = numpy.linalg.solve(A, B)
-        x1 = round_up(solution[0], 3)
-        x2 = round_up(solution[1], 3)
-        x3 = round_up(solution[2], 3)
+        x1 = float(solution[0])
+        x2 = float(solution[1])
+        x3 = float(solution[2])
 
         # x1 = -0.303
         # x2 = -0.58
@@ -302,7 +302,7 @@ class BRGTUForceMethod(TaskPlugin):
         coef['p'] = 1
 
 
-        system_of_equations_2 = f"x1 = {x1}\nx2 = {x2}\nx3 = {x3}\n"
+        system_of_equations_2 = f"x1 = {round_up(x1, 3)}\nx2 = {round_up(x2, 3)}\nx3 = {round_up(x3, 3)}\n"
         print(system_of_equations_2)
 
         for entity in layout:
@@ -461,6 +461,15 @@ class BRGTUForceMethod(TaskPlugin):
         main_frame, msp, base_point = draw_frame(frame=main_frame, base_point=base_point, diagram_name='M',
                                                   msp=msp,
                                                   drowing_loads=False, accuracy=2)
+
+        for rod in main_frame.rods:
+            if not rod.diagram_M:
+                rod.diagram_M = [0, 0]
+            if not rod.diagram_Q:
+                rod.diagram_Q = [0, 0]
+        for rod in main_frame.rods:
+            if not rod.diagram_N:
+                _ = main_frame.calculate_diagram_N()
 
         for entity in layout:
             if entity.dxf.layer == 'sf_Mok' and entity.dxftype() == 'VIEWPORT':

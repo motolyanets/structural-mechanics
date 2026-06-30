@@ -25,10 +25,10 @@ def multiply_rods_diagrams_Simpson(rod1: Rod, rod2: Rod, q: float | None = None)
     multiplied_diagram = []
 
     d1_start = diagram_1[0]
-    d1_center = round_up((diagram_1[0] + diagram_1[-1]) / 2, 3)
+    d1_center = (diagram_1[0] + diagram_1[-1]) / 2
     d1_end = diagram_1[-1]
     d2_start = diagram_2[0]
-    d2_center = round_up((diagram_2[0] + diagram_2[-1]) / 2, 3)
+    d2_center = (diagram_2[0] + diagram_2[-1]) / 2
     d2_end = diagram_2[-1]
 
     d1_start_t = round_up(d1_start)
@@ -47,13 +47,22 @@ def multiply_rods_diagrams_Simpson(rod1: Rod, rod2: Rod, q: float | None = None)
             multiplied_diagram.append(text)
             multiplied_diagram.append(result)
     else:
-        result = (length / (6 * stiffness)) * (
-                d1_start * d2_start + 4 * d1_center * d2_center + d1_end * d2_end + 4 * d1_center * q * length ** 2 / 8)
-                # d1_start * d2_start + 4 * d1_center * d2_center + d1_end * d2_end + 4 * d1_center * q * (7.5 / length) * length ** 2 / 8)
-        if result:
+        rod_angle = rod1.get_angle_deg()
+        if rod_angle in [0, 90, 180, 270, 360]:
+            result = (length / (6 * stiffness)) * (
+                    d1_start * d2_start + 4 * d1_center * d2_center + d1_end * d2_end + 4 * d1_center * q * length ** 2 / 8)
             text = (
                 f'({length} / (6·{stiffness}·EI)) * ({d1_start_t}·{d2_start_t} + 4·{d1_center_t}·{d2_center_t} + '
                 f'{d1_end_t}·{d2_end_t} + 4·{d1_center_t}·{q}·{length}² / 8)')
+
+        else:
+            cos_angle = math.cos(math.radians(rod_angle))
+            result = (length / (6 * stiffness)) * (
+                    d1_start * d2_start + 4 * d1_center * d2_center + d1_end * d2_end + 4 * d1_center * q * cos_angle * length ** 2 / 8)
+            text = (
+                f'({length} / (6·{stiffness}·EI)) * ({d1_start_t}·{d2_start_t} + 4·{d1_center_t}·{d2_center_t} + '
+                f'{d1_end_t}·{d2_end_t} + 4·{d1_center_t}·{q}·{round_up(cos_angle, 4)}·{length}² / 8)')
+        if result:
             multiplied_diagram.append(text)
             multiplied_diagram.append(result)
 

@@ -1,6 +1,7 @@
 import math
 from typing import List, Tuple
 
+from ezdxf import zoom, bbox
 from ezdxf.lldxf.const import HATCH_PATTERN_TYPE, HATCH_TYPE_PREDEFINED, HATCH_TYPE_CUSTOM
 from ezdxf.math import Vec2
 from openpyxl import drawing
@@ -13,6 +14,28 @@ from core.mechanics.solver import FrameForMovementMethod
 from services.services import round_up
 
 h_r = 0.1
+
+
+def keep_only_layout(doc, layout_name_to_keep):
+    """
+    Сохраняет только указанный layout, удаляя все остальные.
+
+    Args:
+        input_path: исходный DXF файлу
+        layout_name_to_keep: имя layout, который нужно оставить (например, "Layout1")
+    """
+
+    # Получаем все layouts (кроме модели)
+    all_layouts = list(doc.layouts)
+
+    layout_to_keep = doc.layouts.get(layout_name_to_keep)
+
+    # Удаляем все layouts, кроме нужного
+    for layout in all_layouts:
+        if layout.name != layout_name_to_keep and not layout.is_modelspace:
+            doc.layouts.delete(layout.name)
+    return layout_to_keep
+
 
 def draw_hinge(hinge_point: Node, direction_point, msp, hinge_radius=h_r):
     # Вычисляем вектор направления линии
@@ -188,6 +211,124 @@ def draw_frame(frame: Frame, base_point: List[float], msp, diagram_name: str = N
 
     base_point = [base_point[0] + frame.length() + 10, base_point[1]]
     return frame, msp, base_point
+
+
+def draw_dimension_chains(frame: Frame, base_point: List[float], msp, offset=1):
+    """
+    Создает цепочки линейных размеров снизу и справа от рамы.
+
+    Args:
+        frame: Рама
+        msp: пространство листа
+        offset: расстояние от крайних точек рамы до размерной линии
+        text_height: высота текста размеров
+    """
+    nodes = frame.nodes
+
+    # Извлекаем координаты узлов
+    points = [(node.x + base_point[0], node.y + base_point[1]) for node in nodes]
+
+    # Находим границы рамы
+    xs = [p[0] for p in points]
+    ys = [p[1] for p in points]
+    min_x, max_x = min(xs), max(xs)
+    min_y, max_y = min(ys), max(ys)
+
+    points_x = []
+    points_y = []
+    for point in points:
+        if point not in points_x:
+            points_x.append((point[0], min_y))
+        if point not in points_y:
+            points_y.append((max_x, point[1]))
+
+
+    # ============================================
+    # 1. Нижняя размерная цепь (горизонтальные размеры)
+    # ============================================
+    # Сортируем точки по X для нижней цепи
+    bottom_points = sorted(points_x, key=lambda p: p[0])
+
+    # Y-координата для нижней размерной линии
+    dim_y = min_y - offset
+
+    # Проходим по всем точкам снизу (по X)
+    for i in range(len(bottom_points) - 1):
+        x1 = bottom_points[i][0]
+        x2 = bottom_points[i + 1][0]
+        y = bottom_points[i][1]  # используем Y точки для выноски
+
+        # Создаем размер между соседними точками по X
+        create_linear_dimension(
+            msp=msp,
+            x1=x1, y1=y,
+            x2=x2, y2=y,
+            dim_line_y=dim_y,
+            text=str(round(abs(x2 - x1), 2))
+        )
+
+    # ============================================
+    # 2. Правая размерная цепь (вертикальные размеры)
+    # ============================================
+    # Сортируем точки по Y для правой цепи
+    right_points = sorted(points_y, key=lambda p: p[1])
+
+    # X-координата для правой размерной линии
+    dim_x = max_x + offset
+
+    # Проходим по всем точкам справа (по Y)
+    for i in range(len(right_points) - 1):
+        x = right_points[i][0]  # используем X точки для выноски
+        y1 = right_points[i][1]
+        y2 = right_points[i + 1][1]
+
+        # Создаем размер между соседними точками по Y
+        create_linear_dimension(
+            msp=msp,
+            x1=x, y1=y1,
+            x2=x, y2=y2,
+            dim_line_x=dim_x,
+            text=str(round(abs(y2 - y1), 2))
+        )
+
+
+def create_linear_dimension(msp, x1, y1, x2, y2, dim_line_y=None, dim_line_x=None, text=None, dimstyle='ISO-25'):
+    """
+    Создает один линейный размер.
+    """
+    # Проверяем, что точки не совпадают
+    if abs(x1 - x2) < 0.001 and abs(y1 - y2) < 0.001:
+        return None
+
+    # Создаем размер
+    if dim_line_y is not None:
+        # Горизонтальный размер
+        dim = msp.add_linear_dim(
+            p1=(x1, y1),
+            p2=(x2, y2),
+            base=(x1, dim_line_y),  # ← здесь base вместо location
+            dimstyle=dimstyle
+        )
+    elif dim_line_x is not None:
+        # Вертикальный размер
+        dim = msp.add_linear_dim(
+            p1=(x1, y1),
+            p2=(x2, y2),
+            base=(dim_line_x, y1),  # ← здесь base вместо location
+            angle=90,
+            dimstyle=dimstyle
+        )
+    else:
+        # Автоматическое определение
+        dim_y = min(y1, y2) - 10
+        dim = msp.add_linear_dim(
+            p1=(x1, y1),
+            p2=(x2, y2),
+            base=(x1, dim_y),  # ← здесь base вместо location
+            dimstyle=dimstyle
+        )
+
+    return dim
 
 
 def draw_mm_diagram(frame: Frame, base_point: List[float], msp, diagram_name: str = None, drawing_sections: bool = True):
@@ -763,3 +904,64 @@ def draw_diagram_q(rod: Rod, base_point: List[float], diagram: List[float], msp,
         msp.add_text(f"{Q_end}", dxfattribs={'layer': 'diagram Q', 'height': 0.2, 'color': 6}).set_placement(text_point)
 
     return msp
+
+
+def safe_zoom_for_work(doc):
+    """
+    Безопасный zoom для чертежей с проблемными размерами.
+    """
+    msp = doc.modelspace()
+
+    # Получаем все объекты, исключая размеры
+    all_entities = list(msp)
+    filtered = []
+
+    for e in all_entities:
+        # Пропускаем все типы размеров
+        if e.dxftype() in ('DIMENSION', 'DIMLINEAR', 'DIMALIGNED',
+                           'DIMRADIUS', 'DIMDIAMETER', 'DIMANGULAR'):
+            continue
+        filtered.append(e)
+
+    print(f"Обработано объектов: {len(filtered)} из {len(all_entities)}")
+
+    if not filtered:
+        print("Нет объектов для zoom")
+        return
+
+    try:
+        # Вычисляем габариты
+        ext = bbox.extents(filtered, fast=True)
+        if ext:
+            # Получаем минимальные и максимальные координаты
+            min_x, min_y, min_z = ext.extmin
+            max_x, max_y, max_z = ext.extmax
+
+            # Вычисляем центр и размеры
+            center_x = (min_x + max_x) / 2
+            center_y = (min_y + max_y) / 2
+            width = max_x - min_x
+            height = max_y - min_y
+
+            # Добавляем отступ (10%)
+            margin = 0.1
+            width *= (1 + margin)
+            height *= (1 + margin)
+
+            # Используем zoom.center для установки вида
+            zoom.center(msp, (center_x, center_y), (width, height))
+            print("✅ Zoom выполнен успешно")
+        else:
+            print("⚠️ Не удалось вычислить габариты")
+            # Пробуем стандартный zoom
+            try:
+                zoom.extents(msp)
+            except:
+                pass
+    except Exception as e:
+        print(f"❌ Ошибка zoom: {e}")
+        # Пробуем стандартный zoom как запасной вариант
+        try:
+            zoom.extents(msp)
+        except:
+            print("❌ Не удалось выполнить zoom")

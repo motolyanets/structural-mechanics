@@ -10,7 +10,8 @@ from core.mechanics.frame import Frame
 from core.mechanics.load import Force
 from core.mechanics.solver import SolvableFrame, multiply_M_frames_by_Simpson
 from schemes.brgtu.composite_frame.base_composit_frame import CompositeFrame
-from services.authocad import draw_frame, draw_node_with_inner_loads
+from services.authocad import draw_frame, draw_node_with_inner_loads, keep_only_layout, draw_dimension_chains, \
+    safe_zoom_for_work
 from services.services import round_up, relative_error_percent
 from tasks.base import TaskPlugin
 from tasks.brgtu.force_method.loader import ForceMethodLoader
@@ -32,7 +33,7 @@ class BRGTUForceMethod(TaskPlugin):
         doc = ezdxf.readfile('Шаблон.dxf')
         msp = doc.modelspace()
         msp.delete_all_entities()
-        layout = doc.layouts.get("Шаблон (метод сил)")
+        layout = keep_only_layout(doc=doc, layout_name_to_keep='Шаблон (метод сил)')
         base_point = [0, 0]
 
         task_condition_text = (f'{cipher}\n'
@@ -94,6 +95,8 @@ class BRGTUForceMethod(TaskPlugin):
                     entity.dxf.view_height = main_frame.height() + 0.3
             elif entity.dxf.layer == "мс_определение ССН":
                 entity.text += fm_details['equation_of_static_determinacy']
+
+        draw_dimension_chains(frame=main_frame, base_point=base_point, msp=msp)
         main_frame, msp, base_point = draw_frame(frame=main_frame, base_point=base_point, msp=msp, drowing_stiffnes=True)
 
         for i in [1, 2, 3]:
@@ -510,6 +513,7 @@ class BRGTUForceMethod(TaskPlugin):
 
         print('\n')
         print('-------Статическая проверка-------')
+        draw_dimension_chains(frame=main_frame, base_point=base_point, msp=msp)
         main_frame, msp, base_point = draw_frame(frame=main_frame, base_point=base_point, msp=msp)
 
         for entity in layout:
@@ -588,6 +592,6 @@ class BRGTUForceMethod(TaskPlugin):
                                                     0.0)
                     entity.dxf.view_height = fm_frame_k.height() + 0.3
 
-        zoom.extents(msp)
+        safe_zoom_for_work(doc)
         doc.saveas(f'report.dxf')
 

@@ -618,7 +618,6 @@ def draw_displacement_finding(frame: Frame, displacement: Displacement, msp, n_b
 
 
 def find_perpendicular_angle(start_point: Vec2, end_point: Vec2) -> float:
-
     # Вычисляем угол перпендикуляра
     dx = end_point.x - start_point.x
     dy = end_point.y - start_point.y
@@ -631,6 +630,83 @@ def find_perpendicular_angle(start_point: Vec2, end_point: Vec2) -> float:
         perpendicular_angle -= 180
 
     return perpendicular_angle
+
+
+def sample_spline(spline_points: List, num_points=100, direction_x0: bool = False):
+    """
+    Дискретизирует сплайн (поддерживает и fit_points, и control_points).
+    """
+    p0 = spline_points[0]
+    p1 = spline_points[1]
+    p2 = spline_points[2]
+
+    if not direction_x0:
+        (x1, y1), (x2, y2), (x3, y3) = (p0[0], p0[1]), (p1[0], p1[1]), (p2[0], p2[1])
+    else:
+        (x1, y1), (x2, y2), (x3, y3) = (p0[1], p0[0]), (p1[1], p1[0]), (p2[1], p2[0])
+
+    # 1. Находим коэффициенты a, b, c через определители (правило Крамера)
+    # Системы уравнений:
+    # a*x1^2 + b*x1 + c = y1
+    # a*x2^2 + b*x2 + c = y2
+    # a*x3^2 + b*x3 + c = y3
+
+    denom = (x1 - x2) * (x1 - x3) * (x2 - x3)
+    if denom == 0:
+        raise ValueError("Точки не должны лежать на одной вертикальной линии (X должны отличаться).")
+
+    a = (x3 * (y2 - y1) + x2 * (y1 - y3) + x1 * (y3 - y2)) / denom
+    b = (x3 ** 2 * (y1 - y2) + x2 ** 2 * (y3 - y1) + x1 ** 2 * (y2 - y3)) / denom
+    c = (x2 * x3 * (x2 - x3) * y1 + x3 * x1 * (x3 - x1) * y2 + x1 * x2 * (x1 - x2) * y3) / denom
+
+    # 2. Генерируем точки с равным шагом по X от x1 до x3
+    points = []
+    start_x = x1
+    end_x = x3
+
+    for i in range(num_points + 1):
+        # Равномерный шаг от start_x до end_x
+        x = start_x + (end_x - start_x) * (i / num_points)
+        # Считаем y по точной формуле параболы
+        y = a * x ** 2 + b * x + c
+        if not direction_x0:
+            points.append((round(x, 4), round(y, 4)))
+
+        else:
+            points.append((round(y, 4), round(x, 4)))
+    return points
+
+
+def draw_diagram_between_two_lines(rod_line_points: List, diagram_line_points: List, angle: float, msp):
+    p1 = [rod_line_points[0][0], rod_line_points[0][1]]
+    p2 = [rod_line_points[-1][0], rod_line_points[-1][1]]
+    rod_points = [p1, p2]
+    hatch = msp.add_hatch(color=3, dxfattribs={'layer': 'Штриховка 1'})
+    hatch.set_pattern_fill("ANSI31", scale=0.05, color=3, angle=angle)
+
+    if len(diagram_line_points) == 3:
+        direction_x0 = False
+        if rod_points[0][0] == rod_points[1][0]:
+            direction_x0 = True
+        diagram_line_points = sample_spline(spline_points=diagram_line_points, direction_x0=direction_x0)
+
+    path_points = []
+
+    # Добавляем точки полилинии (в прямом порядке)
+    path_points.extend(rod_points)
+
+    # Добавляем точки сплайна (в обратном порядке)
+    path_points.extend(reversed(diagram_line_points))
+
+    # Замыкаем контур (добавляем первую точку в конец)
+    if path_points:
+        path_points.append(path_points[0])
+
+    path_polyline = msp.add_lwpolyline(path_points,
+                                       dxfattribs={'layer': 'diagram M', 'color': 6, 'linetype': 'CONTINUOUS'})
+    path_polyline.closed = True
+
+    hatch.paths.add_polyline_path(path_points, is_closed=True)
 
 
 def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp, scale: float = 1.0, accuracy: int = 2):
@@ -670,16 +746,14 @@ def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp,
     M_start = round_up(diagram[0], accuracy)
     M_end = round_up(diagram[-1], accuracy)
 
-
-
     # Определяем знаки и нормализуем значения
     # Для горизонтального стержня: + вверх, - вниз
     # Для вертикального стержня: + влево, - вправо
 
     # Рассчитываем локальные координаты для эпюры
     num_segments = 2  # Количество сегментов для интерполяции
-    points = [start_point]
 
+    diagram_points = []
     for i, M in enumerate(diagram):
         # Определяем направление отступа
         if is_horizontal:
@@ -702,33 +776,11 @@ def draw_diagram_m(rod: Rod, base_point: List[float], diagram: List[float], msp,
             offset_direction = perpendicular if M >= 0 else -perpendicular
             offset_value = abs(M) * scale
             diagram_point = points_on_rod[i] + offset_direction * offset_value
-
-        points.append(diagram_point)
-    points.append(end_point)
-
-    # Рисуем эпюру как полилинию
-    if len(points) > 1:
-        polyline = msp.add_lwpolyline(points, dxfattribs={'layer': 'diagram M', 'color': 6, 'linetype': 'CONTINUOUS'})
-        polyline.closed = True
+        diagram_points.append(diagram_point)
 
     perpendicular_angle = find_perpendicular_angle(start_point=start_point, end_point=end_point)
 
-    if rod.dx() == 0:
-        hatch = msp.add_hatch(color=3, dxfattribs={'layer': 'Штриховка 1'})
-    elif rod.dy() == 0:
-        hatch = msp.add_hatch(color=3, dxfattribs={'layer': 'Штриховка 2'})
-    else:
-        hatch = msp.add_hatch(color=3, dxfattribs={'layer': 'Штриховка 3'})
-
-    hatch.dxf.pattern_name = 'LINE'
-    hatch.dxf.pattern_angle = perpendicular_angle
-    hatch.dxf.pattern_scale = 0.05
-
-    # Добавляем весь контур целиком
-    hatch.paths.add_polyline_path(points, is_closed=True)
-
-    # Рисуем базовую линию (стержень) для справки (опционально)
-    # msp.add_line(start_point, end_point, dxfattribs={'color': 7, 'linetype': 'DASHED'})
+    draw_diagram_between_two_lines(rod_line_points=points_on_rod, diagram_line_points=diagram_points, angle=perpendicular_angle-45, msp=msp)
 
     # Добавляем подписи значений (опционально)
     # Подпись в начале стержня
@@ -792,6 +844,7 @@ def draw_diagram_q(rod: Rod, base_point: List[float], diagram: List[float], msp,
     # Вычисляем глобальные координаты стержня
     start_point = Vec2(rod.start_node.x + base_point[0], rod.start_node.y + base_point[1])
     end_point = Vec2(rod.end_node.x + base_point[0], rod.end_node.y + base_point[1])
+    points_on_rod = [start_point, end_point]
 
     # Определяем вектор стержня и его длину
     rod_vector = end_point - start_point
@@ -814,7 +867,7 @@ def draw_diagram_q(rod: Rod, base_point: List[float], diagram: List[float], msp,
 
     # Рассчитываем локальные координаты для эпюры
     num_segments = 1  # Количество сегментов для интерполяции
-    points = [start_point]
+    diagram_points = []
 
     for i in range(num_segments + 1):
         t = i / num_segments  # параметр от 0 до 1
@@ -846,33 +899,11 @@ def draw_diagram_q(rod: Rod, base_point: List[float], diagram: List[float], msp,
             offset_direction = perpendicular if Q >= 0 else -perpendicular
             offset_value = abs(Q) * scale
             diagram_point = point_on_rod + offset_direction * offset_value
-
-        points.append(diagram_point)
-    points.append(end_point)
-
-    # Рисуем эпюру как полилинию
-    if len(points) > 1:
-        polyline = msp.add_lwpolyline(points, dxfattribs={'layer': 'diagram Q', 'color': 6, 'linetype': 'CONTINUOUS'})
-        polyline.closed = True
+        diagram_points.append(diagram_point)
 
     perpendicular_angle = find_perpendicular_angle(start_point=start_point, end_point=end_point)
 
-    if rod.dx() == 0:
-        hatch = msp.add_hatch(color=3, dxfattribs={'layer': 'Штриховка 1'})
-    elif rod.dy() == 0:
-        hatch = msp.add_hatch(color=3, dxfattribs={'layer': 'Штриховка 2'})
-    else:
-        hatch = msp.add_hatch(color=3, dxfattribs={'layer': 'Штриховка 3'})
-
-    hatch.dxf.pattern_name = 'LINE'
-    hatch.dxf.pattern_angle = perpendicular_angle
-    hatch.dxf.pattern_scale = 0.05
-
-    # Добавляем весь контур целиком
-    hatch.paths.add_polyline_path(points, is_closed=True)
-
-    # Рисуем базовую линию (стержень) для справки (опционально)
-    # msp.add_line(start_point, end_point, dxfattribs={'color': 7, 'linetype': 'DASHED'})
+    draw_diagram_between_two_lines(rod_line_points=points_on_rod, diagram_line_points=diagram_points, angle=perpendicular_angle-45, msp=msp)
 
     # Добавляем подписи значений (опционально)
     # Подпись в начале стержня
@@ -923,8 +954,6 @@ def safe_zoom_for_work(doc):
             continue
         filtered.append(e)
 
-    print(f"Обработано объектов: {len(filtered)} из {len(all_entities)}")
-
     if not filtered:
         print("Нет объектов для zoom")
         return
@@ -950,7 +979,6 @@ def safe_zoom_for_work(doc):
 
             # Используем zoom.center для установки вида
             zoom.center(msp, (center_x, center_y), (width, height))
-            print("✅ Zoom выполнен успешно")
         else:
             print("⚠️ Не удалось вычислить габариты")
             # Пробуем стандартный zoom

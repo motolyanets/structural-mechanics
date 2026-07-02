@@ -89,8 +89,16 @@ class Force(Load):
         angle_rad = math.radians(self.rotation)
         direction = Vec2(math.cos(angle_rad), math.sin(angle_rad))
 
-        # Вычисляем точку на конце стрелки
-        tip_point = Vec2(insert_point) + direction * 0.6 + Vec2(0.1, -0.1)
+        if self.rotation == 0:
+            tip_point = Vec2(insert_point) + direction * 0.6 + Vec2(0.1, -0.1)
+        elif self.rotation == 90:
+            tip_point = Vec2(insert_point) + direction * 0.6 + Vec2(0.1, -0.1)
+        elif self.rotation == 180:
+            tip_point = Vec2(insert_point) + direction * 0.6 + Vec2(-1, -0.1)
+        elif self.rotation == 270:
+            tip_point = Vec2(insert_point) + direction * 0.6 + Vec2(0.1, 0.1)
+        else:
+            tip_point = Vec2(insert_point) + direction * 0.6
 
         msp.add_text(text=text, height=0.2, dxfattribs={"layer": "Loads",}).set_placement(tip_point)
         return msp
@@ -187,7 +195,6 @@ class DistributedForce(Load):
         center_y = (start_point[1] + end_point[1]) / 2
         return center_x, center_y
 
-
     def get_projection_on_axis(self, axis_name: str) -> tuple:
         rotation_radians = math.radians(self.rotation)
         if axis_name == 'x':
@@ -202,7 +209,6 @@ class DistributedForce(Load):
         else:
             expression = f' - {self.name}·{self.length}'
         return projection, expression
-
 
     def get_lever_arm(self, point: Tuple[float, float]) -> float:
         """
@@ -256,10 +262,18 @@ class DistributedForce(Load):
                              "layer": "Loads",
                              "rotation": self.rotation,
                              "yscale": self.length,
-                         #     !!!!!!!!!!!!!!!!!!!!!!!!!! Тут нужно сделать взависимости от направления
                          })
         text = f'{self.name} = {self.value}'
-        placement = (insert_point[0] + 0.5, insert_point[1])
+        if self.rotation == 0:
+            placement = (insert_point[0] - 1.25, insert_point[1])
+        elif self.rotation == 90:
+            placement = (insert_point[0], insert_point[1] - 0.6)
+        elif self.rotation == 180:
+            placement = (insert_point[0] + 0.5, insert_point[1])
+        elif self.rotation == 270:
+            placement = (insert_point[0], insert_point[1] + 0.5)
+        else:
+            placement = (insert_point[0], insert_point[1])
         msp.add_text(text=text, height=0.2, dxfattribs={"layer": "Loads",}).set_placement(placement)
         return msp
 

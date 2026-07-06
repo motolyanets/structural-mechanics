@@ -49,7 +49,7 @@ class Force(Load):
         # M = r × F = |r| * |F| * sin(θ)
         # В 2D: M = (dx * Fy - dy * Fx)
         moment_arm = dx * force_y - dy * force_x
-        moment_arm = round_up(moment_arm, 3)
+        moment_arm = moment_arm
 
         return moment_arm
 
@@ -203,7 +203,7 @@ class DistributedForce(Load):
             projection = self.Q() * math.sin(rotation_radians)
         else:
             raise Exception('Название оси должно быть \'x\' или \'y\'')
-        projection = round(projection, 2)
+        projection = projection
         if projection >= 0:
             expression = f' + {self.name}·{self.length}'
         else:
@@ -236,12 +236,12 @@ class DistributedForce(Load):
         # M = r × F = |r| * |F| * sin(θ)
         # В 2D: M = (dx * Fy - dy * Fx)
         moment_arm = dx * force_y - dy * force_x
-        moment_arm = round_up(moment_arm, 3)
+        moment_arm = moment_arm
         return moment_arm
 
     def get_moment_about(self, point: Tuple[float, float]) -> tuple:
         lever_arm = self.get_lever_arm(point=point)
-        moment = round_up(lever_arm * self.Q())
+        moment = lever_arm * self.Q()
         if lever_arm >= 0:
             text = f' +{self.name}·{self.length}·{round_up(abs(lever_arm))}'
         else:

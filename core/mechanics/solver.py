@@ -137,7 +137,7 @@ class SolvableFrame(Frame):
         if isinstance(reaction, Force):
             reaction_lever_arm = reaction.get_lever_arm(point=point)
             reaction_value = -moment / reaction_lever_arm
-            equation += f' + {reaction_lever_arm}·{reaction.name} = 0\n'
+            equation += f' + {round_up(reaction_lever_arm, 3)}·{reaction.name} = 0\n'
             equation += f'{reaction.name} = {reaction_value}\n'
 
         elif isinstance(reaction, Momentum):

@@ -126,7 +126,7 @@ class BRGTUForceMethod(TaskPlugin):
         fm_frames = []
 
         for diagram in ed_diagrams_with_p:
-            print(f'Расчет эпюры М{diagram} метода перемещений')
+            print(f'Расчет эпюры М{diagram} метода сил')
             fm_nodes, fm_rods, fm_supports, fm_loads, _ = new_fm_frame(params)
 
             if 'splitted_frames_order' in fm_details:
@@ -241,9 +241,9 @@ class BRGTUForceMethod(TaskPlugin):
         print(f'δss = {delta_ss_text}\n')
         sum_delta = delta_11 + delta_12 * 2 + delta_13 * 2 + delta_22 + delta_23 * 2 + delta_33
         uni_check_text = (f'δ\\H0.5x;11\\H2.0x; + δ\\H0.5x;12\\H2.0x;·2 + δ\\H0.5x;13\\H2.0x;·2 + δ\\H0.5x;22\\H2.0x; + '
-                          f'δ\\H0.5x;23\\H2.0x;·2 + δ\\H0.5x;33\\H2.0x; = {round_up(delta_11,2)}/EI + '
-                          f'2·{round_up(delta_12,2)}/EI + 2·{round_up(delta_13,2)}/EI + {round_up(delta_22,2)}/EI +'
-                          f' 2·{round_up(delta_23,2)}/EI + {round_up(delta_33,2)}/EI = {round_up(sum_delta,2)}/EI\n')
+                          f'δ\\H0.5x;23\\H2.0x;·2 + δ\\H0.5x;33\\H2.0x; = {round_up(delta_11,3)}/EI + '
+                          f'2·{round_up(delta_12,3)}/EI + 2·{round_up(delta_13,3)}/EI + {round_up(delta_22,3)}/EI +'
+                          f' 2·{round_up(delta_23,3)}/EI + {round_up(delta_33,3)}/EI = {round_up(sum_delta,3)}/EI\n')
         print(f'δ11 + δ12·2 + δ13·2 + δ22 + δ23·2 + δ33 = {round_up(delta_11,3)}/EI + 2·{round_up(delta_12,3)}/EI + '
               f'2·{round_up(delta_13,3)}/EI + {round_up(delta_22,3)}/EI + 2·{round_up(delta_23,3)}/EI + '
               f'{round_up(delta_33,3)}/EI = {round_up(sum_delta,3)}/EI\n')
@@ -261,8 +261,8 @@ class BRGTUForceMethod(TaskPlugin):
         column_check += f'δ\\H0.5x;sp\\H2.0x; = {delta_sp_text}\n'
         print(f'δsp = {delta_sp_text}\n')
         sum_delta = round_up(delta_1p + delta_2p + delta_3p, 2)
-        col_check_text = (f'Δ\\H0.5x;1p\\H2.0x; + Δ\\H0.5x;2p\\H2.0x; + Δ\\H0.5x;3p\\H2.0x; = {round_up(delta_1p,2)}/EI + '
-                          f'{round_up(delta_2p,2)}/EI + {round_up(delta_3p,2)}/EI = {round_up(sum_delta,2)}/EI\n')
+        col_check_text = (f'Δ\\H0.5x;1p\\H2.0x; + Δ\\H0.5x;2p\\H2.0x; + Δ\\H0.5x;3p\\H2.0x; = {round_up(delta_1p,3)}/EI + '
+                          f'{round_up(delta_2p,3)}/EI + {round_up(delta_3p,3)}/EI = {round_up(sum_delta,3)}/EI\n')
         print(f'Δ1p + Δ2p + Δ3p = {delta_1p}/EI + {delta_2p}/EI + {delta_3p}/EI = {sum_delta}/EI\n')
         E_col_check, e_text_col_check = relative_error_percent(delta_sp, sum_delta, tolerance_percent=3)
         column_check += '\n' + col_check_text + '\n' + e_text_col_check + '\n' + 'Проверка выполняется'

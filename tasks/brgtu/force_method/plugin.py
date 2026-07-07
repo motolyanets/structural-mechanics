@@ -1,5 +1,5 @@
 import importlib
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 import ezdxf
 import numpy
@@ -23,7 +23,7 @@ class BRGTUForceMethod(TaskPlugin):
     def _init_loader(self):
         self.loader = ForceMethodLoader(self.excel_path)
 
-    def solve(self, cipher: str) -> Dict[str, Any]:
+    def solve(self, cipher: str):
         params = self.loader.load_cipher(cipher)
         circuit_number = params["circuit_number"]
 
@@ -399,13 +399,6 @@ class BRGTUForceMethod(TaskPlugin):
             if entity.dxf.layer == 'Расчет эпюры Q':
                 entity.text = calculating_Q_report
 
-
-
-
-
-
-
-
         if symmetry:
             print('\n')
             print('-------"Эпюра N"-------')
@@ -444,6 +437,7 @@ class BRGTUForceMethod(TaskPlugin):
                                     if rod.dx() == 0:
                                         rod.diagram_M = [-x for x in ok_rod.diagram_M]
                                         rod.diagram_Q = [-x for x in ok_rod.diagram_Q]
+                                        rod.diagram_N = ok_rod.diagram_N
                                     else:
                                         d_M = ok_rod.diagram_M.copy()
                                         d_M.reverse()
@@ -451,7 +445,9 @@ class BRGTUForceMethod(TaskPlugin):
                                         d_Q = [-x for x in ok_rod.diagram_Q]
                                         d_Q.reverse()
                                         rod.diagram_Q = d_Q
-                                    rod.diagram_N = ok_rod.diagram_N
+                                        d_N = ok_rod.diagram_N.copy()
+                                        d_N.reverse()
+                                        rod.diagram_N = d_N
             for rod in main_frame.rods:
                 if not rod.diagram_M:
                     rod.diagram_M = [0, 0]
@@ -699,3 +695,16 @@ class BRGTUForceMethod(TaskPlugin):
 
         print("✅ Расчетная работа решена успешно")
 
+        m_ok_output = []
+        q_ok_output = []
+        n_ok_output = []
+        for rod in main_frame.rods:
+            m_ok_output.append(rod.diagram_M)
+            q_ok_output.append(rod.diagram_Q)
+            n_ok_output.append(rod.diagram_N)
+
+        print(m_ok_output)
+        print(q_ok_output)
+        print(n_ok_output)
+
+        return m_ok_output, q_ok_output, n_ok_output

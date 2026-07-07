@@ -41,8 +41,8 @@ def main():
     for key, task in tasks.items():
         print(f"  {key}. {task['name']}")
 
-    # choice = input("\nВыберите задачу: ").strip()
-    choice = "2"
+    choice = input("\nВыберите задачу: ").strip()
+    # choice = "2"
 
     if choice not in tasks:
         print("❌ Неверный выбор")
@@ -54,25 +54,14 @@ def main():
         print(f"❌ Файл не найден: {task_info['excel_path']}")
         return
 
-    # cipher = input("\nВведите 4-значный шифр: ").strip()
-    cipher = "1312".strip()
+    cipher = input("\nВведите 4-значный шифр: ").strip()
+    # cipher = "1111".strip()
 
     try:
         plugin = task_info["class"](task_info["excel_path"])
         plugin.loader.print_summary()
         result = plugin.solve(cipher)
-
-        # print("\n" + "=" * 60)
-        # print("РЕЗУЛЬТАТ:")
-        # print("=" * 60)
-        #
-        # if "reactions" in result and result["reactions"]:
-        #     print("\nНайденные реакции:")
-        #     for name, data in result["reactions"].items():
-        #         print(f"  {name} = {data['value']} (угол: {data['rotation']}°)")
-        #
-        # if "message" in result:
-        #     print(f"\n{result['message']}")
+        return result
 
     except Exception as e:
         print(f"\n❌ Ошибка: {e}")

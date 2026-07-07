@@ -49,7 +49,7 @@ class BRGTUCompositeFrame(TaskPlugin):
         else:
             raise ValueError(f"Схема {circuit_number} не реализована")
 
-        from schemes.brgtu.composite_frame.base_composit_frame import CompositeFrame
+        from core.mechanics.solver import CompositeFrame
         frame = CompositeFrame(nodes, rods, supports, loads, splitted_order)
 
         parts_of_frame = frame.split_frame()

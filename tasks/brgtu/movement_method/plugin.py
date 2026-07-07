@@ -8,7 +8,7 @@ from ezdxf import zoom
 from core.mechanics.frame import Frame
 from core.mechanics.load import Twist, Displacement, Force
 from core.mechanics.solver import FrameForMovementMethod, SolvableFrame, multiply_M_frames_by_Simpson
-from schemes.brgtu.composite_frame.base_composit_frame import CompositeFrame
+from core.mechanics.solver import CompositeFrame
 from services.authocad import draw_frame, draw_node_with_inner_loads, draw_displacement_finding
 from services.services import round_up, is_subsegment_2d, relative_error_percent
 from tasks.base import TaskPlugin

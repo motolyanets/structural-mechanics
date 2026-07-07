@@ -1,15 +1,13 @@
 import importlib
-from copy import deepcopy
 from typing import Dict, Any
 
 import ezdxf
 import numpy
-from ezdxf import zoom
 
 from core.mechanics.frame import Frame
-from core.mechanics.load import Force
+from core.mechanics.load import DistributedForce
 from core.mechanics.solver import SolvableFrame, multiply_M_frames_by_Simpson
-from schemes.brgtu.composite_frame.base_composit_frame import CompositeFrame
+from core.mechanics.solver import CompositeFrame
 from services.authocad import draw_frame, draw_node_with_inner_loads, keep_only_layout, draw_dimension_chains, \
     safe_zoom_for_work
 from services.services import round_up, relative_error_percent
@@ -382,10 +380,15 @@ class BRGTUForceMethod(TaskPlugin):
         print('-------"Эпюра Q"-------')
         calculating_Q_report = ''
         i = 1
+        distr_loads = []
+        for load in ok_mm_frame.loads:
+            if isinstance(load, DistributedForce):
+                distr_loads.append(load)
         for rod in ok_mm_frame.rods:
             q = None
-            if len(rod.diagram_M) == 3:
-                q = params['q']
+            for distr_load in distr_loads:
+                if distr_load.rod.name == rod.name:
+                    q = distr_load
 
             report = rod.calculate_diagram_q(q=q)
             calculating_Q_report += report + '\n'
@@ -397,37 +400,34 @@ class BRGTUForceMethod(TaskPlugin):
                 entity.text = calculating_Q_report
 
 
-        print('\n')
-        print('-------"Эпюра N"-------')
-
-        nodes_for_calculating = ok_mm_frame.calculate_diagram_N()
-        # nodes_for_calculating = [ok_mm_frame.nodes[1], ok_mm_frame.nodes[2], ok_mm_frame.nodes[4], ok_mm_frame.nodes[5]]
-        # n = [[-7.43, -7.43], [-7.08, -7.08], [-21.37, -21.37], [-14.95, -14.95], [-7.36, -0.78], [-10.35, -10.35], [-10.35, -10.35]]
-        # i = 0
-        # for rod in ok_mm_frame.rods:
-        #     rod.diagram_N = n[i]
-        #     i += 1
-        for rod in ok_mm_frame.rods:
-            print(f'{rod} ------ {rod.diagram_N}')
-
-        # doc.saveas(f'report.dxf')
 
 
-        ok_mm_frame.base_point = base_point
-        n_base_point = None
-        for node_for_calculating in nodes_for_calculating:
-            msp, n_base_point = draw_node_with_inner_loads(frame=ok_mm_frame, node_name=node_for_calculating.name,
-                                                           n_base_point=n_base_point, msp=msp, is_drawing_m=False)
-        for entity in layout:
-            if entity.dxf.layer == 'sf_N вырезание узлов' and entity.dxftype() == 'VIEWPORT':
-                if entity:
-                    entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
-                                                    ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1] - 20,
-                                                    0.0)
-                    entity.dxf.view_height = ok_mm_frame.height() + 0.3
+
+
 
 
         if symmetry:
+            print('\n')
+            print('-------"Эпюра N"-------')
+
+            nodes_for_calculating = ok_mm_frame.calculate_diagram_N()
+            for rod in ok_mm_frame.rods:
+                print(f'{rod} ------ {rod.diagram_N}')
+
+            ok_mm_frame.base_point = base_point
+            n_base_point = None
+            for node_for_calculating in nodes_for_calculating:
+                msp, n_base_point = draw_node_with_inner_loads(frame=ok_mm_frame, node_name=node_for_calculating.name,
+                                                               n_base_point=n_base_point, msp=msp, is_drawing_m=False)
+            for entity in layout:
+                if entity.dxf.layer == 'sf_N вырезание узлов' and entity.dxftype() == 'VIEWPORT':
+                    if entity:
+                        entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
+                                                        ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[
+                                                            1] - 20,
+                                                        0.0)
+                        entity.dxf.view_height = ok_mm_frame.height() + 0.3
+
             symmetric_pare_of_rods = main_frame.get_symmetric_pare_of_rods()
             for ok_rod in ok_mm_frame.rods:
                 for pare_of_rods in symmetric_pare_of_rods:
@@ -452,30 +452,129 @@ class BRGTUForceMethod(TaskPlugin):
                                         d_Q.reverse()
                                         rod.diagram_Q = d_Q
                                     rod.diagram_N = ok_rod.diagram_N
+            for rod in main_frame.rods:
+                if not rod.diagram_M:
+                    rod.diagram_M = [0, 0]
+                if not rod.diagram_Q:
+                    rod.diagram_Q = [0, 0]
+            for rod in main_frame.rods:
+                if not rod.diagram_N:
+                    _ = main_frame.calculate_diagram_N()
         else:
             for main_rod in main_frame.rods:
                 for ok_rod in ok_mm_frame.rods:
-                    if not ok_rod.diagram_M or not ok_rod.diagram_Q or not ok_rod.diagram_N:
+                    if not ok_rod.diagram_M or not ok_rod.diagram_Q:
                         raise Exception(f'Стержень {ok_rod} не расчитан')
                     else:
                         if main_rod.name == ok_rod.name:
                             main_rod.diagram_M = ok_rod.diagram_M
                             main_rod.diagram_Q = ok_rod.diagram_Q
-                            main_rod.diagram_N = ok_rod.diagram_N
                             break
+                if not main_rod.diagram_M:
+                    main_rod.diagram_M = [0, 0]
+                if not main_rod.diagram_Q:
+                    main_rod.diagram_Q = [0, 0]
+
+            print('\n')
+            print('-------"Эпюра N"-------')
+
+            nodes_for_calculating = main_frame.calculate_diagram_N()
+            for rod in ok_mm_frame.rods:
+                print(f'{rod} ------ {rod.diagram_N}')
+
+            main_frame.base_point = base_point
+            n_base_point = None
+            for node_for_calculating in nodes_for_calculating:
+                msp, n_base_point = draw_node_with_inner_loads(frame=main_frame, node_name=node_for_calculating.name,
+                                                               n_base_point=n_base_point, msp=msp, is_drawing_m=False)
+            for entity in layout:
+                if entity.dxf.layer == 'sf_N вырезание узлов' and entity.dxftype() == 'VIEWPORT':
+                    if entity:
+                        entity.dxf.view_center_point = (main_frame.base_point[0] + main_frame.geometrical_center()[0],
+                                                        main_frame.base_point[1] + main_frame.geometrical_center()[
+                                                            1] - 20,
+                                                        0.0)
+                        entity.dxf.view_height = main_frame.height() + 0.3
+
+        # print('\n')
+        # print('-------"Эпюра N"-------')
+        #
+        # nodes_for_calculating = ok_mm_frame.calculate_diagram_N()
+        # # nodes_for_calculating = [ok_mm_frame.nodes[1], ok_mm_frame.nodes[2], ok_mm_frame.nodes[4], ok_mm_frame.nodes[5]]
+        # # n = [[-7.43, -7.43], [-7.08, -7.08], [-21.37, -21.37], [-14.95, -14.95], [-7.36, -0.78], [-10.35, -10.35], [-10.35, -10.35]]
+        # # i = 0
+        # # for rod in ok_mm_frame.rods:
+        # #     rod.diagram_N = n[i]
+        # #     i += 1
+        # for rod in ok_mm_frame.rods:
+        #     print(f'{rod} ------ {rod.diagram_N}')
+        #
+        # # doc.saveas(f'report.dxf')
+        #
+        #
+        # ok_mm_frame.base_point = base_point
+        # n_base_point = None
+        # for node_for_calculating in nodes_for_calculating:
+        #     msp, n_base_point = draw_node_with_inner_loads(frame=ok_mm_frame, node_name=node_for_calculating.name,
+        #                                                    n_base_point=n_base_point, msp=msp, is_drawing_m=False)
+        # for entity in layout:
+        #     if entity.dxf.layer == 'sf_N вырезание узлов' and entity.dxftype() == 'VIEWPORT':
+        #         if entity:
+        #             entity.dxf.view_center_point = (ok_mm_frame.base_point[0] + ok_mm_frame.geometrical_center()[0],
+        #                                             ok_mm_frame.base_point[1] + ok_mm_frame.geometrical_center()[1] - 20,
+        #                                             0.0)
+        #             entity.dxf.view_height = ok_mm_frame.height() + 0.3
+        #
+        #
+        # if symmetry:
+        #     symmetric_pare_of_rods = main_frame.get_symmetric_pare_of_rods()
+        #     for ok_rod in ok_mm_frame.rods:
+        #         for pare_of_rods in symmetric_pare_of_rods:
+        #             if ok_rod.name in [pare_of_rods[0].name, pare_of_rods[1].name]:
+        #                 if not ok_rod.diagram_M or not ok_rod.diagram_Q or not ok_rod.diagram_N:
+        #                     raise Exception(f'Стержень {ok_rod} не расчитан')
+        #                 else:
+        #                     for rod in pare_of_rods:
+        #                         if rod.name == ok_rod.name:
+        #                             rod.diagram_M = ok_rod.diagram_M
+        #                             rod.diagram_Q = ok_rod.diagram_Q
+        #                             rod.diagram_N = ok_rod.diagram_N
+        #                         if rod.name != ok_rod.name:
+        #                             if rod.dx() == 0:
+        #                                 rod.diagram_M = [-x for x in ok_rod.diagram_M]
+        #                                 rod.diagram_Q = [-x for x in ok_rod.diagram_Q]
+        #                             else:
+        #                                 d_M = ok_rod.diagram_M.copy()
+        #                                 d_M.reverse()
+        #                                 rod.diagram_M = d_M
+        #                                 d_Q = [-x for x in ok_rod.diagram_Q]
+        #                                 d_Q.reverse()
+        #                                 rod.diagram_Q = d_Q
+        #                             rod.diagram_N = ok_rod.diagram_N
+        # else:
+        #     for main_rod in main_frame.rods:
+        #         for ok_rod in ok_mm_frame.rods:
+        #             if not ok_rod.diagram_M or not ok_rod.diagram_Q or not ok_rod.diagram_N:
+        #                 raise Exception(f'Стержень {ok_rod} не расчитан')
+        #             else:
+        #                 if main_rod.name == ok_rod.name:
+        #                     main_rod.diagram_M = ok_rod.diagram_M
+        #                     main_rod.diagram_Q = ok_rod.diagram_Q
+        #                     main_rod.diagram_N = ok_rod.diagram_N
+        #                     break
 
         main_frame, msp, base_point = draw_frame(frame=main_frame, base_point=base_point, diagram_name='M',
                                                   msp=msp,
                                                   drowing_loads=False, accuracy=2)
 
-        for rod in main_frame.rods:
-            if not rod.diagram_M:
-                rod.diagram_M = [0, 0]
-            if not rod.diagram_Q:
-                rod.diagram_Q = [0, 0]
-        for rod in main_frame.rods:
-            if not rod.diagram_N:
-                _ = main_frame.calculate_diagram_N()
+        # for rod in main_frame.rods:
+        #     if not rod.diagram_M:
+        #         rod.diagram_M = [0, 0]
+        #     if not rod.diagram_Q:
+        #         rod.diagram_Q = [0, 0]
+        # for rod in main_frame.rods:
+        #     if not rod.diagram_N:
+        #         _ = main_frame.calculate_diagram_N()
 
         for entity in layout:
             if entity.dxf.layer == 'sf_Mok' and entity.dxftype() == 'VIEWPORT':
@@ -548,7 +647,7 @@ class BRGTUForceMethod(TaskPlugin):
         print(f'∑x: {sum_force_expression_names} = 0')
         print(f'    {sum_force_expression_values} = 0')
         print(f'    {sum_of_projections} = 0')
-        if sum_of_projections <= 0.2:
+        if abs(sum_of_projections) <= 0.2:
             print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}")
         else:
             print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}")
@@ -560,7 +659,7 @@ class BRGTUForceMethod(TaskPlugin):
         print(f'∑y: {sum_force_expression_names} = 0')
         print(f'    {sum_force_expression_values} = 0')
         print(f'    {sum_of_projections} = 0')
-        if sum_of_projections <= 0.2:
+        if abs(sum_of_projections) <= 0.2:
             print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}")
         else:
             print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}")

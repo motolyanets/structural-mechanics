@@ -15,13 +15,6 @@ class Rod:
             qy: int | None = None,
             is_start_hinge: bool = False,
             is_end_hinge: bool = False,
-            # diagram_M1: List | None = None,
-            # diagram_M2: List | None = None,
-            # diagram_M3: List | None = None,
-            # diagram_Ms: List | None = None,
-            # diagram_Mp: List | None = None,
-            # diagram_Mok: List | None = None,
-            # diagram_Mk: List | None = None,
             diagram_M: List | None = None,
             diagram_Q: List | None = None,
             diagram_N: List | None = None,
@@ -312,17 +305,33 @@ class Rod:
     #
     #     return multiplied_diagram
 
-    def calculate_diagram_q(self, q: float | None = None) -> str:
+    def calculate_diagram_q(self, q) -> str:
         Q = (self.diagram_M[0] - self.diagram_M[-1]) / self.length()
         if not q:
             report = f'Q{self.name} = ({round_up(self.diagram_M[0])} - {round_up(self.diagram_M[-1])}) / {self.length()} = {round_up(Q)} кН'
             self.diagram_Q = [Q, Q]
         else:
-            Q1 = Q + q * self.length() / 2
-            Q2 = Q - q * self.length() / 2
-            report = (
-                f'Q{self.name} = ({round_up(self.diagram_M[0])} - {round_up(self.diagram_M[-1])}) / {self.length()} + {q} · {self.length()} / 2 = {round_up(Q1)} кН\n'
-                f'Q{self.name} = ({round_up(self.diagram_M[0])} - {round_up(self.diagram_M[-1])}) / {self.length()} - {q} · {self.length()} / 2 = {round_up(Q2)} кН')
+            q_angle = q.rotation
+            rod_angle = self.get_angle_deg()
+            angle_between = q_angle - rod_angle
+
+            if self.dx() == 0 or self.dy() == 0:
+                Q1 = Q - q.value * math.sin(math.radians(angle_between)) * self.length() / 2
+                Q2 = Q + q.value * math.sin(math.radians(angle_between)) * self.length() / 2
+                report = (
+                    f'Q{self.name} = ({round_up(self.diagram_M[0])} - {round_up(self.diagram_M[-1])}) / {self.length()} + {q.value} · {self.length()} / 2 = {round_up(Q1)} кН\n'
+                    f'Q{self.name} = ({round_up(self.diagram_M[0])} - {round_up(self.diagram_M[-1])}) / {self.length()} - {q.value} · {self.length()} / 2 = {round_up(Q2)} кН')
+            else:
+                if q.rotation in [0, 180]:
+                    l = self.dy()
+                elif q.rotation in [90, 270]:
+                    l = self.dx()
+                Q1 = Q - q.value * math.sin(math.radians(angle_between)) * l / 2
+                Q2 = Q + q.value * math.sin(math.radians(angle_between)) * l / 2
+                report = (
+                    f'Q{self.name} = ({round_up(self.diagram_M[0])} - {round_up(self.diagram_M[-1])}) / {self.length()} + {q.value} · {self.length()} / 2 = {round_up(Q1)} кН\n'
+                    f'Q{self.name} = ({round_up(self.diagram_M[0])} - {round_up(self.diagram_M[-1])}) / {self.length()} - {q.value} · {self.length()} / 2 = {round_up(Q2)} кН')
+
             self.diagram_Q = [Q1, Q2]
         return report
 

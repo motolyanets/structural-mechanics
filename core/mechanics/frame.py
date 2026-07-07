@@ -178,10 +178,7 @@ class Frame:
             raise Exception('Найдены не все опорные реакции')
 
     def next_rod(self, previous_rod:Rod, node: Node) -> Rod:
-        rods_with_node = []
-        for rod in self.rods:
-            if node.name == rod.start_node.name or node.name == rod.end_node.name:
-                rods_with_node.append(rod)
+        rods_with_node = self.get_rods_with_node(node_name=node.name)
 
         if len(rods_with_node) == 1:
             return None
@@ -256,6 +253,8 @@ class Frame:
                 while True:
                     if not current_rod or current_rod.start_node in nodes_with_3_or_more_rodes or current_rod.end_node in nodes_with_3_or_more_rodes:
                         break
+                    elif current_rod.start_node.name in [x.name for x in nodes_with_1_rod] and current_rod.end_node.name in [x.name for x in nodes_with_1_rod]:
+                        break
                     current_rod = self.next_rod(previous_rod=current_rod, node=next_node)
 
                     load_on_current_rod = None
@@ -278,6 +277,8 @@ class Frame:
                     sections += sections_on_rod
                     if load_on_current_rod:
                         using_loads.append(load_on_current_rod)
+                    if next_node.name in [x.name for x in nodes_with_1_rod]:
+                        break
 
 
 
@@ -518,6 +519,14 @@ class Frame:
                     else:
                         straight_rod = unsoleved_rod
 
+                is_there_q_on_rod = False
+                q_inclined = None
+                for load in self.loads:
+                    if isinstance(load, DistributedForce):
+                        if load.rod.name == inclined_rod.name:
+                            is_there_q_on_rod = True
+                            q_inclined = load
+
                 n_progection = 0
                 if straight_rod.dx() == 0:
                     for known_intention in known_intentions:
@@ -530,16 +539,48 @@ class Frame:
 
                 if inclined_rod.start_node.name == node.name:
                     if not inclined_rod.diagram_N:
-                        inclined_rod.diagram_N = [-n]
+                        N = -n
+                        if not is_there_q_on_rod:
+                            inclined_rod.diagram_N = [N, N]
+                        else:
+                            N_start = -n
+                            q_angle = q_inclined.rotation
+                            rod_angle = inclined_rod.get_angle_deg()
+                            angle_between = q_angle - rod_angle
+                            if q_inclined.rotation in [0, 180]:
+                                l = inclined_rod.dy()
+                            elif q_inclined.rotation in [90, 270]:
+                                l = inclined_rod.dx()
+                            N_end = N - q_inclined.value * math.cos(math.radians(angle_between)) * l
+                            inclined_rod.diagram_N = [N_start, N_end]
                     elif len(inclined_rod.diagram_N) == 1:
                         diagram_N = [-n, inclined_rod.diagram_N[0]]
                         inclined_rod.diagram_N = diagram_N
                 elif inclined_rod.end_node == node:
                     if not inclined_rod.diagram_N:
-                        inclined_rod.diagram_N = [n]
+                        N = n
+                        if not is_there_q_on_rod:
+                            inclined_rod.diagram_N = [N, N]
+                        else:
+                            N_end = n
+                            q_angle = q_inclined.rotation
+                            rod_angle = inclined_rod.get_angle_deg()
+                            angle_between = q_angle - rod_angle
+                            if q_inclined.rotation in [0, 180]:
+                                l = inclined_rod.dy()
+                            elif q_inclined.rotation in [90, 270]:
+                                l = inclined_rod.dx()
+                            N_start = N + q_inclined.value * math.cos(math.radians(angle_between)) * l
+                            inclined_rod.diagram_N = [N_start, N_end]
                     elif len(inclined_rod.diagram_N) == 1:
                         diagram_N = [inclined_rod.diagram_N[0], n]
                         inclined_rod.diagram_N = diagram_N
+
+
+
+
+
+
 
                 is_there_q_on_rod = False
                 for load in self.loads:
@@ -732,8 +773,8 @@ class Frame:
     def set_reactions_from_diagrams(self):
         for rod in self.rods:
             if not rod.diagram_M or not rod.diagram_Q or not rod.diagram_N:
-                pass
-                # raise Exception('Рама не решена')
+                # pass
+                raise Exception('Рама не решена')
         finded_reactions = []
         # r = [-4.52, 0.33, -18.23, 0, -1.26, 0.87, -0.32, 3.98]
         # i = 0
@@ -810,6 +851,30 @@ class Frame:
                                 reaction.rotation = q_rotation
                                 reaction.value = abs(q)
                             finded_reactions.append(reaction)
+                        else:
+                            rod_angle = r_rod.get_angle_deg()
+                            n = r_rod.diagram_N[0]
+                            q = r_rod.diagram_Q[0]
+                            n_x = n * math.cos(math.radians(rod_angle))
+                            n_y = n * math.sin(math.radians(rod_angle))
+                            q_x = q * math.sin(math.radians(rod_angle))
+                            q_y = -q * math.cos(math.radians(rod_angle))
+
+                            if reaction.rotation in [90, 270]:
+                                r = n_y + q_y
+                                if r >= 0:
+                                    reaction.rotation = 270
+                                else:
+                                    reaction.rotation = 90
+                                reaction.value = abs(r)
+                            elif reaction.rotation in [0, 180]:
+                                r = n_x + q_x
+                                if r >= 0:
+                                    reaction.rotation = 180
+                                else:
+                                    reaction.rotation = 0
+                                reaction.value = abs(r)
+                            finded_reactions.append(reaction)
                     if r_node == r_rod.end_node:
                         if r_rod.dy() == 0:
                             n = r_rod.diagram_N[-1]
@@ -849,6 +914,31 @@ class Frame:
                                 reaction.rotation = q_rotation
                                 reaction.value = abs(q)
                             finded_reactions.append(reaction)
+                        else:
+                            rod_angle = r_rod.get_angle_deg()
+                            n = r_rod.diagram_N[0]
+                            q = r_rod.diagram_Q[0]
+                            n_x = n * math.cos(math.radians(rod_angle))
+                            n_y = n * math.sin(math.radians(rod_angle))
+                            q_x = q * math.sin(math.radians(rod_angle))
+                            q_y = -q * math.cos(math.radians(rod_angle))
+
+                            if reaction.rotation in [90, 270]:
+                                r = n_y + q_y
+                                if r >= 0:
+                                    reaction.rotation = 270
+                                else:
+                                    reaction.rotation = 90
+                                reaction.value = abs(r)
+                            elif reaction.rotation in [0, 180]:
+                                r = n_x + q_x
+                                if r >= 0:
+                                    reaction.rotation = 180
+                                else:
+                                    reaction.rotation = 0
+                                reaction.value = abs(r)
+                            finded_reactions.append(reaction)
+
         self.finded_reactions = finded_reactions
 
 

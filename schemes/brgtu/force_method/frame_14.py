@@ -71,7 +71,7 @@ def create_frame_14(params: dict):
         load_q3 = DistributedForce(name='q', rod=rod11, value=q, rotation=270)
         load_q4 = DistributedForce(name='q', rod=rod13, value=q, rotation=270)
         loads = [load_P1, load_P2, load_P3, load_P4, load_q1, load_q2, load_q3, load_q4]
-        nodes = [node1, node3, node4, node5, node6, node7, node8, node9, node10, node11, node12, node13, node14, node16, node17]
+        nodes = [node1, node3, node4, node5, node6, node7, node8, node9, node10, node11, node12, node13, node14, node15, node16, node17]
         rods = [rod1, rod2, rod3, rod4, rod5, rod6, rod7, rod8_1, rod8_2, rod9, rod10, rod11, rod12, rod13, rod14, rod15]
 
     else:
@@ -83,11 +83,11 @@ def create_frame_14(params: dict):
         load_P1 = Force(name='P', node=node2, value=P, rotation=0)
         load_P2 = Force(name='P', node=node8, value=P, rotation=180)
         load_P3 = Force(name='P', node=node11, value=P, rotation=0)
-        load_P4 = Force(name='P', node=node15, value=P, rotation=180)
+        load_P4 = Force(name='P', node=node18, value=P, rotation=180)
         load_q1 = DistributedForce(name='q', rod=rod4, value=q, rotation=0)
         load_q2 = DistributedForce(name='q', rod=rod12, value=q, rotation=180)
         loads = [load_P1, load_P2, load_P3, load_P4, load_q1, load_q2]
-        nodes = [node1, node3, node4, node5, node6, node7, node8, node9, node10, node11, node12, node13, node14, node16, node17]
+        nodes = [node1, node2, node3, node4, node5, node6, node7, node8, node9, node10, node11, node12, node13, node14, node15, node16, node17, node18]
         rods = [rod1_1, rod1_2, rod2, rod3, rod4, rod5, rod6, rod7, rod8_1, rod8_2, rod9, rod10, rod11, rod12, rod13, rod14, rod15_1, rod15_2]
 
     supports = [support1, support2, support3, support4, support5, support6]
@@ -151,7 +151,7 @@ def create_primary_system_14(params: dict):
         rods = [rod1, rod2, rod3, rod4, rod5, rod6, rod7]
 
         details['splitted_frames_order'] = (
-            ['A', '2', 'E1'],
+            ['A', 'E1'],
             ['E', '4', 'B', 'S', 'R', 'K', 'C'],
         )
 
@@ -163,11 +163,11 @@ def create_primary_system_14(params: dict):
         load_P2 = Force(name='P', node=node8, value=P, rotation=180)
         load_q1 = DistributedForce(name='q', rod=rod4, value=q, rotation=0)
         loads_p = [load_P1, load_P2, load_q1]
-        nodes = [node1, node3, node4, node5, node6, node7, node8, node9, ]
+        nodes = [node1, node2, node3, node4, node5, node6, node7, node8, node9, ]
         rods = [rod1_1, rod1_2, rod2, rod3, rod4, rod5, rod6, rod7]
 
         details['splitted_frames_order'] = (
-            ['A', 'E1'],
+            ['A', '2', 'E1'],
             ['E', '4', 'B', 'S', 'R', 'K', 'C'],
         )
 

@@ -475,7 +475,7 @@ class BRGTUForceMethod(TaskPlugin):
             print('-------"Эпюра N"-------')
 
             nodes_for_calculating = main_frame.calculate_diagram_N()
-            for rod in ok_mm_frame.rods:
+            for rod in main_frame.rods:
                 print(f'{rod} ------ {rod.diagram_N}')
 
             main_frame.base_point = base_point

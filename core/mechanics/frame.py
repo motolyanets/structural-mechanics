@@ -785,159 +785,247 @@ class Frame:
         #     print(reaction)
             if reaction not in finded_reactions:
                 r_node = reaction.node
-                r_rod = None
+
+
+                # r_rod = None
+                # for rod in self.rods:
+                #     if rod.start_node == r_node or rod.end_node == r_node:
+                #         if not r_rod:
+                #             r_rod = rod
+                #         else:
+                #             raise Exception('К опоре может подходить только 1 стержень')
+                # if not r_rod:
+                #     raise Exception('К опоре не подходит ни один стержень')
+
+                r_rods = []
                 for rod in self.rods:
                     if rod.start_node == r_node or rod.end_node == r_node:
-                        if not r_rod:
-                            r_rod = rod
-                        else:
-                            raise Exception('К опоре может подходить только 1 стержень')
-                if not r_rod:
+                        r_rods.append(rod)
+                if len(r_rods) == 0:
                     raise Exception('К опоре не подходит ни один стержень')
 
+
+
                 if isinstance(reaction, Momentum):
-                    if r_node == r_rod.start_node:
-                        value = abs(r_rod.diagram_M[0])
-                        if r_rod.diagram_M[0] >= 0:
-                            rotation = False
-                        else:
-                            rotation = True
-                    elif r_node == r_rod.end_node:
-                        value = abs(r_rod.diagram_M[-1])
-                        if r_rod.diagram_M[0] >= 0:
-                            rotation = True
-                        else:
-                            rotation = False
-                    reaction.value = value
-                    reaction.rotation = rotation
+                    r_value = 0
+                    for r_rod in r_rods:
+                        if r_node == r_rod.start_node:
+                            if r_rod.diagram_M[0] >= 0:
+                                r_value += abs(r_rod.diagram_M[0])
+                            else:
+                                r_value -= abs(r_rod.diagram_M[0])
+                        elif r_node == r_rod.end_node:
+                            if r_rod.diagram_M[0] >= 0:
+                                r_value -= abs(r_rod.diagram_M[0])
+                            else:
+                                r_value += abs(r_rod.diagram_M[0])
+                    reaction.value = abs(r_value)
+                    if r_value >= 0:
+                        reaction.rotation = False
+                    else:
+                        reaction.rotation = True
                     finded_reactions.append(reaction)
+
+
                 elif isinstance(reaction, Force):
-                    if r_node == r_rod.start_node:
-                        if r_rod.dy() == 0:
-                            n = r_rod.diagram_N[0]
-                            if n >= 0:
-                                n_rotation = 180
-                            else:
-                                n_rotation = 0
-                            q = r_rod.diagram_Q[0]
-                            if q >= 0:
-                                q_rotation = 90
-                            else:
-                                q_rotation = 270
-
-                            if reaction.rotation in [0, 180]:
-                                reaction.rotation = n_rotation
-                                reaction.value = abs(n)
-                            elif reaction.rotation in [90, 270]:
-                                reaction.rotation = q_rotation
-                                reaction.value = abs(q)
-                            finded_reactions.append(reaction)
-                        elif r_rod.dx() == 0:
-                            n = r_rod.diagram_N[0]
-                            if n >= 0:
-                                n_rotation = 270
-                            else:
-                                n_rotation = 90
-                            q = r_rod.diagram_Q[0]
-                            if q >= 0:
-                                q_rotation = 180
-                            else:
-                                q_rotation = 0
-
-                            if reaction.rotation in [90, 270]:
-                                reaction.rotation = n_rotation
-                                reaction.value = abs(n)
-                            elif reaction.rotation in [0, 180]:
-                                reaction.rotation = q_rotation
-                                reaction.value = abs(q)
-                            finded_reactions.append(reaction)
-                        else:
-                            rod_angle = r_rod.get_angle_deg()
+                    reaction_angle = reaction.rotation
+                    r_value = 0
+                    for r_rod in r_rods:
+                        rod_angle = r_rod.get_angle_deg()
+                        if r_node == r_rod.start_node:
                             n = r_rod.diagram_N[0]
                             q = r_rod.diagram_Q[0]
-                            n_x = n * math.cos(math.radians(rod_angle))
-                            n_y = n * math.sin(math.radians(rod_angle))
-                            q_x = q * math.sin(math.radians(rod_angle))
-                            q_y = -q * math.cos(math.radians(rod_angle))
-
-                            if reaction.rotation in [90, 270]:
-                                r = n_y + q_y
-                                if r >= 0:
-                                    reaction.rotation = 270
-                                else:
-                                    reaction.rotation = 90
-                                reaction.value = abs(r)
-                            elif reaction.rotation in [0, 180]:
-                                r = n_x + q_x
-                                if r >= 0:
-                                    reaction.rotation = 180
-                                else:
-                                    reaction.rotation = 0
-                                reaction.value = abs(r)
-                            finded_reactions.append(reaction)
-                    if r_node == r_rod.end_node:
-                        if r_rod.dy() == 0:
-                            n = r_rod.diagram_N[-1]
                             if n >= 0:
-                                n_rotation = 0
+                                n_angle = rod_angle
                             else:
-                                n_rotation = 180
-                            q = r_rod.diagram_Q[-1]
+                                n_angle = rod_angle + 180
+                                if n_angle >= 360:
+                                    n_angle -= 360
                             if q >= 0:
-                                q_rotation = 270
+                                q_angle = rod_angle - 90
                             else:
-                                q_rotation = 90
+                                q_angle = rod_angle + 90
+                                if q_angle >= 360:
+                                    q_angle -= 360
 
-                            if reaction.rotation in [0, 180]:
-                                reaction.rotation = n_rotation
-                                reaction.value = abs(n)
-                            elif reaction.rotation in [90, 270]:
-                                reaction.rotation = q_rotation
-                                reaction.value = abs(q)
-                            finded_reactions.append(reaction)
-                        elif r_rod.dx() == 0:
-                            n = r_rod.diagram_N[-1]
+                            r_value += abs(n) * math.cos(math.radians(reaction_angle - n_angle))
+                            r_value += abs(q) * math.cos(math.radians(reaction_angle - q_angle))
+                        elif r_node == r_rod.end_node:
+                            n = r_rod.diagram_N[1]
+                            q = r_rod.diagram_Q[1]
                             if n >= 0:
-                                n_rotation = 90
+                                n_angle = rod_angle + 180
+                                if n_angle >= 360:
+                                    n_angle -= 360
                             else:
-                                n_rotation = 270
-                            q = r_rod.diagram_Q[-1]
+                                n_angle = rod_angle
                             if q >= 0:
-                                q_rotation = 0
+                                q_angle = rod_angle + 90
+                                if q_angle >= 360:
+                                    q_angle -= 360
                             else:
-                                q_rotation = 180
+                                q_angle = rod_angle - 90
 
-                            if reaction.rotation in [90, 270]:
-                                reaction.rotation = n_rotation
-                                reaction.value = abs(n)
-                            elif reaction.rotation in [0, 180]:
-                                reaction.rotation = q_rotation
-                                reaction.value = abs(q)
-                            finded_reactions.append(reaction)
-                        else:
-                            rod_angle = r_rod.get_angle_deg()
-                            n = r_rod.diagram_N[0]
-                            q = r_rod.diagram_Q[0]
-                            n_x = n * math.cos(math.radians(rod_angle))
-                            n_y = n * math.sin(math.radians(rod_angle))
-                            q_x = q * math.sin(math.radians(rod_angle))
-                            q_y = -q * math.cos(math.radians(rod_angle))
+                            r_value += abs(n) * math.cos(math.radians(reaction_angle - n_angle))
+                            r_value += abs(q) * math.cos(math.radians(reaction_angle - q_angle))
 
-                            if reaction.rotation in [90, 270]:
-                                r = n_y + q_y
-                                if r >= 0:
-                                    reaction.rotation = 270
-                                else:
-                                    reaction.rotation = 90
-                                reaction.value = abs(r)
-                            elif reaction.rotation in [0, 180]:
-                                r = n_x + q_x
-                                if r >= 0:
-                                    reaction.rotation = 180
-                                else:
-                                    reaction.rotation = 0
-                                reaction.value = abs(r)
-                            finded_reactions.append(reaction)
+                    if r_value >= 0:
+                        reaction.value = r_value
+                        reaction.rotation += 180
+                        if reaction.rotation >= 360:
+                            reaction.rotation -= 360
+                    else:
+                        reaction.value = -r_value
+                    finded_reactions.append(reaction)
+
+
+
+
+
+
+                # if isinstance(reaction, Momentum):
+                #     if r_node == r_rod.start_node:
+                #         value = abs(r_rod.diagram_M[0])
+                #         if r_rod.diagram_M[0] >= 0:
+                #             rotation = False
+                #         else:
+                #             rotation = True
+                #     elif r_node == r_rod.end_node:
+                #         value = abs(r_rod.diagram_M[-1])
+                #         if r_rod.diagram_M[0] >= 0:
+                #             rotation = True
+                #         else:
+                #             rotation = False
+                #     reaction.value = value
+                #     reaction.rotation = rotation
+                #     finded_reactions.append(reaction)
+                # elif isinstance(reaction, Force):
+                #     if r_node == r_rod.start_node:
+                #         if r_rod.dy() == 0:
+                #             n = r_rod.diagram_N[0]
+                #             if n >= 0:
+                #                 n_rotation = 180
+                #             else:
+                #                 n_rotation = 0
+                #             q = r_rod.diagram_Q[0]
+                #             if q >= 0:
+                #                 q_rotation = 90
+                #             else:
+                #                 q_rotation = 270
+                #
+                #             if reaction.rotation in [0, 180]:
+                #                 reaction.rotation = n_rotation
+                #                 reaction.value = abs(n)
+                #             elif reaction.rotation in [90, 270]:
+                #                 reaction.rotation = q_rotation
+                #                 reaction.value = abs(q)
+                #             finded_reactions.append(reaction)
+                #         elif r_rod.dx() == 0:
+                #             n = r_rod.diagram_N[0]
+                #             if n >= 0:
+                #                 n_rotation = 270
+                #             else:
+                #                 n_rotation = 90
+                #             q = r_rod.diagram_Q[0]
+                #             if q >= 0:
+                #                 q_rotation = 180
+                #             else:
+                #                 q_rotation = 0
+                #
+                #             if reaction.rotation in [90, 270]:
+                #                 reaction.rotation = n_rotation
+                #                 reaction.value = abs(n)
+                #             elif reaction.rotation in [0, 180]:
+                #                 reaction.rotation = q_rotation
+                #                 reaction.value = abs(q)
+                #             finded_reactions.append(reaction)
+                #         else:
+                #             rod_angle = r_rod.get_angle_deg()
+                #             n = r_rod.diagram_N[0]
+                #             q = r_rod.diagram_Q[0]
+                #             n_x = n * math.cos(math.radians(rod_angle))
+                #             n_y = n * math.sin(math.radians(rod_angle))
+                #             q_x = q * math.sin(math.radians(rod_angle))
+                #             q_y = -q * math.cos(math.radians(rod_angle))
+                #
+                #             if reaction.rotation in [90, 270]:
+                #                 r = n_y + q_y
+                #                 if r >= 0:
+                #                     reaction.rotation = 270
+                #                 else:
+                #                     reaction.rotation = 90
+                #                 reaction.value = abs(r)
+                #             elif reaction.rotation in [0, 180]:
+                #                 r = n_x + q_x
+                #                 if r >= 0:
+                #                     reaction.rotation = 180
+                #                 else:
+                #                     reaction.rotation = 0
+                #                 reaction.value = abs(r)
+                #             finded_reactions.append(reaction)
+                #     if r_node == r_rod.end_node:
+                #         if r_rod.dy() == 0:
+                #             n = r_rod.diagram_N[-1]
+                #             if n >= 0:
+                #                 n_rotation = 0
+                #             else:
+                #                 n_rotation = 180
+                #             q = r_rod.diagram_Q[-1]
+                #             if q >= 0:
+                #                 q_rotation = 270
+                #             else:
+                #                 q_rotation = 90
+                #
+                #             if reaction.rotation in [0, 180]:
+                #                 reaction.rotation = n_rotation
+                #                 reaction.value = abs(n)
+                #             elif reaction.rotation in [90, 270]:
+                #                 reaction.rotation = q_rotation
+                #                 reaction.value = abs(q)
+                #             finded_reactions.append(reaction)
+                #         elif r_rod.dx() == 0:
+                #             n = r_rod.diagram_N[-1]
+                #             if n >= 0:
+                #                 n_rotation = 90
+                #             else:
+                #                 n_rotation = 270
+                #             q = r_rod.diagram_Q[-1]
+                #             if q >= 0:
+                #                 q_rotation = 0
+                #             else:
+                #                 q_rotation = 180
+                #
+                #             if reaction.rotation in [90, 270]:
+                #                 reaction.rotation = n_rotation
+                #                 reaction.value = abs(n)
+                #             elif reaction.rotation in [0, 180]:
+                #                 reaction.rotation = q_rotation
+                #                 reaction.value = abs(q)
+                #             finded_reactions.append(reaction)
+                #         else:
+                #             rod_angle = r_rod.get_angle_deg()
+                #             n = r_rod.diagram_N[0]
+                #             q = r_rod.diagram_Q[0]
+                #             n_x = n * math.cos(math.radians(rod_angle))
+                #             n_y = n * math.sin(math.radians(rod_angle))
+                #             q_x = q * math.sin(math.radians(rod_angle))
+                #             q_y = -q * math.cos(math.radians(rod_angle))
+                #
+                #             if reaction.rotation in [90, 270]:
+                #                 r = n_y + q_y
+                #                 if r >= 0:
+                #                     reaction.rotation = 270
+                #                 else:
+                #                     reaction.rotation = 90
+                #                 reaction.value = abs(r)
+                #             elif reaction.rotation in [0, 180]:
+                #                 r = n_x + q_x
+                #                 if r >= 0:
+                #                     reaction.rotation = 180
+                #                 else:
+                #                     reaction.rotation = 0
+                #                 reaction.value = abs(r)
+                #             finded_reactions.append(reaction)
 
         self.finded_reactions = finded_reactions
 

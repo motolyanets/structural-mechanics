@@ -210,7 +210,7 @@ class SolvableFrame(Frame):
         point = (support_node.x, support_node.y)
         return self.create_moment_equation_with_two_unknowns(point, unknown_reactions)
 
-    def create_moment_equation_with_two_unknowns(self, point: Tuple[float, float], unknown_reactions: List[Force]) -> str:
+    def create_moment_equation_with_two_unknowns(self, point: Tuple[float, float], unknown_reactions: List) -> str:
         coefficients = {}
         constant_term = 0
         constant_term_expression = ''
@@ -246,8 +246,11 @@ class SolvableFrame(Frame):
                     constant_term_expression += text
 
         for reaction in unknown_reactions:
-            lever_arm = reaction.get_lever_arm(point=point)
-            coefficients[reaction.name] = lever_arm
+            if isinstance(reaction, Force):
+                lever_arm = reaction.get_lever_arm(point=point)
+                coefficients[reaction.name] = lever_arm
+            elif isinstance(reaction, Momentum):
+                coefficients[reaction.name] = 1
 
         equation_parts = []
         sorted_coeffs = sorted(coefficients.items(), key=lambda x: x[0])
@@ -600,7 +603,12 @@ class ThreeHingedFrame(SolvableFrame, BaseFrame):
         for reaction in self.reactions():
             if reaction.name not in [r.name for r in self.finded_reactions]:
                 if isinstance(reaction, Force):
+                    if (reaction.node.x, reaction.node.y) != point:
+                        unknown_reactions.append(reaction)
+                elif isinstance(reaction, Momentum):
                     unknown_reactions.append(reaction)
+        if len(unknown_reactions) != 2:
+            raise Exception('В уравнении должно быть две переменные!')
         return self.create_moment_equation_with_two_unknowns(point, unknown_reactions[:2])
 
     def solve_system_of_equations(self, equation1: str, equation2: str) -> dict:

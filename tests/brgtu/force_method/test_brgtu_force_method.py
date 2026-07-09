@@ -430,5 +430,150 @@ class TestBrgtuForceMethod(unittest.TestCase):
             error_message = "\n".join(all_errors)
             self.fail(f"Найдены расхождения:\n{error_message}")
 
+
+    @patch('sys.stdin', StringIO('2\n1611\n'))
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_brgtu_force_method_1611(self, mock_stdout):
+        from main import main
+        m_ok_output, q_ok_output, n_ok_output = main()
+
+        # Ожидаемые значения эпюр моментов для каждого стержня
+        expected_m_ok_output = [[-4.9, 9.85], [9.85, -10.08, 0.0], [-0.49, 0.0], [0, 0.51], [1, -4], [-4, 0.0], [0, 0],
+                                [0, 0], [0, 0], [0, 0], [0, -4], [-4, 1], [0, -0.51], [0.49, 0], [0.0, -10.08, 9.85],
+                                [4.9, -9.85]]
+        expected_q_ok_output = [[-2.5, -2.5], [6.86, -4.93], [-0.13, -0.13], [-0.13, -0.13], [6.67, 6.67], [-5.33, -5.33],
+                                [0, 0], [0, 0], [0, 0], [0, 0], [5.33, 5.33], [-6.67, -6.67], [0.13, 0.13], [0.13, 0.13],
+                                [4.93, -6.86], [2.5, 2.5]]
+        expected_n_ok_output = [[-7.46, -7.46], [-3.85, -1.61], [-4.54, -4.54], [-11.21, -11.21], [0, 0], [0, 0],
+                                [-5.33, -5.33], [-2.63, -2.63], [-2.63, -2.63], [-5.33, -5.33], [0, 0], [0, 0],
+                                [-11.21, -11.21], [-4.54, -4.54], [-1.61, -3.85], [-7.46, -7.46]]
+
+
+        errors_m = compare_moment_lists(m_ok_output, expected_m_ok_output, self.tolerance)
+        errors_q = compare_moment_lists(q_ok_output, expected_q_ok_output, self.tolerance)
+        errors_n = compare_moment_lists(n_ok_output, expected_n_ok_output, self.tolerance)
+
+        # Собираем все ошибки вместе
+        all_errors = []
+        if errors_m:
+            all_errors.extend(errors_m)
+        if errors_q:
+            all_errors.extend(errors_q)
+        if errors_n:
+            all_errors.extend(errors_n)
+
+        # Если есть ошибки, выводим их
+        if all_errors:
+            error_message = "\n".join(all_errors)
+            self.fail(f"Найдены расхождения:\n{error_message}")
+
+
+    @patch('sys.stdin', StringIO('2\n1612\n'))
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_brgtu_force_method_1612(self, mock_stdout):
+        from main import main
+        m_ok_output, q_ok_output, n_ok_output = main()
+
+        # Ожидаемые значения эпюр моментов для каждого стержня
+        expected_m_ok_output = [[12.34, -7.1], [-7.1, 2.02], [2.02, 0.0], [4.01, 4.41, 0.0], [0, 5.59], [1.57, 0.79],
+                                [0.79, 0.0], [0, 0.0], [0, 0], [0, 0], [0, -0.0], [0.0, 0.79], [0.79, 1.57], [0, -5.59],
+                                [-4.01, -4.41, -0.0], [0.0, 2.02], [-12.34, 7.1], [7.1, -2.02]]
+        expected_q_ok_output = [[9.72, 9.72], [-2.28, -2.28], [0.2, 0.2], [-1.4, 3.4], [-1.4, -1.4], [1.05, 1.05],
+                                [1.05, 1.05], [0, 0], [0, 0], [0, 0], [0, 0], [-1.05, -1.05], [-1.05, -1.05], [1.4, 1.4],
+                                [1.4, -3.4], [-0.2, -0.2], [-9.72, -9.72], [2.28, 2.28]]
+        expected_n_ok_output = [[-0.66, -0.66], [-0.66, -0.66], [-2.37, -2.37], [0.66, 0.66], [-0.39, -0.39], [0, 0],
+                                [0, 0], [1.05, 1.05], [1.12, 1.12], [1.12, 1.12], [1.05, 1.05], [0, 0], [0, 0],
+                                [-0.39, -0.39], [0.66, 0.66], [-2.37, -2.37], [-0.66, -0.66], [-0.66, -0.66]]
+
+        errors_m = compare_moment_lists(m_ok_output, expected_m_ok_output, self.tolerance)
+        errors_q = compare_moment_lists(q_ok_output, expected_q_ok_output, self.tolerance)
+        errors_n = compare_moment_lists(n_ok_output, expected_n_ok_output, self.tolerance)
+
+        # Собираем все ошибки вместе
+        all_errors = []
+        if errors_m:
+            all_errors.extend(errors_m)
+        if errors_q:
+            all_errors.extend(errors_q)
+        if errors_n:
+            all_errors.extend(errors_n)
+
+        # Если есть ошибки, выводим их
+        if all_errors:
+            error_message = "\n".join(all_errors)
+            self.fail(f"Найдены расхождения:\n{error_message}")
+
+
+    @patch('sys.stdin', StringIO('2\n3716\n'))
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_brgtu_force_method_3716(self, mock_stdout):
+        from main import main
+        m_ok_output, q_ok_output, n_ok_output = main()
+
+        # Ожидаемые значения эпюр моментов для каждого стержня
+        expected_m_ok_output = [[0, -2.33, -1.96], [-1.96, 1.11, 6.88], [5.27, -6.88], [0.0, -9.26], [-9.26, 7.47],
+                                [-24.76, 0.0], [2.2, 2.2], [2.2, 2.2], [0, 0], [0, 0], [0.0, -24.76], [-0.0, 9.26],
+                                [9.26, -7.47], [-5.27, 6.88], [6.88, 1.11, -1.96], [-1.96, -2.33, 0]]
+        expected_q_ok_output = [[2.45, -1.15], [-1.15, -4.75], [2.53, 2.53], [4.63, 4.63], [-8.37, -8.37], [-8.25, -8.25],
+                                [0.0, 0.0], [-0.0, -0.0], [0, 0], [0, 0], [8.25, 8.25], [-4.63, -4.63], [8.37, 8.37],
+                                [-2.53, -2.53], [4.75, 1.15], [1.15, -2.45]]
+        expected_n_ok_output = [[0, 0], [0, 0], [-4.75, -4.75], [-4.75, -4.75], [-4.75, -4.75], [4.63, 4.63], [-10.9, -10.9],
+                                [-10.9, -10.9], [2.53, 2.53], [2.53, 2.53], [4.63, 4.63], [-4.75, -4.75], [-4.75, -4.75],
+                                [-4.75, -4.75], [0, 0], [0, 0]]
+
+        errors_m = compare_moment_lists(m_ok_output, expected_m_ok_output, self.tolerance)
+        errors_q = compare_moment_lists(q_ok_output, expected_q_ok_output, self.tolerance)
+        errors_n = compare_moment_lists(n_ok_output, expected_n_ok_output, self.tolerance)
+
+        # Собираем все ошибки вместе
+        all_errors = []
+        if errors_m:
+            all_errors.extend(errors_m)
+        if errors_q:
+            all_errors.extend(errors_q)
+        if errors_n:
+            all_errors.extend(errors_n)
+
+        # Если есть ошибки, выводим их
+        if all_errors:
+            error_message = "\n".join(all_errors)
+            self.fail(f"Найдены расхождения:\n{error_message}")
+
+
+    @patch('sys.stdin', StringIO('2\n3717\n'))
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_brgtu_force_method_3717(self, mock_stdout):
+        from main import main
+        m_ok_output, q_ok_output, n_ok_output = main()
+
+        # Ожидаемые значения эпюр моментов для каждого стержня
+        expected_m_ok_output = [[0, -19.16], [-19.16, 0.67], [2.94, -2.62, -0.67], [0.0, 1.41], [19.84, 0.0],
+                                [-1.53, -1.53], [-1.53, -1.53], [0, 0], [0, 0], [0.0, 19.84], [-0.0, -1.41],
+                                [-2.94, 2.62, 0.67], [0.67, -19.16], [-19.16, 0]]
+        expected_q_ok_output = [[6.39, 6.39], [-6.61, -6.61], [3.72, -2.28], [-0.35, -0.35], [6.61, 6.61], [0.0, 0.0],
+                                [-0.0, -0.0], [0, 0], [0, 0], [-6.61, -6.61], [0.35, 0.35], [-3.72, 2.28], [6.61, 6.61],
+                                [-6.39, -6.39]]
+        expected_n_ok_output = [[0, 0], [0, 0], [-6.61, -6.61], [-6.61, -6.61], [-0.35, -0.35], [-4.07, -4.07],
+                                [-4.07, -4.07], [-2.28, -2.28], [-2.28, -2.28], [-0.35, -0.35], [-6.61, -6.61],
+                                [-6.61, -6.61], [0, 0], [0, 0]]
+
+        errors_m = compare_moment_lists(m_ok_output, expected_m_ok_output, self.tolerance)
+        errors_q = compare_moment_lists(q_ok_output, expected_q_ok_output, self.tolerance)
+        errors_n = compare_moment_lists(n_ok_output, expected_n_ok_output, self.tolerance)
+
+        # Собираем все ошибки вместе
+        all_errors = []
+        if errors_m:
+            all_errors.extend(errors_m)
+        if errors_q:
+            all_errors.extend(errors_q)
+        if errors_n:
+            all_errors.extend(errors_n)
+
+        # Если есть ошибки, выводим их
+        if all_errors:
+            error_message = "\n".join(all_errors)
+            self.fail(f"Найдены расхождения:\n{error_message}")
+
 if __name__ == '__main__':
     unittest.main()

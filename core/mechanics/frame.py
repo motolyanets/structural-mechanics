@@ -594,12 +594,19 @@ class Frame:
                 return True
 
 
-
-
-
-
-
         elif len(unsoleved_rods) == 1:
+
+
+
+
+
+            # Нужно добавить вариант на случай если этот один стержень наклонный
+
+
+
+
+
+
             unsoleved_rod = unsoleved_rods[0]
             n_progection = 0
             if unsoleved_rod.dx() == 0:
@@ -706,6 +713,13 @@ class Frame:
                         if isinstance(load, Force) and load.node.name == node.name:
                             forces_in_node.append(load)
                     the_only_rod = rodes_with_node[0]
+
+                    if node.name == the_only_rod.start_node.name:
+                        if round_up(the_only_rod.diagram_M[0], 2) != 0:
+                            break
+                    elif node.name == the_only_rod.end_node.name:
+                        if round_up(the_only_rod.diagram_M[-1], 2) != 0:
+                            break
                     n = 0
                     if forces_in_node:
                         for force in forces_in_node:
@@ -752,16 +766,17 @@ class Frame:
 
         while True:
             changed = False
-            for node in nodes_for_calculating:
-                rods_with_node = self.get_rods_with_node(node_name=node.name)
-                changing_in_node = self.calculate_N_in_node(node=node, rods_with_node=rods_with_node)
-                if changing_in_node:
-                    changed = True
             for node in nodes_with_collinear_rodes:
                 rods_with_node = self.get_rods_with_node(node_name=node.name)
                 changing_in_node = self.replace_N_from_collinear_rode(node=node, rods_with_node=rods_with_node)
                 if changing_in_node:
                     changed = True
+            for node in nodes_for_calculating:
+                rods_with_node = self.get_rods_with_node(node_name=node.name)
+                changing_in_node = self.calculate_N_in_node(node=node, rods_with_node=rods_with_node)
+                if changing_in_node:
+                    changed = True
+                    break
             if not changed:
                 break
 
@@ -815,10 +830,10 @@ class Frame:
                             else:
                                 r_value -= abs(r_rod.diagram_M[0])
                         elif r_node == r_rod.end_node:
-                            if r_rod.diagram_M[0] >= 0:
-                                r_value -= abs(r_rod.diagram_M[0])
+                            if r_rod.diagram_M[-1] >= 0:
+                                r_value -= abs(r_rod.diagram_M[-1])
                             else:
-                                r_value += abs(r_rod.diagram_M[0])
+                                r_value += abs(r_rod.diagram_M[-1])
                     reaction.value = abs(r_value)
                     if r_value >= 0:
                         reaction.rotation = False

@@ -647,5 +647,41 @@ class TestBrgtuForceMethod(unittest.TestCase):
             error_message = "\n".join(all_errors)
             self.fail(f"Найдены расхождения:\n{error_message}")
 
+
+    @patch('sys.stdin', StringIO('2\n5938\n'))
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_brgtu_force_method_5938(self, mock_stdout):
+        from main import main
+        m_ok_output, q_ok_output, n_ok_output = main()
+
+        # Ожидаемые значения эпюр моментов для каждого стержня
+        expected_m_ok_output = [[0, -10.66], [-10.66, -10.33, 0.0], [0.0, -14.86], [-14.86, 19.02], [5.7, 0], [0, -5.97],
+                                [7.37, 7.37], [0, 0], [0, 0], [7.37, 7.37], [-5.7, 0], [0, 5.97], [19.02, -14.86],
+                                [-14.86, 0.0], [10.66, 10.33, -0.0], [-10.66, 0]]
+        expected_q_ok_output = [[4.57, 4.57], [1.87, -6.13], [4.57, 4.57], [-10.43, -10.43], [1.1, 1.1], [1.19, 1.19],
+                                [0.0, 0.0], [0, 0], [0, 0], [-0.0, -0.0], [-1.1, -1.1], [-1.19, -1.19], [10.43, 10.43],
+                                [-4.57, -4.57], [-1.87, 6.13], [-4.57, -4.57]]
+        expected_n_ok_output = [[1.87, 1.87], [-4.57, -4.57], [-6.13, -6.13], [-6.13, -6.13], [0, 0], [-10.42, -10.42],
+                                [-6.04, -6.04], [1.1, 1.1], [1.1, 1.1], [-6.04, -6.04], [0, 0], [-10.42, -10.42],
+                                [-6.13, -6.13], [-6.13, -6.13], [-4.56, -4.56], [1.87, 1.87]]
+
+        errors_m = compare_moment_lists(m_ok_output, expected_m_ok_output, self.tolerance)
+        errors_q = compare_moment_lists(q_ok_output, expected_q_ok_output, self.tolerance)
+        errors_n = compare_moment_lists(n_ok_output, expected_n_ok_output, self.tolerance)
+
+        # Собираем все ошибки вместе
+        all_errors = []
+        if errors_m:
+            all_errors.extend(errors_m)
+        if errors_q:
+            all_errors.extend(errors_q)
+        if errors_n:
+            all_errors.extend(errors_n)
+
+        # Если есть ошибки, выводим их
+        if all_errors:
+            error_message = "\n".join(all_errors)
+            self.fail(f"Найдены расхождения:\n{error_message}")
+
 if __name__ == '__main__':
     unittest.main()

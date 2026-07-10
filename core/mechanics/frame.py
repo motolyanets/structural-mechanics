@@ -56,8 +56,8 @@ class Frame:
                     if rod1 != rod2:
                         if round_up(rod1.dx(), 3) == round_up(rod2.dx(), 3) == 0:
                             condition1 = rod1.start_node.y == rod2.start_node.y
-                            condition2 = abs(node_of_symmetry.x - rod1.start_node.x) == abs(node_of_symmetry.x - rod2.start_node.x)
-                            condition3 = abs(node_of_symmetry.x - rod1.end_node.x) == abs(node_of_symmetry.x - rod2.end_node.x)
+                            condition2 = round_up(abs(node_of_symmetry.x - rod1.start_node.x), 4) == round_up(abs(node_of_symmetry.x - rod2.start_node.x), 4)
+                            condition3 = round_up(abs(node_of_symmetry.x - rod1.end_node.x), 4) == round_up(abs(node_of_symmetry.x - rod2.end_node.x), 4)
                             condition4 = True
                         else:
                             condition1 = rod1.start_node.y == rod2.end_node.y

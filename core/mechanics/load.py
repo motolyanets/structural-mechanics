@@ -19,7 +19,7 @@ class Force(Load):
         self.name = name
         self.node = node
         self.value = value
-        self.rotation = int(rotation)
+        self.rotation = float(rotation)
         self.x = node.x
         self.y = node.y
 
@@ -162,12 +162,12 @@ class Momentum(Load):
 class DistributedForce(Load):
     """Создаем класс для распределенной нагрузки"""
 
-    def __init__(self, name: str, value: float, rotation: int, rod: Rod | None = None,
+    def __init__(self, name: str, value: float, rotation: float, rod: Rod | None = None,
                  start_coordinates: Tuple[float, float] | None = None, end_coordinates: Tuple[float, float] | None = None):
         self.name = name
         self.rod = rod
         self.value = float(value)
-        self.rotation = int(rotation)
+        self.rotation = float(rotation)
 
         if rod:
             self.start_coordinates = (self.rod.start_node.x, self.rod.start_node.y)

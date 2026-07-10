@@ -41,8 +41,8 @@ def main():
     for key, task in tasks.items():
         print(f"  {key}. {task['name']}")
 
-    # choice = input("\nВыберите задачу: ").strip()
-    choice = "2"
+    choice = input("\nВыберите задачу: ").strip()
+    # choice = "2"
 
     if choice not in tasks:
         print("❌ Неверный выбор")
@@ -54,8 +54,8 @@ def main():
         print(f"❌ Файл не найден: {task_info['excel_path']}")
         return
 
-    # cipher = input("\nВведите 4-значный шифр: ").strip()
-    cipher = "1811".strip()
+    cipher = input("\nВведите 4-значный шифр: ").strip()
+    # cipher = "1811".strip()
 
     try:
         plugin = task_info["class"](task_info["excel_path"])

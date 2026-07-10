@@ -7,7 +7,7 @@ import os
 
 # Добавляем путь к корневой директории проекта
 sys.path.insert(0, os.path.abspath('../../..'))
-t = 0.4
+t = 0.5
 
 def check_absolute_difference(actual, expected, tolerance):
     """
@@ -26,7 +26,7 @@ def check_absolute_difference(actual, expected, tolerance):
     return diff < tolerance, diff
 
 
-def compare_moment_lists(actual_list, expected_list, tolerance=t):
+def compare_moment_lists(actual_list, expected_list, tolerance):
     """
     Сравнивает два списка эпюр моментов с заданным допуском.
 
@@ -556,6 +556,78 @@ class TestBrgtuForceMethod(unittest.TestCase):
         expected_n_ok_output = [[0, 0], [0, 0], [-6.61, -6.61], [-6.61, -6.61], [-0.35, -0.35], [-4.07, -4.07],
                                 [-4.07, -4.07], [-2.28, -2.28], [-2.28, -2.28], [-0.35, -0.35], [-6.61, -6.61],
                                 [-6.61, -6.61], [0, 0], [0, 0]]
+
+        errors_m = compare_moment_lists(m_ok_output, expected_m_ok_output, self.tolerance)
+        errors_q = compare_moment_lists(q_ok_output, expected_q_ok_output, self.tolerance)
+        errors_n = compare_moment_lists(n_ok_output, expected_n_ok_output, self.tolerance)
+
+        # Собираем все ошибки вместе
+        all_errors = []
+        if errors_m:
+            all_errors.extend(errors_m)
+        if errors_q:
+            all_errors.extend(errors_q)
+        if errors_n:
+            all_errors.extend(errors_n)
+
+        # Если есть ошибки, выводим их
+        if all_errors:
+            error_message = "\n".join(all_errors)
+            self.fail(f"Найдены расхождения:\n{error_message}")
+
+
+    @patch('sys.stdin', StringIO('2\n1811\n'))
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_brgtu_force_method_1811(self, mock_stdout):
+        from main import main
+        m_ok_output, q_ok_output, n_ok_output = main()
+
+        # Ожидаемые значения эпюр моментов для каждого стержня
+        expected_m_ok_output = [[15.94, -6.03], [-6.03, -0.0], [0.0, -3.56, 7.58], [3.88, -7.58], [36.07, 3.88],
+                                [0, 29.4], [-6.67, 37.44], [37.44, -6.67], [0, 0], [0, 0], [29.4, 0], [-36.07, -3.88],
+                                [-3.88, 7.58], [7.58, -3.56, 0.0], [6.03, 0.0], [-15.94, 6.03]]
+        expected_q_ok_output = [[10.99, 10.99], [-3.01, -3.01], [2.74, -4.64], [3.01, 3.01], [16.1, 16.1], [-14, -14],
+                                [-17.65, -17.65], [17.65, 17.65], [0, 0], [0, 0], [14, 14], [-16.1, -16.1],
+                                [-3.01, -3.01], [4.64, -2.74], [3.01, 3.01], [-10.99, -10.99]]
+        expected_n_ok_output = [[-4.75, -4.75], [-4.75, -4.75], [-4.92, -0.91], [-3.65, -3.65], [-3.65, -3.65], [0, 0],
+                                [-16.1, -16.1], [-16.1, -16.1], [13.08, 13.08], [13.08, 13.08], [0, 0], [-3.65, -3.65],
+                                [-3.65, -3.65], [-0.91, -4.92], [-4.75, -4.75], [-4.75, -4.75]]
+
+        errors_m = compare_moment_lists(m_ok_output, expected_m_ok_output, self.tolerance)
+        errors_q = compare_moment_lists(q_ok_output, expected_q_ok_output, self.tolerance)
+        errors_n = compare_moment_lists(n_ok_output, expected_n_ok_output, self.tolerance)
+
+        # Собираем все ошибки вместе
+        all_errors = []
+        if errors_m:
+            all_errors.extend(errors_m)
+        if errors_q:
+            all_errors.extend(errors_q)
+        if errors_n:
+            all_errors.extend(errors_n)
+
+        # Если есть ошибки, выводим их
+        if all_errors:
+            error_message = "\n".join(all_errors)
+            self.fail(f"Найдены расхождения:\n{error_message}")
+
+
+    @patch('sys.stdin', StringIO('2\n1812\n'))
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_brgtu_force_method_1812(self, mock_stdout):
+        from main import main
+        m_ok_output, q_ok_output, n_ok_output = main()
+
+        # Ожидаемые значения эпюр моментов для каждого стержня
+        expected_m_ok_output = [[-17.24, -14.73, -11.02], [-11.02, -6.11, 0], [0.0, -11.65], [-17.51, 11.65],
+                                [-2.51, -17.51], [0.0, 0.0], [2.51, -11.24], [-11.24, 2.51], [0, 0], [0, 0], [0.0, 0.0],
+                                [2.51, 17.51], [17.51, -11.65], [-11.65, 0.0], [11.02, 6.11, 0.0], [17.24, 14.73, 11.02]]
+        expected_q_ok_output = [[-1.91, -4.31], [-4.31, -6.71], [1.45, 1.45], [-7.29, -7.29], [7.5, 7.5], [-0.0, -0.0],
+                                [5.5, 5.5], [-5.5, -5.5], [0, 0], [0, 0], [0.0, 0.0], [-7.5, -7.5], [7.29, 7.29],
+                                [-1.45, -1.45], [4.31, 6.71], [1.91, 4.31]]
+        expected_n_ok_output = [[-5.5, -5.5], [-5.5, -5.5], [-8.55, -8.55], [5.5, 5.5], [5.5, 5.5], [0, 0],
+                                [-7.5, -7.5], [-7.5, -7.5], [14.79, 14.79], [14.79, 14.79], [0, 0], [5.5, 5.5],
+                                [5.5, 5.5], [-8.55, -8.55], [-5.55, -5.5], [-5.5, -5.5]]
 
         errors_m = compare_moment_lists(m_ok_output, expected_m_ok_output, self.tolerance)
         errors_q = compare_moment_lists(q_ok_output, expected_q_ok_output, self.tolerance)

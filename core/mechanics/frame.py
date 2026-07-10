@@ -54,7 +54,7 @@ class Frame:
             for rod1 in self.rods:
                 for rod2 in self.rods:
                     if rod1 != rod2:
-                        if rod1.dx() == rod2.dx() == 0:
+                        if round_up(rod1.dx(), 3) == round_up(rod2.dx(), 3) == 0:
                             condition1 = rod1.start_node.y == rod2.start_node.y
                             condition2 = abs(node_of_symmetry.x - rod1.start_node.x) == abs(node_of_symmetry.x - rod2.start_node.x)
                             condition3 = abs(node_of_symmetry.x - rod1.end_node.x) == abs(node_of_symmetry.x - rod2.end_node.x)
@@ -62,8 +62,8 @@ class Frame:
                         else:
                             condition1 = rod1.start_node.y == rod2.end_node.y
                             condition2 = rod1.end_node.y == rod2.start_node.y
-                            condition3 = abs(node_of_symmetry.x - rod1.start_node.x) == abs(node_of_symmetry.x - rod2.end_node.x)
-                            condition4 = abs(node_of_symmetry.x - rod1.end_node.x) == abs(node_of_symmetry.x - rod2.start_node.x)
+                            condition3 = round_up(abs(node_of_symmetry.x - rod1.start_node.x), 3) == round_up(abs(node_of_symmetry.x - rod2.end_node.x), 3)
+                            condition4 = round_up(abs(node_of_symmetry.x - rod1.end_node.x), 3) == round_up(abs(node_of_symmetry.x - rod2.start_node.x), 3)
                         if condition1 and condition2 and condition3 and condition4:
                             pare_of_rods = [rod1, rod2]
                             pare_of_rods.sort(key=lambda i: i.start_node.x)
@@ -459,7 +459,6 @@ class Frame:
         if len(known_intentions) == 0:
             return False
 
-
         if len(unsoleved_rods) == 2:
             inclined_rods = 0
             for unsoleved_rod in unsoleved_rods:
@@ -576,12 +575,6 @@ class Frame:
                         diagram_N = [inclined_rod.diagram_N[0], n]
                         inclined_rod.diagram_N = diagram_N
 
-
-
-
-
-
-
                 is_there_q_on_rod = False
                 for load in self.loads:
                     if isinstance(load, DistributedForce):
@@ -593,57 +586,97 @@ class Frame:
                         inclined_rod.diagram_N = [inclined_rod.diagram_N[0], inclined_rod.diagram_N[0]]
                 return True
 
-
         elif len(unsoleved_rods) == 1:
-
-
-
-
-
-            # Нужно добавить вариант на случай если этот один стержень наклонный
-
-
-
-
-
-
             unsoleved_rod = unsoleved_rods[0]
-            n_progection = 0
-            if unsoleved_rod.dx() == 0:
-                for known_intention in known_intentions:
-                    n_progection += known_intention.value * math.sin(math.radians(known_intention.rotation))
-                n = n_progection / math.sin(math.radians(unsoleved_rod.get_angle_deg()))
-            elif unsoleved_rod.dy() == 0:
-                for known_intention in known_intentions:
-                    n_progection += known_intention.value * math.cos(math.radians(known_intention.rotation))
-                n = n_progection / math.cos(math.radians(unsoleved_rod.get_angle_deg()))
-
-            if unsoleved_rod.start_node.name == node.name:
-                if not unsoleved_rod.diagram_N:
-                    unsoleved_rod.diagram_N = [-n]
-                elif len(unsoleved_rod.diagram_N) == 1:
-                    diagram_N = [-n, unsoleved_rod.diagram_N[0]]
-                    unsoleved_rod.diagram_N = diagram_N
-            elif unsoleved_rod.end_node == node:
-                if not unsoleved_rod.diagram_N:
-                    unsoleved_rod.diagram_N = [n]
-                elif len(unsoleved_rod.diagram_N) == 1:
-                    diagram_N = [unsoleved_rod.diagram_N[0], n]
-                    unsoleved_rod.diagram_N = diagram_N
 
             is_there_q_on_rod = False
+            q_inclined = None
             for load in self.loads:
                 if isinstance(load, DistributedForce):
                     if load.rod.name == unsoleved_rod.name:
                         is_there_q_on_rod = True
+                        q_inclined = load
 
-            if len(unsoleved_rod.diagram_N) == 1:
-                if unsoleved_rod.dx() != 0 and unsoleved_rod.dy() != 0:
-                    if not is_there_q_on_rod:
+            if unsoleved_rod.dx() == 0 or unsoleved_rod.dy() == 0:
+                n_progection = 0
+                if unsoleved_rod.dx() == 0:
+                    for known_intention in known_intentions:
+                        n_progection += known_intention.value * math.sin(math.radians(known_intention.rotation))
+                    n = n_progection / math.sin(math.radians(unsoleved_rod.get_angle_deg()))
+                elif unsoleved_rod.dy() == 0:
+                    for known_intention in known_intentions:
+                        n_progection += known_intention.value * math.cos(math.radians(known_intention.rotation))
+                    n = n_progection / math.cos(math.radians(unsoleved_rod.get_angle_deg()))
+
+                if unsoleved_rod.start_node.name == node.name:
+                    if not unsoleved_rod.diagram_N:
+                        unsoleved_rod.diagram_N = [-n]
+                    elif len(unsoleved_rod.diagram_N) == 1:
+                        diagram_N = [-n, unsoleved_rod.diagram_N[0]]
+                        unsoleved_rod.diagram_N = diagram_N
+                elif unsoleved_rod.end_node == node:
+                    if not unsoleved_rod.diagram_N:
+                        unsoleved_rod.diagram_N = [n]
+                    elif len(unsoleved_rod.diagram_N) == 1:
+                        diagram_N = [unsoleved_rod.diagram_N[0], n]
+                        unsoleved_rod.diagram_N = diagram_N
+
+                if len(unsoleved_rod.diagram_N) == 1:
+                    if unsoleved_rod.dx() != 0 and unsoleved_rod.dy() != 0:
+                        if not is_there_q_on_rod:
+                            unsoleved_rod.diagram_N = [unsoleved_rod.diagram_N[0], unsoleved_rod.diagram_N[0]]
+                    elif unsoleved_rod.dx() == 0 or unsoleved_rod.dy() == 0:
                         unsoleved_rod.diagram_N = [unsoleved_rod.diagram_N[0], unsoleved_rod.diagram_N[0]]
-                elif unsoleved_rod.dx() == 0 or unsoleved_rod.dy() == 0:
-                    unsoleved_rod.diagram_N = [unsoleved_rod.diagram_N[0], unsoleved_rod.diagram_N[0]]
-            return True
+                return True
+            else:
+                n_progection = 0
+                for known_intention in known_intentions:
+                    angle = unsoleved_rod.get_angle_deg() - known_intention.rotation
+                    n_progection += known_intention.value * math.cos(math.radians(angle))
+                n = n_progection
+
+                # Реализован один общий случай, если ошибки, возможно нужно сделать для начального и конечного узла отдельно
+
+                if not unsoleved_rod.diagram_N:
+                    N = -n
+                    if not is_there_q_on_rod:
+                        unsoleved_rod.diagram_N = [N, N]
+                    else:
+                        N_start = -n
+                        q_angle = q_inclined.rotation
+                        rod_angle = unsoleved_rod.get_angle_deg()
+                        angle_between = q_angle - rod_angle
+                        if q_inclined.rotation in [0, 180]:
+                            l = unsoleved_rod.dy()
+                        elif q_inclined.rotation in [90, 270]:
+                            l = unsoleved_rod.dx()
+                        N_end = N - q_inclined.value * math.cos(math.radians(angle_between)) * l
+                        unsoleved_rod.diagram_N = [N_start, N_end]
+                elif len(unsoleved_rod.diagram_N) == 1:
+                    diagram_N = [n, unsoleved_rod.diagram_N[0]]
+                    unsoleved_rod.diagram_N = diagram_N
+
+                # elif inclined_rod.end_node == node:
+                #     if not inclined_rod.diagram_N:
+                #         N = n
+                #         if not is_there_q_on_rod:
+                #             inclined_rod.diagram_N = [N, N]
+                #         else:
+                #             N_end = n
+                #             q_angle = q_inclined.rotation
+                #             rod_angle = inclined_rod.get_angle_deg()
+                #             angle_between = q_angle - rod_angle
+                #             if q_inclined.rotation in [0, 180]:
+                #                 l = inclined_rod.dy()
+                #             elif q_inclined.rotation in [90, 270]:
+                #                 l = inclined_rod.dx()
+                #             N_start = N + q_inclined.value * math.cos(math.radians(angle_between)) * l
+                #             inclined_rod.diagram_N = [N_start, N_end]
+                #     elif len(inclined_rod.diagram_N) == 1:
+                #         diagram_N = [inclined_rod.diagram_N[0], n]
+                #         inclined_rod.diagram_N = diagram_N
+                return True
+
 
     def replace_N_from_collinear_rode(self, node: Node, rods_with_node:List[Rod]) -> bool:
         if len(rods_with_node) != 2:
@@ -675,6 +708,15 @@ class Frame:
                 if len(rods_with_node) == 1:
                     the_only_rod = rods_with_node[0]
                     n = 0
+
+                    if node.name == the_only_rod.start_node.name:
+                        if round_up(the_only_rod.diagram_M[0], 2) != 0:
+                            break
+                    elif node.name == the_only_rod.end_node.name:
+                        if round_up(the_only_rod.diagram_M[-1], 2) != 0:
+                            break
+
+
                     if forces_in_node:
                         for force in forces_in_node:
                             if force.rotation in [0, 180] and the_only_rod.dy() == 0:

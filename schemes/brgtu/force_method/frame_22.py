@@ -60,7 +60,11 @@ def create_frame_22(params: dict):
 
     supports = [support1, support2]
 
-    return nodes, rods, supports, loads
+    symmetry = None
+    details = dict()
+    details['node_name_for_static_check'] = 'D'
+
+    return nodes, rods, supports, loads, symmetry, details
 
 
 def create_primary_system_22(params: dict):
@@ -80,8 +84,8 @@ def create_primary_system_22(params: dict):
     node4 = Node(name='4', x=l1, y=h1 + h2 * 1.5)
     node5 = Node(name='K', x=l1 + l2 * 0.5, y=h1 + h2 * 1.5)
     node6 = Node(name='C', x=l1 + l2, y=h1 + h2 * 1.5, is_hinge=True)
-    node7_1 = Node(name='D_1', x=l1 - 0.001, y=h1)
-    node7_2 = Node(name='D_2', x=l1 + 0.001, y=h1)
+    node7_1 = Node(name='D_1', x=l1 - 0.0001, y=h1)
+    node7_2 = Node(name='D_2', x=l1 + 0.0001, y=h1)
     node8 = Node(name='8', x=l1 + l2, y=h1)
     node9 = Node(name='9', x=l1 * 1.3 + l2, y=h1)
     node10 = Node(name='B', x=l1 + l2, y=0)
@@ -133,5 +137,8 @@ def create_primary_system_22(params: dict):
     loads['k'] = [load_k]
     supports = [support1, support2]
 
-    return nodes, rods, supports, loads
+    details = dict()
+    details['equation_of_static_determinacy'] = ' 3 · 2 - 3 = 3'
+
+    return nodes, rods, supports, loads, details
 

@@ -348,21 +348,9 @@ class Frame:
         if not self.is_all_rods_with_sections():
             raise Exception(f'Созданы сечения не на всех стержнях')
 
-    def calculate_N_in_node(self, node: Node, rods_with_node:List[Rod]) -> bool:
-        unsoleved_rods = []
-        for rod in rods_with_node:
-            if not rod.diagram_N:
-                unsoleved_rods.append(rod)
-            elif len(rod.diagram_N) == 1:
-                unsoleved_rods.append(rod)
-        if len(unsoleved_rods) > 2 or len(unsoleved_rods) == 0:
-            return False
-        elif len(unsoleved_rods) == 2:
-            if unsoleved_rods[0].get_angle_deg() == unsoleved_rods[1].get_angle_deg():
-                return False
-
-        # Собираем все известные усилия в стержнях и внешние усилия
+    def get_known_intentions_in_node(self, node):
         known_intentions = []
+        rods_with_node = self.get_rods_with_node(node_name=node.name)
         for rod in rods_with_node:
             if rod.diagram_N:
                 if len(rod.diagram_N) == 2:
@@ -456,6 +444,118 @@ class Frame:
             if isinstance(load, Force):
                 if load.node.name == node.name:
                     known_intentions.append(load)
+        return known_intentions
+
+
+    def calculate_N_in_node(self, node: Node, rods_with_node:List[Rod]) -> bool:
+        unsoleved_rods = []
+        for rod in rods_with_node:
+            if not rod.diagram_N:
+                unsoleved_rods.append(rod)
+            elif len(rod.diagram_N) == 1:
+                unsoleved_rods.append(rod)
+        if len(unsoleved_rods) > 2 or len(unsoleved_rods) == 0:
+            return False
+        elif len(unsoleved_rods) == 2:
+            if unsoleved_rods[0].get_angle_deg() == unsoleved_rods[1].get_angle_deg():
+                return False
+
+        # Собираем все известные усилия в стержнях и внешние усилия
+        # known_intentions = []
+        # for rod in rods_with_node:
+        #     if rod.diagram_N:
+        #         if len(rod.diagram_N) == 2:
+        #             if rod.dx() == 0:
+        #                 if node == rod.start_node:
+        #                     n_value = abs(rod.diagram_N[0])
+        #                     if rod.diagram_N[0] >= 0:
+        #                         n_direction = 90
+        #                     else:
+        #                         n_direction = 270
+        #                 elif node == rod.end_node:
+        #                     n_value = abs(rod.diagram_N[-1])
+        #                     if rod.diagram_N[-1] >= 0:
+        #                         n_direction = 270
+        #                     else:
+        #                         n_direction = 90
+        #             elif rod.dy() == 0:
+        #                 if node == rod.start_node:
+        #                     n_value = abs(rod.diagram_N[0])
+        #                     if rod.diagram_N[0] >= 0:
+        #                         n_direction = 0
+        #                     else:
+        #                         n_direction = 180
+        #                 elif node == rod.end_node:
+        #                     n_value = abs(rod.diagram_N[-1])
+        #                     if rod.diagram_N[-1] >= 0:
+        #                         n_direction = 180
+        #                     else:
+        #                         n_direction = 0
+        #             elif rod.dx() != 0 and rod.dy() != 0:
+        #                 rod_angle = rod.get_angle_deg()
+        #                 if node == rod.start_node:
+        #                     n_value = abs(rod.diagram_N[0])
+        #                     if rod.diagram_N[0] >= 0:
+        #                         n_direction = rod_angle
+        #                     else:
+        #                         n_direction = rod_angle + 180
+        #                 elif node == rod.end_node:
+        #                     n_value = abs(rod.diagram_N[-1])
+        #                     if rod.diagram_N[-1] >= 0:
+        #                         n_direction = rod_angle + 180
+        #                     else:
+        #                         n_direction = rod_angle
+        #             intention = Force(name=f'N{rod.name}', node=node, rotation=n_direction, value=n_value)
+        #             known_intentions.append(intention)
+        #     if rod.diagram_Q:
+        #         if rod.dx() == 0:
+        #             if node == rod.start_node:
+        #                 q_value = abs(rod.diagram_Q[0])
+        #                 if rod.diagram_Q[0] >= 0:
+        #                     q_direction = 0
+        #                 else:
+        #                     q_direction = 180
+        #             elif node == rod.end_node:
+        #                 q_value = abs(rod.diagram_Q[-1])
+        #                 if rod.diagram_Q[-1] >= 0:
+        #                     q_direction = 180
+        #                 else:
+        #                     q_direction = 0
+        #         elif rod.dy() == 0:
+        #             if node == rod.start_node:
+        #                 q_value = abs(rod.diagram_Q[0])
+        #                 if rod.diagram_Q[0] >= 0:
+        #                     q_direction = 270
+        #                 else:
+        #                     q_direction = 90
+        #             elif node == rod.end_node:
+        #                 q_value = abs(rod.diagram_Q[-1])
+        #                 if rod.diagram_Q[-1] >= 0:
+        #                     q_direction = 90
+        #                 else:
+        #                     q_direction = 270
+        #         elif rod.dx() != 0 and rod.dy() != 0:
+        #             rod_angle = rod.get_angle_deg()
+        #             if node == rod.start_node:
+        #                 q_value = abs(rod.diagram_Q[0])
+        #                 if rod.diagram_Q[0] >= 0:
+        #                     q_direction = rod_angle - 90
+        #                 else:
+        #                     q_direction = rod_angle + 90
+        #             elif node == rod.end_node:
+        #                 q_value = abs(rod.diagram_Q[-1])
+        #                 if rod.diagram_Q[-1] >= 0:
+        #                     q_direction = rod_angle + 90
+        #                 else:
+        #                     q_direction = rod_angle - 90
+        #
+        #         intention = Force(name=f'Q{rod.name}', node=node, rotation=q_direction, value=q_value)
+        #         known_intentions.append(intention)
+        # for load in self.loads:
+        #     if isinstance(load, Force):
+        #         if load.node.name == node.name:
+        #             known_intentions.append(load)
+        known_intentions = self.get_known_intentions_in_node(node=node)
         if len(known_intentions) == 0:
             return False
 
@@ -470,11 +570,7 @@ class Frame:
                     n = 0
                     if unsoleved_rod.dx() == 0:
                         for known_intention in known_intentions:
-                            if known_intention.rotation in [90, 270]:
-                                if known_intention.rotation == 90:
-                                    n += known_intention.value
-                                elif known_intention.rotation == 270:
-                                    n -= known_intention.value
+                            n += known_intention.value * math.sin(math.radians(known_intention.rotation))
 
                         if unsoleved_rod.start_node == node:
                             if not unsoleved_rod.diagram_N:
@@ -490,11 +586,7 @@ class Frame:
                                 unsoleved_rod.diagram_N = diagram_N
                     elif unsoleved_rod.dy() == 0:
                         for known_intention in known_intentions:
-                            if known_intention.rotation in [0, 180]:
-                                if known_intention.rotation == 0:
-                                    n += known_intention.value
-                                elif known_intention.rotation == 180:
-                                    n -= known_intention.value
+                            n += known_intention.value * math.cos(math.radians(known_intention.rotation))
                         if unsoleved_rod.start_node == node:
                             if not unsoleved_rod.diagram_N:
                                 unsoleved_rod.diagram_N = [-n]
@@ -682,11 +774,43 @@ class Frame:
         if len(rods_with_node) != 2:
             raise Exception('Для коллинеальности нужны 2 стержня')
         rod1, rod2 = rods_with_node
-        if rod1.diagram_N and not rod2.diagram_N:
-            rod2.diagram_N = rod1.diagram_N
-            return True
-        elif rod2.diagram_N and not rod1.diagram_N:
-            rod1.diagram_N = rod2.diagram_N
+
+        forces_in_node = []
+        for load in self.loads:
+            if isinstance(load, Force):
+                if load.node.name == node.name:
+                   forces_in_node.append(load)
+
+        if not forces_in_node:
+            if rod1.diagram_N and not rod2.diagram_N:
+                rod2.diagram_N = rod1.diagram_N
+                return True
+            elif rod2.diagram_N and not rod1.diagram_N:
+                rod1.diagram_N = rod2.diagram_N
+                return True
+            return False
+        else:
+            if not rod1.diagram_N and not rod2.diagram_N:
+                return False
+            elif rod1.diagram_N and rod2.diagram_N:
+                return False
+            elif rod1.diagram_N and not rod2.diagram_N:
+                solved_rod = rod1
+                unsolved_rod = rod2
+            elif rod2.diagram_N and not rod1.diagram_N:
+                solved_rod = rod2
+                unsolved_rod = rod1
+
+            known_intentions = self.get_known_intentions_in_node(node=node)
+            n = 0
+            if solved_rod.start_node.name == node.name:
+                rod_angle = math.radians(solved_rod.get_angle_deg())
+            else:
+                rod_angle = math.radians(solved_rod.get_angle_deg() + 180)
+
+            for known_intention in known_intentions:
+                n += known_intention.value * math.cos(math.radians(known_intention.rotation) - rod_angle)
+            unsolved_rod.diagram_N = [n, n]
             return True
         return False
 

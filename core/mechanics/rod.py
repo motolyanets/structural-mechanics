@@ -1,4 +1,5 @@
 import math
+from itertools import count
 from typing import List, Optional, Tuple
 
 from core.mechanics.node import Node
@@ -41,7 +42,13 @@ class Rod:
         self.stiffness = stiffness
         self.momentum_at_hinge = momentum_at_hinge
         self.nodes = [self.start_node, self.end_node]
-        self.name = f'{start_node.name}{end_node.name}'
+
+        if start_node.name.count('_') == 1 or end_node.name.count('_') == 1:
+            start_name = start_node.name.strip('_')[0]
+            end_name = end_node.name.strip('_')[0]
+            self.name = f'{start_name}{end_name}'
+        else:
+            self.name = f'{start_node.name}{end_node.name}'
 
     def dx(self) -> float:
         dx = self.end_node.x - self.start_node.x

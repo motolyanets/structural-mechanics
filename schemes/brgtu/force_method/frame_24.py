@@ -34,6 +34,7 @@ def create_frame_24(params: dict):
     node17 = Node(name='17', x=l1 * 2 + l2, y=h1)
     node18 = Node(name='18', x=l1 * 2 + l2, y=h1 * 0.5)
     node19 = Node(name='D', x=l1 * 2 + l2, y=0)
+    node20 = Node(name='20', x=l1 + l2 / 2, y=h1 / 2)
 
     rod1 = Rod(start_node=node1, end_node=node2)
     rod2 = Rod(start_node=node2, end_node=node3)
@@ -47,7 +48,10 @@ def create_frame_24(params: dict):
     rod12 = Rod(start_node=node15, end_node=node14)
     rod13 = Rod(start_node=node13, end_node=node16, stiffness=i2)
     rod14 = Rod(start_node=node16, end_node=node17, stiffness=i2)
-    rod16 = Rod(start_node=node7, end_node=node14, is_start_hinge=True, is_end_hinge=True)
+    rod15 = Rod(start_node=node18, end_node=node17)
+    rod16 = Rod(start_node=node19, end_node=node18)
+    rod17_1 = Rod(start_node=node7, end_node=node20, is_start_hinge=True)
+    rod17_2 = Rod(start_node=node20, end_node=node14, is_end_hinge=True)
 
     support1 = Support(node=node1, number_of_reactions=2, rotation=90)
     support2 = Support(node=node6, number_of_reactions=2, rotation=90)
@@ -57,36 +61,38 @@ def create_frame_24(params: dict):
     if load_index == 1:
         rod8 = Rod(start_node=node8, end_node=node10, stiffness=i3)
         rod9 = Rod(start_node=node10, end_node=node12, stiffness=i3)
-        rod15_1 = Rod(start_node=node18, end_node=node17)
-        rod15_2 = Rod(start_node=node19, end_node=node18)
 
         load_P1 = Force(name='P', node=node2, value=P, rotation=0)
         load_P2 = Force(name='P', node=node18, value=P, rotation=180)
         load_q1 = DistributedForce(name='q', rod=rod8, value=q, rotation=270)
         load_q2 = DistributedForce(name='q', rod=rod9, value=q, rotation=270)
         loads = [load_P1, load_P2, load_q1, load_q2]
-        nodes = [node1, node2, node3, node4, node5, node6, node7, node8, node10, node12, node13, node14, node15, node16, node17, node19]
-        rods = [rod1, rod2, rod3, rod4, rod5, rod6, rod7, rod8, rod9, rod10, rod11, rod12, rod13, rod14, rod15_1, rod15_2, rod16]
+        nodes = [node1, node2, node3, node4, node5, node6, node7, node8, node10, node12, node13, node14, node15, node16, node17, node19, node20]
+        rods = [rod1, rod2, rod3, rod4, rod5, rod6, rod7, rod8, rod9, rod10, rod11, rod12, rod13, rod14, rod15, rod16, rod17_1, rod17_2]
 
     else:
         rod8_1 = Rod(start_node=node8, end_node=node9, stiffness=i3)
         rod8_2 = Rod(start_node=node9, end_node=node10, stiffness=i3)
         rod9_1 = Rod(start_node=node10, end_node=node11, stiffness=i3)
         rod9_2 = Rod(start_node=node11, end_node=node12, stiffness=i3)
-        rod15 = Rod(start_node=node19, end_node=node17)
 
         load_P1 = Force(name='P', node=node9, value=P, rotation=270)
         load_P2 = Force(name='P', node=node11, value=P, rotation=270)
         load_q1 = DistributedForce(name='q', rod=rod1, value=q, rotation=0)
         load_q2 = DistributedForce(name='q', rod=rod2, value=q, rotation=0)
         load_q3 = DistributedForce(name='q', rod=rod15, value=q, rotation=180)
-        loads = [load_P1, load_P2, load_q1, load_q2, load_q3]
-        nodes = [node1, node2, node3, node4, node5, node6, node7, node8, node9, node10, node11, node12, node13, node14, node15, node16, node17, node19]
-        rods = [rod1, rod2, rod3, rod4, rod5, rod6, rod7, rod8_1, rod8_2, rod9_1, rod9_2, rod10, rod11, rod12, rod13, rod14, rod15, rod16]
+        load_q4 = DistributedForce(name='q', rod=rod16, value=q, rotation=180)
+        loads = [load_P1, load_P2, load_q1, load_q2, load_q3, load_q4]
+        nodes = [node1, node2, node3, node4, node5, node6, node7, node8, node9, node10, node11, node12, node13, node14, node15, node16, node17, node19, node20]
+        rods = [rod1, rod2, rod3, rod4, rod5, rod6, rod7, rod8_1, rod8_2, rod9_1, rod9_2, rod10, rod11, rod12, rod13, rod14, rod15, rod16, rod17_1, rod17_2]
 
     supports = [support1, support2, support3, support4]
 
-    return nodes, rods, supports, loads
+    symmetry = ('x', node10)
+    details = dict()
+    details['node_name_for_static_check'] = 'L'
+
+    return nodes, rods, supports, loads, symmetry, details
 
 
 def create_primary_system_24(params: dict):
@@ -99,6 +105,8 @@ def create_primary_system_24(params: dict):
     q = params["q"]
     i2 = params["i2"]
     i3 = params["i3"]
+
+    details = dict()
 
     node1 = Node(name='A', x=0, y=0)
     node2 = Node(name='K', x=0, y=h1 * 0.5)
@@ -155,5 +163,7 @@ def create_primary_system_24(params: dict):
     loads['k'] = [load_k]
     supports = [support1, support2]
 
-    return nodes, rods, supports, loads
+    details['equation_of_static_determinacy'] = ' 3 · 4 - 8 = 4'
+
+    return nodes, rods, supports, loads, details
 

@@ -295,9 +295,9 @@ class BRGTUForceMethod(TaskPlugin):
         x2 = float(solution[1])
         x3 = float(solution[2])
 
-        # x1 = -0.303
-        # x2 = -0.58
-        # x3 = -7.36
+        # x1 = 4.516
+        # x2 = -0.719
+        # x3 = -14.09
 
         coef = dict()
         coef['1'] = x1
@@ -358,7 +358,7 @@ class BRGTUForceMethod(TaskPlugin):
         delta_sok_text, delta_sok = multiply_M_frames_by_Simpson(frame1=s_fm_frame, frame2=ok_mm_frame)
         print(f'δsok = {delta_sok_text}\n')
         print(f'δsok = {delta_sok}/EI ≈ 0')
-        if delta_sok <= 0.1:
+        if abs(delta_sok) <= 0.1:
             print(f"{"\033[92m"}Проверка выполняется{"\033[0m"}\n")
         else:
             print(f"{"\033[91m"}Проверка НЕ выполняется{"\033[0m"}\n")
@@ -462,7 +462,7 @@ class BRGTUForceMethod(TaskPlugin):
                     if not ok_rod.diagram_M or not ok_rod.diagram_Q:
                         raise Exception(f'Стержень {ok_rod} не расчитан')
                     else:
-                        if main_rod.name == ok_rod.name:
+                        if main_rod.name == ok_rod.name or main_rod.name == ok_rod.name[:-2]:
                             main_rod.diagram_M = ok_rod.diagram_M
                             main_rod.diagram_Q = ok_rod.diagram_Q
                             break

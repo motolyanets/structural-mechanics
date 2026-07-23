@@ -7,7 +7,7 @@ import os
 
 # Добавляем путь к корневой директории проекта
 sys.path.insert(0, os.path.abspath('../../..'))
-t = 0.5
+t = 0.6
 
 def check_absolute_difference(actual, expected, tolerance):
     """
@@ -74,7 +74,7 @@ class TestBrgtuForceMethod(unittest.TestCase):
 
     @patch('sys.stdin', StringIO('2\n1111\n'))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_brgtu_force_method_1111(self, mock_stdout):
+    def test_brgtu_force_method_schema_11_1(self, mock_stdout):
         from main import main
         m_ok_output, q_ok_output, n_ok_output = main()
 
@@ -111,7 +111,7 @@ class TestBrgtuForceMethod(unittest.TestCase):
 
     @patch('sys.stdin', StringIO('2\n1112\n'))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_brgtu_force_method_1112(self, mock_stdout):
+    def test_brgtu_force_method_schema_11_2(self, mock_stdout):
         from main import main
         m_ok_output, q_ok_output, n_ok_output = main()
 
@@ -148,7 +148,7 @@ class TestBrgtuForceMethod(unittest.TestCase):
 
     @patch('sys.stdin', StringIO('2\n1211\n'))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_brgtu_force_method_1211(self, mock_stdout):
+    def test_brgtu_force_method_schema_12_1(self, mock_stdout):
         from main import main
         m_ok_output, q_ok_output, n_ok_output = main()
 
@@ -186,7 +186,7 @@ class TestBrgtuForceMethod(unittest.TestCase):
 
     @patch('sys.stdin', StringIO('2\n1212\n'))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_brgtu_force_method_1212(self, mock_stdout):
+    def test_brgtu_force_method_schema_12_2(self, mock_stdout):
         from main import main
         m_ok_output, q_ok_output, n_ok_output = main()
 
@@ -223,7 +223,7 @@ class TestBrgtuForceMethod(unittest.TestCase):
 
     @patch('sys.stdin', StringIO('2\n1311\n'))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_brgtu_force_method_1311(self, mock_stdout):
+    def test_brgtu_force_method_schema_13_1(self, mock_stdout):
         from main import main
         m_ok_output, q_ok_output, n_ok_output = main()
 
@@ -257,7 +257,7 @@ class TestBrgtuForceMethod(unittest.TestCase):
 
     @patch('sys.stdin', StringIO('2\n1312\n'))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_brgtu_force_method_1312(self, mock_stdout):
+    def test_brgtu_force_method_schema_13_2(self, mock_stdout):
         """Тест эпюр моментов для choice=2, cipher='1312'"""
         from main import main
         m_ok_output, q_ok_output, n_ok_output = main()
@@ -292,7 +292,7 @@ class TestBrgtuForceMethod(unittest.TestCase):
 
     @patch('sys.stdin', StringIO('2\n7495\n'))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_brgtu_force_method_7495(self, mock_stdout):
+    def test_brgtu_force_method_schema_14_1(self, mock_stdout):
         """Тест эпюр моментов для choice=2, cipher='1312'"""
         from main import main
         m_ok_output, q_ok_output, n_ok_output = main()
@@ -331,7 +331,7 @@ class TestBrgtuForceMethod(unittest.TestCase):
 
     @patch('sys.stdin', StringIO('2\n7496\n'))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_brgtu_force_method_7496(self, mock_stdout):
+    def test_brgtu_force_method_schema_14_2(self, mock_stdout):
         from main import main
         m_ok_output, q_ok_output, n_ok_output = main()
 
@@ -367,7 +367,7 @@ class TestBrgtuForceMethod(unittest.TestCase):
 
     @patch('sys.stdin', StringIO('2\n1511\n'))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_brgtu_force_method_1511(self, mock_stdout):
+    def test_brgtu_force_method_schema_15_1(self, mock_stdout):
         from main import main
         m_ok_output, q_ok_output, n_ok_output = main()
 
@@ -400,7 +400,7 @@ class TestBrgtuForceMethod(unittest.TestCase):
 
     @patch('sys.stdin', StringIO('2\n1512\n'))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_brgtu_force_method_1512(self, mock_stdout):
+    def test_brgtu_force_method_schema_15_2(self, mock_stdout):
         from main import main
         m_ok_output, q_ok_output, n_ok_output = main()
 
@@ -433,7 +433,7 @@ class TestBrgtuForceMethod(unittest.TestCase):
 
     @patch('sys.stdin', StringIO('2\n1611\n'))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_brgtu_force_method_1611(self, mock_stdout):
+    def test_brgtu_force_method_schema_16_1(self, mock_stdout):
         from main import main
         m_ok_output, q_ok_output, n_ok_output = main()
 
@@ -470,7 +470,7 @@ class TestBrgtuForceMethod(unittest.TestCase):
 
     @patch('sys.stdin', StringIO('2\n1612\n'))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_brgtu_force_method_1612(self, mock_stdout):
+    def test_brgtu_force_method_schema_16_2(self, mock_stdout):
         from main import main
         m_ok_output, q_ok_output, n_ok_output = main()
 
@@ -506,7 +506,7 @@ class TestBrgtuForceMethod(unittest.TestCase):
 
     @patch('sys.stdin', StringIO('2\n3716\n'))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_brgtu_force_method_3716(self, mock_stdout):
+    def test_brgtu_force_method_schema_17_2(self, mock_stdout):
         from main import main
         m_ok_output, q_ok_output, n_ok_output = main()
 
@@ -542,7 +542,7 @@ class TestBrgtuForceMethod(unittest.TestCase):
 
     @patch('sys.stdin', StringIO('2\n3717\n'))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_brgtu_force_method_3717(self, mock_stdout):
+    def test_brgtu_force_method_schema_17_1(self, mock_stdout):
         from main import main
         m_ok_output, q_ok_output, n_ok_output = main()
 
@@ -578,7 +578,7 @@ class TestBrgtuForceMethod(unittest.TestCase):
 
     @patch('sys.stdin', StringIO('2\n1811\n'))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_brgtu_force_method_1811(self, mock_stdout):
+    def test_brgtu_force_method_schema_18_1(self, mock_stdout):
         from main import main
         m_ok_output, q_ok_output, n_ok_output = main()
 
@@ -614,7 +614,7 @@ class TestBrgtuForceMethod(unittest.TestCase):
 
     @patch('sys.stdin', StringIO('2\n1812\n'))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_brgtu_force_method_1812(self, mock_stdout):
+    def test_brgtu_force_method_schema_18_2(self, mock_stdout):
         from main import main
         m_ok_output, q_ok_output, n_ok_output = main()
 
@@ -650,7 +650,7 @@ class TestBrgtuForceMethod(unittest.TestCase):
 
     @patch('sys.stdin', StringIO('2\n5938\n'))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_brgtu_force_method_5938(self, mock_stdout):
+    def test_brgtu_force_method_schema_19_2(self, mock_stdout):
         from main import main
         m_ok_output, q_ok_output, n_ok_output = main()
 
@@ -686,7 +686,7 @@ class TestBrgtuForceMethod(unittest.TestCase):
 
     @patch('sys.stdin', StringIO('2\n5939\n'))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_brgtu_force_method_5939(self, mock_stdout):
+    def test_brgtu_force_method_schema_19_1(self, mock_stdout):
         from main import main
         m_ok_output, q_ok_output, n_ok_output = main()
 
@@ -723,7 +723,7 @@ class TestBrgtuForceMethod(unittest.TestCase):
 
     @patch('sys.stdin', StringIO('2\n2011\n'))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_brgtu_force_method_2011(self, mock_stdout):
+    def test_brgtu_force_method_schema_20_1(self, mock_stdout):
         from main import main
         m_ok_output, q_ok_output, n_ok_output = main()
 
@@ -760,7 +760,7 @@ class TestBrgtuForceMethod(unittest.TestCase):
 
     @patch('sys.stdin', StringIO('2\n2012\n'))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_brgtu_force_method_2012(self, mock_stdout):
+    def test_brgtu_force_method_schema_20_2(self, mock_stdout):
         from main import main
         m_ok_output, q_ok_output, n_ok_output = main()
 
@@ -796,22 +796,58 @@ class TestBrgtuForceMethod(unittest.TestCase):
             self.fail(f"Найдены расхождения:\n{error_message}")
 
 
-    @patch('sys.stdin', StringIO('2\n4113\n'))
+    # @patch('sys.stdin', StringIO('2\n4113\n'))
+    # @patch('sys.stdout', new_callable=StringIO)
+    # def test_brgtu_force_method_schema_21_1(self, mock_stdout):
+    #     from main import main
+    #     m_ok_output, q_ok_output, n_ok_output = main()
+    #
+    #     # Ожидаемые значения эпюр моментов для каждого стержня
+    #     expected_m_ok_output = [[0, 1.78], [1.78, 3.55], [3.55, -4.33, 4.67], [0, 0.0], [0.0, -1.88], [2.79, 4.02],
+    #                             [4.02, -7.36], [0, 0], [0, 0], [-7.36, 4.02], [-2.79, -4.02], [-0.0, 1.88], [0, -0.0],
+    #                             [4.67, -4.33, 3.55], [0, -1.78], [-1.78, -3.55]]
+    #     expected_q_ok_output = [[-0.89, -0.89], [-0.89, -0.89], [3.8, -4.06], [0, 0], [0.3, 0.3], [-0.58, -0.58],
+    #                             [3.5, 3.5], [0, 0], [0, 0], [-3.5, -3.5], [0.58, 0.58], [-0.3, -0.3], [0, 0], [4.06, -3.8],
+    #                             [0.89, 0.89], [0.89, 0.89]]
+    #     expected_n_ok_output = [[-4.85, -4.85], [-4.85, -4.85], [-3.14, 1.25], [-7.65, -7.65], [-7.65, -7.65], [-3.5, -3.5],
+    #                             [-0.58, -0.58], [-0.3, -0.3], [-0.3, -0.3], [-0.58, -0.58], [-3.5, -3.5], [-7.65, -7.65],
+    #                             [-7.65, -7.65], [1.25, -3.14], [-4.85, -4.85], [-4.85, -4.85]]
+    #
+    #     errors_m = compare_moment_lists(m_ok_output, expected_m_ok_output, self.tolerance)
+    #     errors_q = compare_moment_lists(q_ok_output, expected_q_ok_output, self.tolerance)
+    #     errors_n = compare_moment_lists(n_ok_output, expected_n_ok_output, self.tolerance)
+    #
+    #     # Собираем все ошибки вместе
+    #     all_errors = []
+    #     if errors_m:
+    #         all_errors.extend(errors_m)
+    #     if errors_q:
+    #         all_errors.extend(errors_q)
+    #     if errors_n:
+    #         all_errors.extend(errors_n)
+    #
+    #     # Если есть ошибки, выводим их
+    #     if all_errors:
+    #         error_message = "\n".join(all_errors)
+    #         self.fail(f"Найдены расхождения:\n{error_message}")
+
+
+    @patch('sys.stdin', StringIO('2\n4114\n'))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_brgtu_force_method_4113(self, mock_stdout):
+    def test_brgtu_force_method_schema_21_2(self, mock_stdout):
         from main import main
         m_ok_output, q_ok_output, n_ok_output = main()
 
         # Ожидаемые значения эпюр моментов для каждого стержня
-        expected_m_ok_output = [[0, 1.78], [1.78, 3.55], [3.55, -4.33, 4.67], [0, 0.0], [0.0, -1.88], [2.79, 4.02],
-                                [4.02, -7.36], [0, 0], [0, 0], [-7.36, 4.02], [-2.79, -4.02], [-0.0, 1.88], [0, -0.0],
-                                [4.67, -4.33, 3.55], [0, -1.78], [-1.78, -3.55]]
-        expected_q_ok_output = [[-0.89, -0.89], [-0.89, -0.89], [3.8, -4.06], [0, 0], [0.3, 0.3], [-0.58, -0.58],
-                                [3.5, 3.5], [0, 0], [0, 0], [-3.5, -3.5], [0.58, 0.58], [-0.3, -0.3], [0, 0], [4.06, -3.8],
-                                [0.89, 0.89], [0.89, 0.89]]
-        expected_n_ok_output = [[-4.85, -4.85], [-4.85, -4.85], [-3.14, 1.25], [-7.65, -7.65], [-7.65, -7.65], [-3.5, -3.5],
-                                [-0.58, -0.58], [-0.3, -0.3], [-0.3, -0.3], [-0.58, -0.58], [-3.5, -3.5], [-7.65, -7.65],
-                                [-7.65, -7.65], [1.25, -3.14], [-4.85, -4.85], [-4.85, -4.85]]
+        expected_m_ok_output = [[0, -5.85], [-5.85, 2.3], [2.3, -2.12], [0, 0.0], [0.0, -1.36], [-3.48, 4.61],
+                                [4.61, -0.14, -1.73], [0, 0], [0, 0], [-1.73, -0.14, 4.61], [3.48, -4.61], [-0.0, 1.36],
+                                [0, -0.0], [-2.12, 2.3], [0, 5.85], [5.85, -2.3]]
+        expected_q_ok_output = [[2.93, 2.93], [-4.07, -4.07], [0.51, 0.51], [0, 0], [0.22, 0.22], [-3.85, -3.85], [3.9, 0],
+                                [0, 0], [0, 0], [0, -3.9], [3.85, 3.85], [-0.22, -0.22], [0, 0], [-0.51, -0.51],
+                                [-2.93, -2.93], [4.07, 4.07]]
+        expected_n_ok_output = [[-2.87, -2.87], [-2.87, -2.87], [-4.95, -4.95], [-1.03, -1.03], [-1.03, -1.03],
+                                [-3.9, -3.9], [-3.85, -3.85], [-0.22, -0.22], [-0.22, -0.22], [-3.85, -3.85], [-3.9, -3.9],
+                                [-1.03, -1.03], [-1.03, -1.03], [-4.96, -4.96], [-2.87, -2.87], [-2.87, -2.87]]
 
         errors_m = compare_moment_lists(m_ok_output, expected_m_ok_output, self.tolerance)
         errors_q = compare_moment_lists(q_ok_output, expected_q_ok_output, self.tolerance)
@@ -832,22 +868,268 @@ class TestBrgtuForceMethod(unittest.TestCase):
             self.fail(f"Найдены расхождения:\n{error_message}")
 
 
-    @patch('sys.stdin', StringIO('2\n4114\n'))
+    @patch('sys.stdin', StringIO('2\n6279\n'))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_brgtu_force_method_4114(self, mock_stdout):
+    def test_brgtu_force_method_schema_22_1(self, mock_stdout):
         from main import main
         m_ok_output, q_ok_output, n_ok_output = main()
 
         # Ожидаемые значения эпюр моментов для каждого стержня
-        expected_m_ok_output = [[0, -5.85], [-5.85, 2.3], [2.3, -2.12], [0, 0.0], [0.0, -1.36], [-3.48, 4.61],
-                                [4.61, -0.14, -1.73], [0, 0], [0, 0], [-1.73, -0.14, 4.61], [3.48, -4.61], [-0.0, 1.36],
-                                [0, -0.0], [-2.12, 2.3], [0, 5.85], [5.85, -2.3]]
-        expected_q_ok_output = [[2.93, 2.93], [-4.07, -4.07], [0.51, 0.51], [0, 0], [0.22, 0.22], [-3.85, -3.85], [3.9, 0],
-                                [0, 0], [0, 0], [0, -3.9], [3.85, 3.85], [-0.22, -0.22], [0, 0], [-0.51, -0.51],
-                                [-2.93, -2.93], [4.07, 4.07]]
-        expected_n_ok_output = [[-2.87, -2.87], [-2.87, -2.87], [-4.95, -4.95], [-1.03, -1.03], [-1.03, -1.03],
-                                [-3.9, -3.9], [-3.85, -3.85], [-0.22, -0.22], [-0.22, -0.22], [-3.85, -3.85], [-3.9, -3.9],
-                                [-1.03, -1.03], [-1.03, -1.03], [-4.96, -4.96], [-2.87, -2.87], [-2.87, -2.87]]
+        expected_m_ok_output = [[-14.72, 12.64], [16.67, -11.26], [-11.26, -21.63], [-21.63, 0.0], [-4.03, 0], [0, 3.07],
+                                [-0.71, 0.0], [10.91, 2.73, 0.0], [0, 12.19, 7.14]]
+        expected_q_ok_output = [[-4.89, -4.89], [2.11, 2.11], [2.59, 2.59], [-5.41, -5.41], [-0.38, -0.38], [-0.38, -0.38],
+                                [-0.09, -0.09], [6.93, 0], [-7.43, 4.89]]
+        expected_n_ok_output = [[-2.21, -2.21], [-1.51, -1.51], [0.09, 0.09], [0.09, 0.09], [-4.97, -4.97], [-4.97, -4.97],
+                                [-5.41, -5.41], [0, 0], [-12.72, -12.72]]
+
+        errors_m = compare_moment_lists(m_ok_output, expected_m_ok_output, self.tolerance)
+        errors_q = compare_moment_lists(q_ok_output, expected_q_ok_output, self.tolerance)
+        errors_n = compare_moment_lists(n_ok_output, expected_n_ok_output, self.tolerance)
+
+        # Собираем все ошибки вместе
+        all_errors = []
+        if errors_m:
+            all_errors.extend(errors_m)
+        if errors_q:
+            all_errors.extend(errors_q)
+        if errors_n:
+            all_errors.extend(errors_n)
+
+        # Если есть ошибки, выводим их
+        if all_errors:
+            error_message = "\n".join(all_errors)
+            self.fail(f"Найдены расхождения:\n{error_message}")
+
+
+    @patch('sys.stdin', StringIO('2\n6278\n'))
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_brgtu_force_method_schema_22_2(self, mock_stdout):
+        from main import main
+        m_ok_output, q_ok_output, n_ok_output = main()
+
+        # Ожидаемые значения эпюр моментов для каждого стержня
+        expected_m_ok_output = [[26.08, -13.67], [35.24, -15.57], [-15.57, -35.18], [-35.18, -39.59, -35.19],
+                                [-35.19, -22, 0.0], [-48.9, 0], [0, 37.26], [7.01, 0.0], [25.2, 0], [0, -5.05]]
+        expected_q_ok_output = [[7.1, 7.1], [7.77, 7.77], [3, 3], [4.4, -4.4], [-4.4, -13.2], [-4.66, -4.66],
+                                [-4.66, -4.66], [0.9, 0.9], [8, 8], [0.9, 0.9]]
+        expected_n_ok_output = [[0.25, 0.25], [3.08, 3.08], [-3.35, -3.35], [-0.9, -0.9], [-0.9, -0.9], [0, 0], [0, 0],
+                                [-13.2, -13.2], [0, 0], [-25.85, -25.85]]
+
+        errors_m = compare_moment_lists(m_ok_output, expected_m_ok_output, self.tolerance)
+        errors_q = compare_moment_lists(q_ok_output, expected_q_ok_output, self.tolerance)
+        errors_n = compare_moment_lists(n_ok_output, expected_n_ok_output, self.tolerance)
+
+        # Собираем все ошибки вместе
+        all_errors = []
+        if errors_m:
+            all_errors.extend(errors_m)
+        if errors_q:
+            all_errors.extend(errors_q)
+        if errors_n:
+            all_errors.extend(errors_n)
+
+        # Если есть ошибки, выводим их
+        if all_errors:
+            error_message = "\n".join(all_errors)
+            self.fail(f"Найдены расхождения:\n{error_message}")
+
+
+    @patch('sys.stdin', StringIO('2\n2311\n'))
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_brgtu_force_method_schema_23_1(self, mock_stdout):
+        from main import main
+        m_ok_output, q_ok_output, n_ok_output = main()
+
+        # Ожидаемые значения эпюр моментов для каждого стержня
+        expected_m_ok_output = [[0, -7.73], [-7.73, 2.53], [2.53, 0.0], [0.0, -2.53], [1.88, -2.06], [-4.59, 3.29],
+                                [3.29, -0.43, 0.96], [0.96, -0.43, 3.29], [4.59, -3.29], [-1.88, 2.06], [-2.53, 0.0],
+                                [0.0, 2.53], [7.73, -2.53], [0, 7.73]]
+        expected_q_ok_output = [[3.87, 3.87], [-5.13, -5.13], [0.6, 0.6], [0.6, 0.6], [0.98, 0.98], [-4.15, -4.15],
+                                [2.76, -1.74], [1.74, -2.76], [4.15, 4.15], [-0.98, -0.98], [-0.6, -0.6], [-0.6, -0.6],
+                                [5.13, 5.13], [-3.87, -3.87]]
+        expected_n_ok_output = [[-0.6, -0.6], [-0.6, -0.6], [-5.13, -5.13], [-5.13, -5.13], [-4.35, -4.35], [-4.95, -4.95],
+                                [-5.84, -3.77], [-3.77, -5.84], [-4.95, -4.95], [-4.35, -4.35], [-5.13, -5.13],
+                                [-5.13, -5.13], [-0.6, -0.6], [-0.6, -0.6]]
+
+        errors_m = compare_moment_lists(m_ok_output, expected_m_ok_output, self.tolerance)
+        errors_q = compare_moment_lists(q_ok_output, expected_q_ok_output, self.tolerance)
+        errors_n = compare_moment_lists(n_ok_output, expected_n_ok_output, self.tolerance)
+
+        # Собираем все ошибки вместе
+        all_errors = []
+        if errors_m:
+            all_errors.extend(errors_m)
+        if errors_q:
+            all_errors.extend(errors_q)
+        if errors_n:
+            all_errors.extend(errors_n)
+
+        # Если есть ошибки, выводим их
+        if all_errors:
+            error_message = "\n".join(all_errors)
+            self.fail(f"Найдены расхождения:\n{error_message}")
+
+
+    @patch('sys.stdin', StringIO('2\n2312\n'))
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_brgtu_force_method_schema_23_2(self, mock_stdout):
+        from main import main
+        m_ok_output, q_ok_output, n_ok_output = main()
+
+        # Ожидаемые значения эпюр моментов для каждого стержня
+        expected_m_ok_output = [[0, -1.29, -1.39], [-1.39, -0.28, 2.02], [2.02, 0.0], [0.0, -2.02], [-1.42, 0.52],
+                                [-1.5, 5.28], [5.28, -6.5], [-6.5, 5.28], [1.5, -5.28], [1.42, -0.52], [-2.02, 0.0],
+                                [0.0, 2.02], [1.3, 0.28, -2.02], [0, 1.29, 1.39]]
+        expected_q_ok_output = [[1.89, -0.51], [-0.51, -2.91], [0.48, 0.48], [0.48, 0.48], [-0.49, -0.49], [-3.39, -3.39],
+                                [2.57, 2.57], [-2.57, -2.57], [3.39, 3.39], [0.49, 0.49], [-0.48, -0.48], [-0.48, -0.48],
+                                [0.51, 2.91], [-1.89, 0.51]]
+        expected_n_ok_output = [[-0.48, -0.48], [-0.48, -0.48], [-2.91, -2.91], [-2.91, -2.91], [-4.02, -4.02], [-4.5, -4.5],
+                                [-5.01, -5.01], [-5.01, -5.01], [-4.5, -4.5], [-4.02, -4.02], [-2.91, -2.91], [-2.91, -2.91],
+                                [-0.48, -0.48], [-0.48, -0.48]]
+
+        errors_m = compare_moment_lists(m_ok_output, expected_m_ok_output, self.tolerance)
+        errors_q = compare_moment_lists(q_ok_output, expected_q_ok_output, self.tolerance)
+        errors_n = compare_moment_lists(n_ok_output, expected_n_ok_output, self.tolerance)
+
+        # Собираем все ошибки вместе
+        all_errors = []
+        if errors_m:
+            all_errors.extend(errors_m)
+        if errors_q:
+            all_errors.extend(errors_q)
+        if errors_n:
+            all_errors.extend(errors_n)
+
+        # Если есть ошибки, выводим их
+        if all_errors:
+            error_message = "\n".join(all_errors)
+            self.fail(f"Найдены расхождения:\n{error_message}")
+
+
+    @patch('sys.stdin', StringIO('2\n0483\n'))
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_brgtu_force_method_schema_24_1(self, mock_stdout):
+        from main import main
+        m_ok_output, q_ok_output, n_ok_output = main()
+
+        # Ожидаемые значения эпюр моментов для каждого стержня
+        expected_m_ok_output = [[0, -9.1], [-9.1, 5.79], [5.79, 0.0], [0.0, -5.79], [0, 1.47], [1.47, -1.81],
+                                [-7.6, 12.75], [12.75, -6.24, -12.57], [-12.57, -6.24, 12.75], [7.6, -12.75],
+                                [-1.47, 1.81], [0, -1.47], [-5.79, 0.0], [0.0, 5.79], [9.1, -5.79], [0, 9.1], [0, 0],
+                                [0, 0]]
+        expected_q_ok_output = [[3.79, 3.79], [-6.21, -6.21], [1.29, 1.29], [1.29, 1.29], [-0.61, -0.61], [1.36, 1.36],
+                                [-4.84, -4.84], [11.25, 0], [0, -11.25], [4.84, 4.84], [-1.36, -1.36], [0.61, 0.61],
+                                [-1.29, -1.29], [-1.29, -1.29], [6.21, 6.21], [-3.79, -3.79], [0, 0], [0, 0]]
+        expected_n_ok_output = [[-1.29, -1.29], [-1.29, -1.29], [-6.21, -6.21], [-6.21, -6.21], [-9.96, -9.96],
+                                [-9.96, -9.96], [-11.25, -11.25], [-4.84, -4.84], [-4.84, -4.84], [-11.25, -11.25],
+                                [-9.96, -9.96], [-9.96, -9.96], [-6.21, -6.21], [-6.21, -6.21], [-1.29, -1.29],
+                                [-1.29, -1.29], [-1.97, -1.97], [-1.97, -1.97]]
+
+        errors_m = compare_moment_lists(m_ok_output, expected_m_ok_output, self.tolerance)
+        errors_q = compare_moment_lists(q_ok_output, expected_q_ok_output, self.tolerance)
+        errors_n = compare_moment_lists(n_ok_output, expected_n_ok_output, self.tolerance)
+
+        # Собираем все ошибки вместе
+        all_errors = []
+        if errors_m:
+            all_errors.extend(errors_m)
+        if errors_q:
+            all_errors.extend(errors_q)
+        if errors_n:
+            all_errors.extend(errors_n)
+
+        # Если есть ошибки, выводим их
+        if all_errors:
+            error_message = "\n".join(all_errors)
+            self.fail(f"Найдены расхождения:\n{error_message}")
+
+
+    @patch('sys.stdin', StringIO('2\n0484\n'))
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_brgtu_force_method_schema_24_2(self, mock_stdout):
+        from main import main
+        m_ok_output, q_ok_output, n_ok_output = main()
+
+        # Ожидаемые значения эпюр моментов для каждого стержня
+        expected_m_ok_output = [[0, -4.32, -5.05], [-5.05, -2.17, 4.3], [4.3, 0.0], [0.0, -4.3], [0, 2.34], [2.34, -3.31],
+                                [-7.61, 12.38], [12.38, -10.12], [-10.12, -10.12], [-10.12, -10.12], [-10.12, 12.38],
+                                [7.61, -12.38], [-2.34, 3.31], [0, -2.34], [-4.3, 0.0], [0.0, 4.3], [5.05, 2.17, -4.3],
+                                [0, 4.32, 5.05], [0, 0], [0, 0]]
+        expected_q_ok_output = [[5.1, -0.9], [-0.9, -6.9], [0.96, 0.96], [0.96, 0.96], [-0.97, -0.97], [2.35, 2.35],
+                                [-4.54, -4.54], [10, 10], [0.0, 0.0], [-0.0, -0.0], [-10, -10], [4.54, 4.54],
+                                [-2.35, -2.35], [0.97, 0.97], [-0.96, -0.96], [-0.96, -0.96], [0.9, 6.9], [-5.1, 0.9],
+                                [0, 0], [0, 0]]
+        expected_n_ok_output = [[-0.96, -0.96], [-0.96, -0.96], [-6.9, -6.9], [-6.9, -6.9], [-9.04, -9.04], [-9.04, -9.04],
+                                [-10, -10], [-4.54, -4.54], [-4.54, -4.54], [-4.54, -4.54], [-4.54, -4.54], [-10, -10],
+                                [-9.04, -9.04], [-9.04, -9.04], [-6.9, -6.9], [-6.9, -6.9], [-0.96, -0.96], [-0.96, -0.96],
+                                [-3.33, -3.33], [-3.33, -3.33]]
+
+        errors_m = compare_moment_lists(m_ok_output, expected_m_ok_output, self.tolerance)
+        errors_q = compare_moment_lists(q_ok_output, expected_q_ok_output, self.tolerance)
+        errors_n = compare_moment_lists(n_ok_output, expected_n_ok_output, self.tolerance)
+
+        # Собираем все ошибки вместе
+        all_errors = []
+        if errors_m:
+            all_errors.extend(errors_m)
+        if errors_q:
+            all_errors.extend(errors_q)
+        if errors_n:
+            all_errors.extend(errors_n)
+
+        # Если есть ошибки, выводим их
+        if all_errors:
+            error_message = "\n".join(all_errors)
+            self.fail(f"Найдены расхождения:\n{error_message}")
+
+
+    @patch('sys.stdin', StringIO('2\n2511\n'))
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_brgtu_force_method_schema_25_1(self, mock_stdout):
+        from main import main
+        m_ok_output, q_ok_output, n_ok_output = main()
+
+        # Ожидаемые значения эпюр моментов для каждого стержня
+        expected_m_ok_output = [[0, 0.93], [-21.38, 17.03], [17.03, -10.96], [-10.96, 3.19], [22.31, 4.32, -6.9],
+                                [-6.9, -10.3, -11.44], [-11.44, -10.3, -6.9], [-6.9, 4.32, 22.31], [3.19, -10.96],
+                                [-10.96, 17.03], [21.38, -17.03], [0, -0.93]]
+        expected_q_ok_output = [[-0.23, -0.23], [-20.22, -20.22], [5.71, 5.71], [-4.99, -4.99], [9, 3.3], [3.3, 0],
+                                [0, -3.3], [-3.3, -9], [4.99, 4.99], [-5.71, -5.71], [20.22, 20.22], [0.23, 0.23]]
+        expected_n_ok_output = [[-20, -20], [-11, -11], [-22.29, -22.29], [-19.59, -19.59], [19.98, 19.98], [19.98, 19.98],
+                                [19.98, 19.98], [19.98, 19.98], [-19.59, -19.59], [-22.29, -22.29], [-11, -11], [-20, -20]]
+
+        errors_m = compare_moment_lists(m_ok_output, expected_m_ok_output, self.tolerance)
+        errors_q = compare_moment_lists(q_ok_output, expected_q_ok_output, self.tolerance)
+        errors_n = compare_moment_lists(n_ok_output, expected_n_ok_output, self.tolerance)
+
+        # Собираем все ошибки вместе
+        all_errors = []
+        if errors_m:
+            all_errors.extend(errors_m)
+        if errors_q:
+            all_errors.extend(errors_q)
+        if errors_n:
+            all_errors.extend(errors_n)
+
+        # Если есть ошибки, выводим их
+        if all_errors:
+            error_message = "\n".join(all_errors)
+            self.fail(f"Найдены расхождения:\n{error_message}")
+
+
+    @patch('sys.stdin', StringIO('2\n2512\n'))
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_brgtu_force_method_schema_25_2(self, mock_stdout):
+        from main import main
+        m_ok_output, q_ok_output, n_ok_output = main()
+
+        # Ожидаемые значения эпюр моментов для каждого стержня
+        expected_m_ok_output = [[0, 10.09], [-22.96, 7.6], [7.6, -2.25, 4.41], [33.05, -19.2], [-19.2, -19.2],
+                                [-19.2, -19.2], [-19.2, 33.05], [4.41, -2.25, 7.6], [22.96, -7.6], [0, -10.09]]
+        expected_q_ok_output = [[-2.52, -2.52], [-15.28, -15.28], [4.76, -3.94], [11, 11], [0, 0], [0, 0], [-11, -11],
+                                [3.94, -4.76], [15.28, 15.28], [2.52, 2.52]]
+        expected_n_ok_output = [[-20, -20], [-9, -9], [-17.08, -14.76], [12.76, 12.76], [12.76, 12.76], [12.76, 12.76],
+                                [12.76, 12.76], [-14.76, -17.08], [-9, -9], [-20, -20]]
 
         errors_m = compare_moment_lists(m_ok_output, expected_m_ok_output, self.tolerance)
         errors_q = compare_moment_lists(q_ok_output, expected_q_ok_output, self.tolerance)

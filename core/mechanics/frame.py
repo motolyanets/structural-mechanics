@@ -873,6 +873,8 @@ class Frame:
                 for support in self.supports:
                     if support.node.name == node.name:
                         is_free_node = False
+                if node.x == self.length():
+                    is_free_node = False
                 if is_free_node:
                     forces_in_node = []
                     for load in self.loads:

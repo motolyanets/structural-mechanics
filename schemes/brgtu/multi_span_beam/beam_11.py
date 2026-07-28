@@ -1,0 +1,142 @@
+import importlib
+
+from core.mechanics.node import Node
+from core.mechanics.rod import Rod
+from core.mechanics.load import Force, Momentum, DistributedForce
+from core.mechanics.support import Support
+
+
+def get_beam_load_schema(load_number):
+    # Импортируем модуль динамически
+    module = importlib.import_module(f'schemes.brgtu.multi_span_beam.load_{load_number}')
+
+    try:
+        # Получаем функции из модуля
+        create_main_frame = getattr(module, f'create_beam_load_{load_number}')
+
+        return create_main_frame
+
+    except (ImportError, AttributeError) as e:
+        raise ValueError(f"Схема нагрузок {load_number} не реализована") from e
+
+
+def create_frame_11(params: dict):
+    a = params["l1"]
+    b = params["l2"]
+    c = params["h1"]
+    d = params["h2"]
+    P1 = params["P1"]
+    P2 = params["P2"]
+    P3 = params["P3"]
+    q1 = params["q1"]
+    q2 = params["q2"]
+
+    nodes, sections_for_diagram, loads = get_beam_load_schema(params['load_number'])(params)
+
+    node1 = Node(name='A', x=0, y=0)
+    node3 = Node(name='E', x=a * 2, y=0, is_hinge=True)
+    node6 = Node(name='B', x=a * 4 + b, y=0)
+    node7 = Node(name='T', x=a * 4 + b * 2, y=0, is_hinge=True)
+    node11 = Node(name='C', x=(a + b) * 4 + c * 2, y=0)
+    node12 = Node(name='S', x=(a + b) * 4 + c * 3, y=0, is_hinge=True)
+    node14 = Node(name='D', x=(a + b + c) * 4 + d, y=0)
+
+
+
+    rod2 = Rod(start_node=node4, end_node=node3)
+    rod3 = Rod(start_node=node5, end_node=node4)
+    rod4 = Rod(start_node=node3, end_node=node6, stiffness=i3)
+    rod5 = Rod(start_node=node7, end_node=node6)
+    rod6 = Rod(start_node=node8, end_node=node7)
+    rod7_1 = Rod(start_node=node7, end_node=node17, is_start_hinge=True)
+    rod7_2 = Rod(start_node=node17, end_node=node10, is_end_hinge=True)
+    rod8 = Rod(start_node=node9, end_node=node10)
+    rod9 = Rod(start_node=node10, end_node=node11)
+    rod10 = Rod(start_node=node11, end_node=node12, stiffness=i3)
+    rod11_1 = Rod(start_node=node13, end_node=node12)
+    rod11_2 = Rod(start_node=node14, end_node=node13)
+
+    support1 = Support(node=node1, number_of_reactions=3, rotation=0)
+    support2 = Support(node=node6, number_of_reactions=1, rotation=90)
+    support3 = Support(node=node11, number_of_reactions=1, rotation=90)
+    support4 = Support(node=node14, number_of_reactions=1, rotation=90)
+
+
+    supports = [support1, support2, support3, support4, support5, support6]
+
+    symmetry = ('x', node17)
+    details = dict()
+    details['node_name_for_static_check'] = 'L'
+
+    return nodes, rods, supports, loads, symmetry, details
+
+
+def create_primary_system_10(params: dict):
+    l1 = params["l1"]
+    l2 = params["l2"]
+    h1 = params["h1"]
+    h2 = params["h2"]
+    load_index = params["load_index"]
+    P = params["P"]
+    q = params["q"]
+    i2 = params["i2"]
+    i3 = params["i3"]
+
+    details = dict()
+
+    node1 = Node(name='A', x=0, y=h1)
+    node2 = Node(name='2', x=l1 * 0.25, y=h1)
+    node3 = Node(name='3', x=l1 * 0.5, y=h1)
+    node4 = Node(name='K', x=l1 * 0.5, y=h1 * 0.5)
+    node5 = Node(name='B', x=l1 * 0.5, y=0)
+    node6 = Node(name='6', x=l1 * 0.5 + l2, y=h1 + h2 * 0.5)
+    node7 = Node(name='L', x=l1 * 0.5 + l2, y=h1 * 0.8, is_hinge=True)
+    node8 = Node(name='C', x=l1 * 0.5 + l2, y=0)
+
+    rod2 = Rod(start_node=node4, end_node=node3)
+    rod3 = Rod(start_node=node5, end_node=node4)
+    rod4 = Rod(start_node=node3, end_node=node6, stiffness=i3)
+    rod5 = Rod(start_node=node7, end_node=node6)
+    rod6 = Rod(start_node=node8, end_node=node7)
+
+    support1 = Support(node=node5, number_of_reactions=2, rotation=90)
+    support2 = Support(node=node8, number_of_reactions=2, rotation=90)
+
+    loads = {}
+    load_x1 = Force(name='x1', node=node1, value=1, rotation=90)
+    load_x2 = Force(name='x2', node=node7, value=1, rotation=180)
+    load_x3 = Momentum(name='x3', node=node8, value=1, rotation=False)
+    load_k = Force(name='x', node=node4, value=1, rotation=180)
+
+    if load_index == 1:
+        rod1 = Rod(start_node=node1, end_node=node3, stiffness=i2)
+
+        load_P = Force(name='P', node=node4, value=P, rotation=0)
+        load_q = DistributedForce(name='q', rod=rod4, value=q, rotation=270)
+        loads_p = [load_P, load_q]
+        nodes = [node1, node3, node4, node5, node6, node7, node8]
+        rods = [rod1, rod2, rod3, rod4, rod5, rod6]
+
+    else:
+        rod1_1 = Rod(start_node=node1, end_node=node2, stiffness=i2)
+        rod1_2 = Rod(start_node=node2, end_node=node3, stiffness=i2)
+
+        load_P1 = Force(name='P', node=node2, value=P, rotation=270)
+        load_P2 = Force(name='P', node=node6, value=P, rotation=180)
+        load_q1 = DistributedForce(name='q', rod=rod2, value=q, rotation=0)
+        load_q2 = DistributedForce(name='q', rod=rod3, value=q, rotation=0)
+        loads_p = [load_P1, load_P2, load_q1, load_q2]
+        nodes = [node1, node2, node3, node4, node5, node6, node7, node8]
+        rods = [rod1_1, rod1_2, rod2, rod3, rod4, rod5, rod6]
+
+    loads['1'] = [load_x1]
+    loads['2'] = [load_x2]
+    loads['3'] = [load_x3]
+    loads['p'] = loads_p
+    loads['k'] = [load_k]
+    supports = [support1, support2]
+
+    details['equation_of_static_determinacy'] = ' 3 · 5 - 10 = 5'
+
+    return nodes, rods, supports, loads, details
+

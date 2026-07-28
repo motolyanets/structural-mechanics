@@ -4,6 +4,7 @@ from pathlib import Path
 from tasks.brgtu.composite_frame.plugin import BRGTUCompositeFrame
 from tasks.brgtu.force_method.plugin import BRGTUForceMethod
 from tasks.brgtu.movement_method.plugin import BRGTUMovementMethod
+from tasks.brgtu.multi_span_beam.plugin import BRGTUMultiSpanBeam
 
 
 # from tasks.brgtu.force_method.plugin import BRGTUForceMethod
@@ -35,14 +36,19 @@ def main():
             "class": BRGTUMovementMethod,
             "excel_path": Path("data/brgtu/movement_method_8.xlsx")
         },
+        "5": {
+            "name": "Многопролетная балка",
+            "class": BRGTUMultiSpanBeam,
+            "excel_path": Path("data/brgtu/multi_span_beam.xlsx")
+        },
     }
 
     print("\nДоступные задачи:")
     for key, task in tasks.items():
         print(f"  {key}. {task['name']}")
 
-    choice = input("\nВыберите задачу: ").strip()
-    # choice = "2"
+    # choice = input("\nВыберите задачу: ").strip()
+    choice = "5"
 
     if choice not in tasks:
         print("❌ Неверный выбор")
@@ -54,8 +60,8 @@ def main():
         print(f"❌ Файл не найден: {task_info['excel_path']}")
         return
 
-    cipher = input("\nВведите 4-значный шифр: ").strip()
-    # cipher = "2812"
+    # cipher = input("\nВведите 4-значный шифр: ").strip()
+    cipher = "1111"
     try:
         plugin = task_info["class"](task_info["excel_path"])
         plugin.loader.print_summary()

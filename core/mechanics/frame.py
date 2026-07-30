@@ -446,7 +446,6 @@ class Frame:
                     known_intentions.append(load)
         return known_intentions
 
-
     def calculate_N_in_node(self, node: Node, rods_with_node:List[Rod]) -> bool:
         unsoleved_rods = []
         for rod in rods_with_node:
@@ -768,7 +767,6 @@ class Frame:
                 #         diagram_N = [inclined_rod.diagram_N[0], n]
                 #         inclined_rod.diagram_N = diagram_N
                 return True
-
 
     def replace_N_from_collinear_rode(self, node: Node, rods_with_node:List[Rod]) -> bool:
         if len(rods_with_node) != 2:
@@ -1211,5 +1209,3 @@ class Frame:
                 #             finded_reactions.append(reaction)
 
         self.finded_reactions = finded_reactions
-
-

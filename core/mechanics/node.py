@@ -1,3 +1,6 @@
+from services.services import round_up
+
+
 class Node:
     """Узел расчётной схемы"""
     def __init__(
@@ -7,7 +10,8 @@ class Node:
             name: str | None = None,
             is_hinge: bool = False,
     ):
-        self.x = float(x)
+        self.x = round_up(float(x), 6)
+        self.y = round_up(float(y), 6)
         self.y = float(y)
         self.name = name
         self.is_hinge = is_hinge

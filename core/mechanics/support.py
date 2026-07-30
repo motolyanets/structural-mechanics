@@ -36,3 +36,7 @@ class Support:
                          })
         return msp
 
+    def __repr__(self) -> str:
+        return f"Support({self.block_name}, {self.node.name})"
+
+

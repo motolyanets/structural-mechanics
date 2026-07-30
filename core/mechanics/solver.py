@@ -1143,3 +1143,181 @@ class CompositeFrame(Frame):
                     self.finded_reactions.append(finded_reaction)
         return report
 
+
+class SimpleBeam(SolvableFrame, BaseFrame):
+
+    def solve_frame(self):
+        print(50 * '-')
+        print('Решаем простую балку')
+        report = 'Опорные реакции:\n'
+        reactions = self.reactions()
+        node1 = self.find_node_with_single_unknown()[0]
+        r = self.solve_single_unknown_at_node(node=node1)
+        for reaction in reactions:
+            if r[0] == reaction.name:
+                reaction.value = r[1]
+                self.finded_reactions.append(reaction)
+                print(r[2])
+
+        r1 = self.find_reaction_from_force_projection('x')
+        r2 = self.find_reaction_from_force_projection('y')
+
+        report += r[2] + r1 + r2
+
+
+        for reaction in self.finded_reactions:
+            print(f'{reaction.name}={reaction.value} ------ {reaction.rotation}')
+        print(50 * '-')
+        return report
+
+
+class MultiSpanBeam(Frame):
+    def __init__(self, nodes: List[Node], rods: List[Rod], supports: List[Support],
+                 loads: list, name: str | None = None):
+        super().__init__(nodes=nodes, rods=rods, supports=supports, loads=loads, name=name)
+
+    def split_beam(self):
+        simple_beams_list = []
+        simple_beam = []
+        for node in self.nodes:
+            simple_beam.append(deepcopy(node))
+            if node.is_hinge:
+                simple_beams_list.append(simple_beam)
+                simple_beam = [deepcopy(node)]
+            if node is self.nodes[-1]:
+                simple_beams_list.append(simple_beam)
+
+        hinges_with_added_support = set()
+        for simple_beam in simple_beams_list:
+            amount_of_supports = 0
+            for node in simple_beam:
+                for s in self.supports:
+                    if node.name == s.node.name and s.number_of_reactions in [1, 2]:
+                        amount_of_supports += 1
+            if amount_of_supports in [0, 1]:
+                for node in simple_beam:
+                    if node.is_hinge and node.name not in hinges_with_added_support:
+                        node.is_hinge = False
+                        hinges_with_added_support.add(node.name)
+
+        parts_of_beam = []
+        finded_reactions = []
+        for simple_beam in simple_beams_list:
+            new_nodes = simple_beam
+
+            new_supports = []
+            for support in self.supports:
+                if support.node.name in [n.name for n in simple_beam]:
+                    new_supports.append(deepcopy(support))
+
+            new_rods = []
+
+            s_fr = []
+            for i in simple_beam:
+                if len(i.name) > 1:
+                    try:
+                        new_i = str(int(i.name))
+                    except:
+                        new_i = i.name[0]
+                else:
+                    new_i = i.name
+                s_fr.append(new_i)
+
+            for rod in self.rods:
+                if rod.start_node.name in s_fr and rod.end_node.name in s_fr:
+                    new_rod = deepcopy(rod)
+                    new_rods.append(new_rod)
+
+            for new_node in new_nodes:
+                if new_node.is_hinge:
+                    sup = Support(node=new_node, number_of_reactions=2, rotation=90)
+                    new_supports.append(sup)
+
+            nodes_with_loads = set()
+            new_loads = []
+            for load in self.loads:
+                new_load = deepcopy(load)
+                if isinstance(new_load, (Force, Momentum)):
+                    if new_load.node.name in [n.name for n in simple_beam] and new_load.node.name not in nodes_with_loads:
+                        new_loads.append(new_load)
+                        nodes_with_loads.add(new_load.node.name)
+                else:
+                    for rod in new_rods:
+                        if rod.start_node.x >= load.start_coordinates[0] and rod.end_node.x <= load.end_coordinates[0]:
+                            new_l = DistributedForce(name=load.name, value=load.value, rotation=load.rotation, rod=rod)
+                            new_loads.append(new_l)
+
+            finded_reactions = finded_reactions.copy()
+
+            part_of_beam = SimpleBeam(
+                nodes=new_nodes, rods=new_rods,
+                supports=new_supports, loads=new_loads
+            )
+            part_of_beam.finded_reactions = finded_reactions
+            parts_of_beam.append(part_of_beam)
+
+        sorted_parts = self.sort_beams_for_solving(parts_of_beam=parts_of_beam)
+
+        return sorted_parts
+
+    def sort_beams_for_solving(self, parts_of_beam: List[SimpleBeam]) -> List[SimpleBeam]:
+        sorted_beams = []
+        solved_nodes = []
+        while parts_of_beam:
+            for part_of_beam in parts_of_beam:
+                unsolved_nodes_name = []
+                for node in part_of_beam.nodes:
+                    try:
+                        _ = int(node.name)
+                    except:
+                        letter = node.name
+                        if letter not in solved_nodes:
+                            for support in self.supports:
+                                if letter == support.node.name:
+                                    if support.number_of_reactions == 3:
+                                        unsolved_nodes_name.append(letter)
+                            unsolved_nodes_name.append(letter)
+                if len(unsolved_nodes_name) == 2:
+                    sorted_beams.append(part_of_beam)
+                    parts_of_beam.remove(part_of_beam)
+                    solved_nodes += unsolved_nodes_name
+                    break
+        print(sorted_beams)
+        return sorted_beams
+
+
+
+
+    def solve_beam(self):
+        print(50 * '-')
+        print('Решаем многопролетную балку')
+        report = ''
+        parts_of_beam = self.split_beam()
+        inner_reactions = []
+        self.finded_reactions = []
+        for i, part in enumerate(parts_of_beam):
+            if inner_reactions:
+                for reaction in inner_reactions:
+                    if reaction.node.name[0] in [node.name for node in part.nodes]:
+                        new_reaction = Force(
+                            name=reaction.name,
+                            node=reaction.node,
+                            rotation=reaction.rotation + 180,
+                            value=reaction.value
+                        )
+                        part.loads.append(new_reaction)
+
+            report += part.solve_frame()
+
+            for reaction in part.finded_reactions:
+                if reaction not in inner_reactions:
+                    inner_reactions.append(reaction)
+
+            for finded_reaction in part.finded_reactions:
+                if finded_reaction.name in [r.name for r in self.reactions()]:
+                    self.finded_reactions.append(finded_reaction)
+        return report
+
+
+
+

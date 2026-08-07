@@ -390,7 +390,7 @@ class BRGTUForceMethod(TaskPlugin):
                 if distr_load.rod.name == rod.name:
                     q = distr_load
 
-            report = rod.calculate_diagram_q(q=q)
+            report = rod.calculate_diagram_q_from_diagram_m(q=q)
             calculating_Q_report += report + '\n'
             i += 1
             print(f'{rod} ------ {rod.diagram_Q}')

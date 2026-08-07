@@ -772,7 +772,7 @@ class BRGTUMovementMethod(TaskPlugin):
             if len(rod.diagram_M) == 3:
                 q = params['q']
 
-            report = rod.calculate_diagram_q(q=q)
+            report = rod.calculate_diagram_q_from_diagram_m(q=q)
             calculating_Q_report += report + '\n'
             i += 1
             print(f'{rod} ------ {rod.diagram_Q}')

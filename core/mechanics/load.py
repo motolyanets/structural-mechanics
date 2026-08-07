@@ -64,9 +64,13 @@ class Force(Load):
 
     def get_projection_on_axis(self, axis_name: str) -> tuple:
         rotation_radians = math.radians(self.rotation)
+        # Нужно пересмотреть логику и сделать проекцию не только на оси х и у, но и на наклонный стержень
+        # Будем получать не название оси, а угол наклона в градусах
         if axis_name == 'x':
+            axis_rotation = 0
             projection = self.value * math.cos(rotation_radians)
         elif axis_name == 'y':
+            axis_rotation = 90
             projection = self.value * math.sin(rotation_radians)
         else:
             raise Exception('Название оси должно быть \'x\' или \'y\'')

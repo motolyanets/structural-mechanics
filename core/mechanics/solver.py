@@ -10,7 +10,8 @@ from core.mechanics.rod import Rod
 from core.mechanics.load import Force, Momentum, DistributedForce, Twist, Displacement
 from core.mechanics.rod_movementmethod import RodForMovementMethod
 from core.mechanics.support import Support
-from services.services import round_up, making_report_of_multiply, is_point_on_rod, is_distr_force_on_rod
+from services.services import round_up, making_report_of_multiply, is_point_on_rod, is_distr_force_on_rod, \
+    is_subsegment_2d
 
 
 def multiply_rods_diagrams_Simpson(rod1: Rod, rod2: Rod, q: float | None = None):
@@ -1175,6 +1176,26 @@ class MultiSpanBeam(Frame):
     def __init__(self, nodes: List[Node], rods: List[Rod], supports: List[Support],
                  loads: list, name: str | None = None):
         super().__init__(nodes=nodes, rods=rods, supports=supports, loads=loads, name=name)
+        self.distribution_of_loads_among_rods()
+
+    def distribution_of_loads_among_rods(self):
+        distributed_loads = []
+        new_loads = []
+        for load in self.loads:
+            if isinstance(load, DistributedForce):
+                distributed_loads.append(load)
+            else:
+                new_loads.append(load)
+        for d_load in distributed_loads:
+            p_start = d_load.start_coordinates
+            p_end = d_load.end_coordinates
+            for rod in self.rods:
+                rod_start = (rod.start_node.x, rod.start_node.y)
+                rod_end = (rod.end_node.x, rod.end_node.y)
+                if is_subsegment_2d(small_segment=(rod_start, rod_end), big_segment=(p_start, p_end)):
+                    l = DistributedForce(name=d_load.name, value=d_load.value, rotation=d_load.rotation, rod=rod)
+                    new_loads.append(l)
+        self.loads = new_loads
 
     def split_beam(self):
         simple_beams_list = []
@@ -1284,6 +1305,72 @@ class MultiSpanBeam(Frame):
                     break
         print(sorted_beams)
         return sorted_beams
+
+    def create_sections_for_diagrams(self):
+        self.is_that_frame_solved()
+
+        for rod in self.rods:
+            rod.sections = None
+
+        all_loads = self.loads + self.finded_reactions
+        number_of_section = 1
+        sections = []
+
+        using_loads = []
+        load_on_current_rod = None
+
+        current_rod = self.rods[0]
+        node = current_rod.start_node
+        for load in all_loads:
+            # Добавляем нагрузки, действующие в текущем узле
+            if isinstance(load, (Force, Momentum)):
+                if load.node.name == node.name and load not in using_loads:
+                    using_loads.append(load)
+            # Добавляем распределенную нагрузку, действующую на текущий стержень
+            elif isinstance(load, DistributedForce):
+                if load.rod == current_rod:
+                    load_on_current_rod = load
+
+        sections_on_rod, number_of_section, next_node = current_rod.make_sections_on_rod(
+            first_node=node,
+            number_of_section=number_of_section,
+            loads=using_loads,
+            load_on_current_rod=load_on_current_rod,
+        )
+        sections += sections_on_rod
+        if load_on_current_rod:
+            using_loads.append(load_on_current_rod)
+
+        if current_rod:
+            while True:
+                current_rod = self.next_rod(previous_rod=current_rod, node=next_node)
+
+                load_on_current_rod = None
+                for load in all_loads:
+                    # Добавляем нагрузки, действующие в текущем узле
+                    if isinstance(load, (Force, Momentum)):
+                        if load.node.name == next_node.name and load not in using_loads:
+                            using_loads.append(load)
+                    # Добавляем распределенную нагрузку, действующую на текущий стержень
+                    elif isinstance(load, DistributedForce):
+                        if load.rod == current_rod:
+                            load_on_current_rod = load
+
+                sections_on_rod, number_of_section, next_node = current_rod.make_sections_on_rod(
+                    first_node=next_node,
+                    number_of_section=number_of_section,
+                    loads=using_loads,
+                    load_on_current_rod=load_on_current_rod,
+                )
+                sections += sections_on_rod
+                if load_on_current_rod:
+                    using_loads.append(load_on_current_rod)
+                if current_rod == self.rods[-1]:
+                    break
+
+        if not self.is_all_rods_with_sections():
+            raise Exception(f'Созданы сечения не на всех стержнях')
+
 
 
 

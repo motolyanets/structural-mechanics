@@ -13,6 +13,7 @@ class Section:
             y_drawing: float,
             name: str,
             loads: List,
+            rod_angle: float,
             is_hinge: bool = False,
     ):
         self.x = float(x)
@@ -21,6 +22,7 @@ class Section:
         self.y_drawing = float(y_drawing)
         self.name = name
         self.loads = loads
+        self.rod_angle = rod_angle
         self.is_hinge = is_hinge
 
     def sum_momentum_in_section(self):
@@ -83,6 +85,35 @@ class Section:
             # moment = round_up(moment, 3)
             equation = f'M({self.name}) =' + normalize_equation(equation) + ' = ' + str(round_up(moment, 2))
         return moment, equation
+
+    def sum_q_about_section(self):
+        from core.mechanics.load import Force, Momentum, DistributedForce
+        all_loads = self.loads
+
+        point = (self.x, self.y)
+        section_q = 0
+        equation = ''
+        for load in all_loads:
+            if isinstance(load, Force):
+                text, moment_of_load = load.get_moment_about(point=point)
+                moment += moment_of_load
+                equation += f'+ {text} '
+            elif isinstance(load, Momentum):
+                if load.rotation:
+                    moment += load.value
+                    equation += f'+{load.name} '
+                else:
+                    moment -= load.value
+                    equation += f'-{load.name} '
+            if isinstance(load, DistributedForce):
+                text, moment_of_load = load.get_moment_about(point=point)
+                moment += moment_of_load
+                equation += f'+ {text} '
+
+        # moment = round_up(moment, 3)
+        equation = f'M({self.name}) =' + normalize_equation(equation) + ' = ' + str(round_up(moment, 2))
+        return moment, equation
+
 
 
     def __repr__(self) -> str:

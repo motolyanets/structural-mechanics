@@ -97,6 +97,18 @@ class BRGTUMultiSpanBeam(TaskPlugin):
         main_frame, msp, base_point = draw_frame(frame=main_beam, base_point=base_point, msp=msp)
         main_beam.solve_beam()
 
+        main_beam.base_point = base_point
+        main_beam.create_sections_for_diagrams()
+        finding_moments_report = ''
+        for rod in main_beam.rods:
+            section_equation = rod.calculate_diagram_m()
+            finding_moments_report += section_equation + '\n'
+        finding_moments_report = finding_moments_report.replace('\n\n', '\n')
+        finding_moments_report = finding_moments_report.replace('= =', '=')
+
+        fm_frame, msp, base_point = draw_frame(frame=main_beam, base_point=base_point, diagram_name='M', msp=msp,
+                                               accuracy=2, drawing_nodes=False, drawing_sections=True)
+
         safe_zoom_for_work(doc)
         doc.saveas(f'report.dxf')
 

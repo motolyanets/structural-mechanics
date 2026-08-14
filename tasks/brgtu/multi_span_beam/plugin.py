@@ -95,18 +95,28 @@ class BRGTUMultiSpanBeam(TaskPlugin):
 
         draw_dimension_chains(frame=main_beam, base_point=base_point, msp=msp)
         main_frame, msp, base_point = draw_frame(frame=main_beam, base_point=base_point, msp=msp)
-        main_beam.solve_beam()
+        parts_of_beam = main_beam.split_beam()
 
         main_beam.base_point = base_point
         main_beam.create_sections_for_diagrams()
         finding_moments_report = ''
+        finding_q_report = ''
+        finding_n_report = ''
         for rod in main_beam.rods:
-            section_equation = rod.calculate_diagram_m()
-            finding_moments_report += section_equation + '\n'
+            section_m_equation = rod.calculate_diagram_m()
+            finding_moments_report += section_m_equation + '\n'
+            section_q_equation = rod.calculate_diagram_q()
+            finding_q_report += section_q_equation + '\n'
+            section_n_equation = rod.calculate_diagram_n()
+            finding_n_report += section_n_equation + '\n'
         finding_moments_report = finding_moments_report.replace('\n\n', '\n')
         finding_moments_report = finding_moments_report.replace('= =', '=')
 
         fm_frame, msp, base_point = draw_frame(frame=main_beam, base_point=base_point, diagram_name='M', msp=msp,
+                                               accuracy=2, drawing_nodes=False, drawing_sections=True)
+        fm_frame, msp, base_point = draw_frame(frame=main_beam, base_point=base_point, diagram_name='Q', msp=msp,
+                                               accuracy=2, drawing_nodes=False, drawing_sections=True)
+        fm_frame, msp, base_point = draw_frame(frame=main_beam, base_point=base_point, diagram_name='N', msp=msp,
                                                accuracy=2, drawing_nodes=False, drawing_sections=True)
 
         safe_zoom_for_work(doc)

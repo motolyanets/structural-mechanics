@@ -135,7 +135,7 @@ class Rod:
 
         x, y, _, _ = self.get_coordinates_of_section(node=node, center=True)
 
-        section = Section(name=str(number_of_section), x=x, y=y, x_drawing=x, y_drawing=y, loads=loads)
+        section = Section(name=str(number_of_section), x=x, y=y, x_drawing=x, y_drawing=y, loads=loads, rod_angle=self.get_angle_deg())
         return section
 
     def make_sections_on_rod(self, first_node: Node, number_of_section: int, loads: List, load_on_current_rod):
@@ -294,6 +294,47 @@ class Rod:
 
             self.diagram_Q = [Q1, Q2]
         return report
+
+    def calculate_diagram_q(self):
+        diagram = []
+
+        finding_transverse_forces = []
+        for section in self.sort_sections():
+            section_transverse_force, section_equation = section.sum_q_about_section()
+            diagram.append(section_transverse_force)
+            finding_transverse_forces.append(section_equation)
+
+        self.diagram_Q = diagram
+
+
+        report = ''
+        for i in finding_transverse_forces:
+            report += f'{i}\n'
+        report.strip('\n')
+        print(f'{self}-------{diagram}')
+
+        return report
+
+    def calculate_diagram_n(self):
+        diagram = []
+
+        finding_longitudinal_forces = []
+        for section in self.sort_sections():
+            section_longitudinal_force, section_equation = section.sum_n_about_section()
+            diagram.append(section_longitudinal_force)
+            finding_longitudinal_forces.append(section_equation)
+
+        self.diagram_N = diagram
+
+
+        report = ''
+        for i in finding_longitudinal_forces:
+            report += f'{i}\n'
+        report.strip('\n')
+        print(f'{self}-------{diagram}')
+
+        return report
+
 
     def __repr__(self) -> str:
         return f"Rod({self.start_node.name}→{self.end_node.name}, L={self.length():.3f})"

@@ -81,6 +81,30 @@ class Force(Load):
             expression = f' - {self.name}'
         return projection, expression
 
+    def get_projection_on_rod(self, rod_angle: float) -> tuple:
+        rod_rotation_radians = math.radians(rod_angle)
+        force_rotation_radians = math.radians(self.rotation)
+
+        projection = -self.value * math.cos(force_rotation_radians - rod_rotation_radians)
+
+        if projection >= 0:
+            expression = f' + {self.name}'
+        else:
+            expression = f' - {self.name}'
+        return expression, projection
+
+    def get_perpendicular_on_rod(self, rod_angle: float) -> tuple:
+        rod_rotation_radians = math.radians(rod_angle)
+        force_rotation_radians = math.radians(self.rotation)
+
+        projection = self.value * math.sin(force_rotation_radians - rod_rotation_radians)
+
+        if projection >= 0:
+            expression = f' + {self.name}'
+        else:
+            expression = f' - {self.name}'
+        return expression, projection
+
     def draw(self, insert_point: Tuple[float, float], msp):
         msp.add_blockref('Сосредоточенная сила', insert=insert_point,
                          dxfattribs={
@@ -213,6 +237,30 @@ class DistributedForce(Load):
         else:
             expression = f' - {self.name}·{self.length}'
         return projection, expression
+
+    def get_projection_on_rod(self, rod_angle: float) -> tuple:
+        rod_rotation_radians = math.radians(rod_angle)
+        force_rotation_radians = math.radians(self.rotation)
+
+        projection = -self.Q() * math.cos(force_rotation_radians - rod_rotation_radians)
+
+        if projection >= 0:
+            expression = f' + {self.name}·{self.length}'
+        else:
+            expression = f' - {self.name}·{self.length}'
+        return expression, projection
+
+    def get_perpendicular_on_rod(self, rod_angle: float) -> tuple:
+        rod_rotation_radians = math.radians(rod_angle)
+        force_rotation_radians = math.radians(self.rotation)
+
+        projection = self.Q() * math.sin(force_rotation_radians - rod_rotation_radians)
+
+        if projection >= 0:
+            expression = f' + {self.name}·{self.length}'
+        else:
+            expression = f' - {self.name}·{self.length}'
+        return expression, projection
 
     def get_lever_arm(self, point: Tuple[float, float]) -> float:
         """

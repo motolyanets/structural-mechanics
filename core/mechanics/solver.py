@@ -1371,10 +1371,6 @@ class MultiSpanBeam(Frame):
         if not self.is_all_rods_with_sections():
             raise Exception(f'Созданы сечения не на всех стержнях')
 
-
-
-
-
     def solve_beam(self):
         print(50 * '-')
         print('Решаем многопролетную балку')
@@ -1403,7 +1399,7 @@ class MultiSpanBeam(Frame):
             for finded_reaction in part.finded_reactions:
                 if finded_reaction.name in [r.name for r in self.reactions()]:
                     self.finded_reactions.append(finded_reaction)
-        return report
+        return report, parts_of_beam
 
 
 

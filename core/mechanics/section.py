@@ -87,32 +87,42 @@ class Section:
         return moment, equation
 
     def sum_q_about_section(self):
-        from core.mechanics.load import Force, Momentum, DistributedForce
+        from core.mechanics.load import Force, DistributedForce
         all_loads = self.loads
 
-        point = (self.x, self.y)
         section_q = 0
         equation = ''
         for load in all_loads:
             if isinstance(load, Force):
-                text, moment_of_load = load.get_moment_about(point=point)
-                moment += moment_of_load
+                text, transverse_force_of_load = load.get_perpendicular_on_rod(rod_angle=self.rod_angle)
+                section_q += transverse_force_of_load
                 equation += f'+ {text} '
-            elif isinstance(load, Momentum):
-                if load.rotation:
-                    moment += load.value
-                    equation += f'+{load.name} '
-                else:
-                    moment -= load.value
-                    equation += f'-{load.name} '
-            if isinstance(load, DistributedForce):
-                text, moment_of_load = load.get_moment_about(point=point)
-                moment += moment_of_load
+            elif isinstance(load, DistributedForce):
+                text, transverse_force_of_load = load.get_perpendicular_on_rod(rod_angle=self.rod_angle)
+                section_q += transverse_force_of_load
                 equation += f'+ {text} '
 
-        # moment = round_up(moment, 3)
-        equation = f'M({self.name}) =' + normalize_equation(equation) + ' = ' + str(round_up(moment, 2))
-        return moment, equation
+        equation = f'Q({self.name}) =' + normalize_equation(equation) + ' = ' + str(round_up(section_q, 2))
+        return section_q, equation
+
+    def sum_n_about_section(self):
+        from core.mechanics.load import Force, DistributedForce
+        all_loads = self.loads
+
+        section_n = 0
+        equation = ''
+        for load in all_loads:
+            if isinstance(load, Force):
+                text, longitudinal_force_of_load = load.get_projection_on_rod(rod_angle=self.rod_angle)
+                section_n += longitudinal_force_of_load
+                equation += f'+ {text} '
+            elif isinstance(load, DistributedForce):
+                text, longitudinal_force_of_load = load.get_projection_on_rod(rod_angle=self.rod_angle)
+                section_n += longitudinal_force_of_load
+                equation += f'+ {text} '
+
+        equation = f'N({self.name}) =' + normalize_equation(equation) + ' = ' + str(round_up(section_n, 2))
+        return section_n, equation
 
 
 
